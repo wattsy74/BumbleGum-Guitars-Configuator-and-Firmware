@@ -30,7 +30,7 @@ module.exports = {
       config: {
         icon: './bg-bee-icon.ico',
         portable: {
-          artifactName: 'BumbleGum-Guitars-Configurator-v2.3-portable.exe',
+          artifactName: 'BumbleGum-Guitars-Configurator-v${version}-portable.exe',
           requestExecutionLevel: 'user'
         }
       }
