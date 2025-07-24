@@ -1,0 +1,33 @@
+{
+  "name": "bgg-windows-app",
+  "productName": "BumbleGum",
+  "version": "2.3.0",
+  "main": "main.js",
+  "description": "BumbleGum Guitar Controller Configurator",
+  "author": "Martyn L. Watts",
+  "scripts": {
+    "start": "electron-forge start",
+    "dev": "vite",
+    "build": "vite build",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "dependencies": {
+    "@jaames/iro": "^5.5.2",
+    "electron-squirrel-startup": "^1.0.1",
+    "serialport": "^11.0.0",
+    "sudo-prompt": "^9.2.1"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-deb": "^7.8.1",
+    "@electron-forge/maker-rpm": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
+    "@electron-forge/plugin-fuses": "^7.8.1",
+    "@electron/fuses": "^1.8.0",
+    "@rabbitholesyndrome/electron-forge-maker-portable": "^0.2.0",
+    "electron": "^27.3.11"
+  }
+}

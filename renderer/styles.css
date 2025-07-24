@@ -1,0 +1,642 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to bottom, #2a1f1a, #1a120e);
+  color: #fff;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.viewport {
+  width: 1000px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+  background: #222;
+}
+
+.header,
+.footer {
+  background: #444;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+}
+
+.left-panel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #333;
+  padding: 10px;
+}
+
+.picker-panel {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #333;
+  padding: 10px;
+}
+
+.picker-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+#picker-root {
+  width: 100%;
+  max-width: 220px;
+}
+
+.preset-dropdown {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.preset-dropdown label {
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+#preset-select {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+
+/* Toggle buttons */
+.fret-toggle,
+.strum-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+select {
+  background-color: #222;         /* Match toggle buttons */
+  color: #fff;
+  border: 1px solid #ffcc00;         /* Subtle outline */
+  padding: 8px 16px;
+  border-radius: 999px;           /* Pill shape */
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 180px;
+  box-shadow: 0 0 4px rgba(0, 255, 204, 0.2); /* Gentle glow */
+  transition: box-shadow 0.2s ease;
+}
+
+/* Focus state with brighter edge */
+select:focus {
+  outline: none;
+  box-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+}
+
+/* Disabled top row */
+select option:disabled {
+  color: #888;
+  font-style: italic;
+}
+
+.dropdown-wrapper {
+  display: flex;
+  flex-direction: column; /* 🔄 Stack children vertically */
+  align-items: flex-start; /* Align left for dropdowns and button */
+}
+
+.preset-dropdown {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  height: 42px;
+  min-width: 200px;
+  box-shadow: 0 0 4px rgba(0, 255, 204, 0.2);
+  transition: box-shadow 0.2s ease;
+  line-height: 1.4;
+}
+
+.preset-dropdown:focus {
+  outline: none;
+  box-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+}
+
+.preset-dropdown option:disabled {
+  color: #888;
+  font-style: italic;
+}
+
+.fret-toggle-button,
+.strum-toggle-button {
+  background-color: #222;
+  color: #ccc;
+  border: 2px solid #444;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.fret-toggle-button.selected,
+.strum-toggle-button.selected {
+  box-shadow: 0 0 8px 2px #ffcc00;
+  border-color: #ffcc00;
+  color: #fff;
+}
+
+/* Fret and strum areas */
+.fret-area,
+.strum-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.fret-set,
+.strum-set {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Fret buttons */
+.fret-button {
+  width: 60px;
+  height: 80px;
+  border: none;
+  border-radius: 30px 30px 10px 10px;
+  font-weight: bold;
+  color: #fff;
+  font-size: 0.9em;
+  cursor: pointer;
+  background-color: #555;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.1s ease;
+}
+
+.fret-button:hover {
+  transform: scale(1.05);
+}
+
+.fret-button.green   { background-color: #2ecc40; }
+.fret-button.red     { background-color: #ff4136; }
+.fret-button.yellow  { background-color: #ffdc00; color: #000; }
+.fret-button.blue    { background-color: #0074d9; }
+.fret-button.orange  { background-color: #ff851b; }
+
+/* Strum buttons */
+.strum-button {
+  width: 100px;
+  height: 50px;
+  border: none;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 1em;
+  color: #fff;
+  background-color: #666;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.1s ease;
+}
+
+.strum-button:hover {
+  transform: scale(1.05);
+}
+.strum-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 4px;
+}
+
+.strum-label {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px #000;
+  letter-spacing: 0.5px;
+}
+
+
+/* Glowing selected button */
+.fret-button.selected,
+.strum-button.selected {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffcc00,
+    0 0 12px 4px #ffcc00;
+  z-index: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #444;
+  padding: 10px 20px;
+  font-weight: bold;
+  height: 50px;
+  -webkit-app-region: drag; /* ✅ Makes it draggable */
+  user-select: none;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  color: #ffcc00;
+  font-family: 'Segoe UI', sans-serif;
+  gap: 12px; /* or adjust as needed */
+}
+
+.header-right {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  -webkit-app-region: no-drag; /* ✅ Allows buttons inside draggable area */
+}
+
+#status-text {
+  font-size: 0.95em;
+  color: #ccc;
+}
+
+#close-btn {
+  background: transparent;
+  border: none;
+  color: #ffcc00;            /* BumbleGum yellow */
+  font-size: 1.3em;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  transition: color 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+#close-btn:hover {
+  color: #fff;
+}
+
+.fret-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 4px;
+}
+.app-title {
+  font-size: 24px;
+  color: #ffcc00;
+  font-family: 'Segoe UI', sans-serif;
+  white-space: nowrap;
+}
+.fret-label {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px #000;
+  letter-spacing: 0.5px;
+}
+
+.text-button {
+  background-color: #222;
+  color: #ffcc00;
+  border: 1px solid #444;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 0 4px rgba(255, 204, 0, 0.3);
+  transition: box-shadow 0.2s ease;
+  min-width: 200px;
+  text-align: center;
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffcc00,
+    0 0 12px 4px #ffcc00;
+  z-index: 1;
+}
+
+.text-button:hover {
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.5);
+}
+
+#apply-config-btn {
+  background-color: #222;
+  color: #ffcc00;
+  border: 1px solid #444;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 0 0 4px rgba(255, 204, 0, 0.3);
+  transition: box-shadow 0.2s ease;
+  display: none; /* Hidden by default */
+  min-width: 200px;
+  text-align: center;
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffcc00,
+    0 0 12px 4px #ffcc00;
+  z-index: 1;
+}
+
+#apply-config-btn:hover {
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.5);
+}
+.config-menu-wrapper {
+  position: relative; /* Keeps the icon aligned inside header */
+}
+
+#config-menu-toggle {
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: #ffcc00;
+  cursor: pointer;
+  padding: 4px 8px;
+  -webkit-app-region: no-drag;
+}
+#config-menu-toggle svg {
+  vertical-align: middle;
+  display: inline-block;
+  transform: translateY(0px); /* Adjust this up/down */
+}
+
+
+.popup-menu {
+  position: absolute;
+  top: 50px; /* Below header height */
+  left: 12px;
+  background-color: #222;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px;
+  width: 220px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  z-index: 999;
+  display: none;
+}
+
+.popup-menu button {
+  background-color: #333;
+  color: #eee;
+  border: none;
+  padding: 8px 12px;
+  margin: 4px 0;
+  width: 100%;
+  text-align: left;
+  font-family: 'Segoe UI', sans-serif;
+  cursor: pointer;
+}
+
+.popup-menu button:hover {
+  background-color: #444;
+}
+
+.icon-button {
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer; /* 👈 This makes it show the hand cursor */
+  padding: 4px 8px;
+}
+
+#hexInput {
+  margin-top: 12px;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 2px solid #FFCC00;
+  border-radius: 999px;
+  background-color: #222;
+  color: #fff;
+  outline: none;
+  width: 100px;
+  text-align: center;
+  box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#hexInput:focus {
+  border-color: #FFCC00;
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.75);
+}
+
+/* Diagnostics Modal Styles */
+#diagnostics-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: none;
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.diagnostics-content {
+  background-color: #333;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80%;
+  overflow-y: auto;
+  position: relative;
+}
+
+.diagnostics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #555;
+  padding-bottom: 10px;
+}
+
+.diagnostics-header h2 {
+  margin: 0;
+  color: #ffcc00;
+}
+
+.close-btn {
+  background: #666;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.close-btn:hover {
+  background: #777;
+}
+
+.diagnostic-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.diagnostic-section h3 {
+  margin: 0 0 10px 0;
+  color: #ffcc00;
+  font-size: 16px;
+}
+
+.diagnostic-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.diagnostic-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.diagnostic-controls input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.polling-indicator {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.polling-indicator.live {
+  color: #4CAF50;
+}
+
+.polling-indicator.off {
+  color: #888;
+}
+
+.diagnostic-output {
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  min-height: 60px;
+  margin-top: 10px;
+}
+
+.led-controls {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #444;
+}
+
+.led-controls button {
+  background-color: #ffcc00;
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.led-controls button:hover {
+  background-color: #e6b800;
+}
+
+/* Modal button styling for consistent yellow theme */
+.modal-btn {
+  background-color: #ffcc00;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  margin: 4px;
+}
+
+.modal-btn:hover {
+  background-color: #e6b800;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modal-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modal-btn:disabled {
+  background-color: #888;
+  color: #444;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

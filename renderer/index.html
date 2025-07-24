@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Fret & Strum Configurator</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="lib/iro.min.js"></script>
+</head>
+
+<body>
+  <!-- Buffer Clearing Popover -->
+  <div id="buffer-clearing-popover" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ffe066;color:#222;padding:24px 40px;border-radius:16px;font-size:1.4em;font-weight:bold;box-shadow:0 6px 32px rgba(0,0,0,0.6);z-index:10000;text-align:center;border:2px solid #ffcc00;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="font-size:1.8em;">🧹</div>
+      <div>Clearing serial buffer...</div>
+    </div>
+  </div>
+  
+  <div class="viewport">
+    <div class="header">
+      <div class="header-left">
+        <div class="config-menu-wrapper">
+          <button id="config-menu-toggle" aria-label="Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="172.304535 -345.054260 79.086975 66.093994">
+    <path transform="matrix(1,0,0,-1,0,0)" style="stroke:none;fill:#FFCC00;fill-rule:evenodd" d="M200.772537,344.938202C200.626877,344.863983,200.41153,344.677185,200.293976,344.523071C200.108704,344.280151,200.080246,344.167664,200.080246,343.678314C200.080246,342.908112,200.214783,342.739471,201.378784,342.050446C203.566284,340.755615,205.323486,339.075409,206.107727,337.528687C206.295792,337.157806,206.43428,336.842255,206.415497,336.827454C206.396729,336.812622,206.02243,336.566925,205.58374,336.281433C203.690506,335.049316,202.286804,333.25708,201.58902,331.180969C201.225296,330.098785,201.073334,329.265381,201.019745,328.058899C200.994904,327.499573,200.960938,327.041962,200.944275,327.041962C200.927628,327.041962,200.403366,327.414398,199.779266,327.869629C193.962433,332.112366,187.856964,334.966187,183.210815,335.614014C182.155029,335.76123,180.220734,335.782959,179.415359,335.656647C177.529373,335.36084,175.971893,334.572113,174.765167,333.301758C173.289383,331.748138,172.402512,329.460205,172.304535,326.953827C172.127426,322.424133,174.915146,318.707581,180.585541,315.913696C181.086273,315.666992,181.484451,315.424194,181.470367,315.374176C181.456299,315.324127,181.327972,315.120361,181.185211,314.921295C180.268021,313.642487,179.912109,312.486145,179.907715,310.770752C179.903564,309.151123,180.171783,307.994049,180.878403,306.583282C181.830063,304.68335,183.440689,303.363159,185.541367,302.76123C186.601837,302.457367,187.471298,302.369873,188.953598,302.417816C190.93045,302.481781,192.82988,302.883301,195.265198,303.752014C195.756638,303.927338,196.170242,304.059235,196.184326,304.045166C196.19841,304.031097,196.120956,303.627319,196.012222,303.147888C195.628784,301.457428,195.536026,300.569458,195.537903,298.607208C195.539856,296.557465,195.635925,295.749969,196.088303,293.981079C196.854401,290.985474,198.581833,287.786194,200.713043,285.415863C200.96492,285.135712,201.212738,284.856476,201.263718,284.795319C201.568207,284.430176,203.405014,282.817749,204.148041,282.263336C206.677078,280.376312,209.483154,279.118561,211.491989,278.971558C212.565491,278.893005,213.90593,279.201904,215.575729,279.912598C216.29068,280.216888,217.515808,280.859802,217.979019,281.173767C218.092834,281.250916,218.347458,281.418335,218.544846,281.545837C218.742233,281.67334,219.226776,282.022247,219.621613,282.321167C223.600708,285.333771,226.457779,289.508362,227.601639,293.981079C228.058105,295.765991,228.152588,296.55896,228.152863,298.607208C228.153107,300.568665,228.059204,301.466003,227.677734,303.147888C227.568985,303.627319,227.488754,304.02829,227.49942,304.038971C227.510101,304.049652,228.200592,303.830505,229.033875,303.552002C231.504395,302.726288,233.091125,302.430023,235.175018,302.405334C236.511169,302.389496,237.423325,302.512207,238.445221,302.845276C241.156952,303.729126,242.975739,305.862579,243.637848,308.936249C243.841354,309.880981,243.84256,311.626953,243.640259,312.445709C243.467972,313.142975,242.856903,314.467041,242.44577,315.033936L242.159454,315.428711L243.41301,316.07608C245.237457,317.01828,246.049561,317.537628,247.218918,318.510101C249.546783,320.446014,250.878555,322.58371,251.290131,325.045074C251.453552,326.022461,251.41777,327.684448,251.212753,328.637177C250.379456,332.509827,248.106293,334.899048,244.603912,335.583374C243.638672,335.772003,241.69989,335.787445,240.494797,335.61615C235.734467,334.939484,229.752762,332.136658,223.784836,327.786407C223.223145,327.376953,222.747559,327.041962,222.728012,327.041962C222.70845,327.041962,222.691803,327.338074,222.690994,327.699982C222.688049,329.025299,222.334564,330.724243,221.816208,331.904419C220.930328,333.921417,219.434891,335.552734,217.382538,336.740967C217.23819,336.824524,217.246979,336.861145,217.564362,337.498688C218.313141,339.002777,220.185562,340.826111,222.147858,341.962036C223.183609,342.561615,223.324615,342.669861,223.48848,342.991028C224.009567,344.012451,223.273514,345.134888,222.136566,345.052643C221.758331,345.025269,221.555298,344.941254,220.844727,344.517975C218.131866,342.901978,215.82193,340.558258,214.833435,338.418762C214.612488,337.940582,214.517838,337.810669,214.412994,337.841827C213.084259,338.23645,210.703873,338.239166,209.252747,337.847687C209.117401,337.811188,209.059479,337.88858,208.870621,338.358124C208.076752,340.33197,205.573181,342.892975,202.854065,344.512695C202.093811,344.965576,201.943878,345.025635,201.517563,345.047974C201.18277,345.065491,200.957184,345.032257,200.772537,344.938202zM213.873993,315.835541C213.898621,315.638153,213.938705,315.306152,213.963104,315.097778C214.109985,313.843048,215.291397,312.094299,217.021103,310.57135C217.419693,310.220398,217.74614,309.906342,217.746552,309.873413C217.746948,309.840515,215.091248,309.813599,211.844971,309.813599C208.598709,309.813599,205.942673,309.843719,205.942673,309.880554C205.942673,309.917358,206.077271,310.067322,206.241776,310.213776C206.406281,310.360229,206.702393,310.624786,206.899796,310.801697C208.474731,312.212952,209.61348,313.98291,209.733459,315.205963C209.75882,315.464508,209.797256,315.792694,209.818878,315.935242L209.858185,316.194489L211.843704,316.194489L213.829224,316.194489L213.873993,315.835541zM221.796097,288.534546C221.835358,288.416779,220.494507,286.891479,219.595276,286.030945C217.722641,284.238983,215.440353,282.785828,213.400314,282.086609C212.852554,281.898865,212.63237,281.867523,211.844971,281.865265C211.047394,281.863007,210.844467,281.891327,210.289642,282.082367C208.71347,282.625061,206.727539,283.77887,205.184937,285.048157C203.955933,286.059387,201.874863,288.270203,201.874863,288.564575C201.874863,288.654968,221.765961,288.624969,221.796097,288.534546zM222.612686,306.531311C223.029434,306.286316,223.517746,306.011292,223.697815,305.920135C224.018204,305.757935,224.030563,305.735962,224.275543,304.89267C224.738388,303.299438,225.164032,301.350281,225.164795,300.820557L225.165039,300.641113L211.844971,300.641113L198.524902,300.641113L198.524902,300.869934C198.524902,301.472565,198.968109,303.495636,199.4142,304.92926L199.6689,305.747803L200.353134,306.120453C200.729462,306.325439,201.220245,306.603149,201.443756,306.73761L201.850159,306.982086L211.852554,306.979431L221.854965,306.976746L222.612686,306.531311zM225.244781,297.410797C225.244766,296.870514,224.973145,295.261993,224.72998,294.362152C224.515228,293.567383,224.041702,292.249634,223.797607,291.767456L223.646072,291.468079L211.824234,291.488281L200.00238,291.508484L199.712509,292.186462C199.041504,293.755798,198.567276,295.623901,198.472107,297.072754L198.423706,297.809601L211.834259,297.809601L225.244797,297.809601L225.244781,297.410797zM213.547348,335.124695C216.870789,334.486206,219.127045,332.224762,219.70166,328.956207C219.850693,328.108459,219.857605,325.701965,219.713104,324.96817L219.611008,324.449738L218.42868,323.293182C217.067947,321.962158,215.951416,320.691559,215.300797,319.733765L214.847122,319.065857L211.844971,319.065857L208.842834,319.065857L208.38916,319.733765C207.727295,320.70813,206.609482,321.978851,205.265289,323.284973C204.092804,324.424255,204.082672,324.437134,203.979004,324.920074C203.829529,325.616302,203.836441,328.111176,203.99028,328.993378C204.425674,331.490082,205.799454,333.330475,208.035736,334.412842C209.765259,335.249939,211.63707,335.491699,213.547348,335.124695zM230.26973,317.391357C235.508667,316.864471,239.276581,315.185852,240.475784,312.844513C240.825562,312.161621,240.957703,311.612,240.957703,310.839935C240.957703,308.719177,239.978745,306.795502,238.474884,305.96106C235.263519,304.179169,228.927673,305.764282,222.544281,309.946594C219.838745,311.719208,217.53447,313.773224,216.958618,314.925598L216.708527,315.426086L216.913605,315.640137C217.684036,316.444275,220.998245,317.226837,224.646591,317.466064C225.963379,317.552399,229.080154,317.510986,230.26973,317.391357zM198.804077,317.468781C202.168091,317.270111,205.273254,316.623291,206.506775,315.864288C206.805862,315.680267,206.899796,315.5755,206.899796,315.425934C206.899796,314.531403,204.490829,312.193604,201.476059,310.162445C196.930298,307.099854,192.045654,305.250488,188.514923,305.25528C186.890167,305.257477,185.805191,305.531342,184.858673,306.178131C183.917969,306.820953,183.285461,307.820068,182.921768,309.237671C182.375336,311.367554,182.887878,313.04129,184.50975,314.423492C187.113754,316.642609,192.687363,317.830048,198.804077,317.468781zM183.729263,332.627258C189.008606,331.485901,195.080963,328.203979,200.915604,323.338562C202.004791,322.430328,204.905777,319.671509,204.905777,319.543945C204.905777,319.511505,204.626602,319.549988,204.285385,319.629425C201.633972,320.246826,197.785294,320.540009,194.816025,320.350769C190.640701,320.084686,187.437805,319.331055,184.866425,318.009644L183.92981,317.52832L183.550369,317.66803C182.803726,317.942932,180.445938,319.140869,179.741226,319.603333C175.882248,322.135803,174.526245,325.051086,175.477402,328.770081C175.971695,330.702728,177.203766,332.058197,178.943619,332.583405C179.820847,332.848206,179.873505,332.85321,181.495956,332.824799C182.594604,332.805573,183.118912,332.759186,183.729263,332.627258zM244.626129,332.628265C245.529907,332.365356,246.112488,332.021484,246.788879,331.351715C247.482086,330.665314,247.928314,329.852539,248.211609,328.760345C248.937469,325.96167,248.34256,323.657471,246.351639,321.556427C245.048157,320.180817,242.797699,318.750031,240.423996,317.78772L239.77066,317.522858L238.828781,318.006805C237.258789,318.813446,235.262238,319.459106,233.101242,319.858978C228.812561,320.652527,223.416565,320.561829,219.402313,319.628662C219.062332,319.549652,218.784164,319.507751,218.784164,319.535583C218.784164,319.615662,221.225525,322.008881,221.974609,322.663116C227.325256,327.336334,233.83815,331.083069,238.826874,332.35788C240.49791,332.784882,241.127838,332.863281,242.63266,332.831573C243.769409,332.807587,244.13942,332.769836,244.626129,332.628265z"/>
+</svg>
+          </button>
+
+          <div id="config-menu" class="popup-menu">
+            <button id="upload-presets-btn">Upload Presets File</button>
+            <button id="download-presets-btn">Download Presets File</button>
+            <button id="button-config-btn">Button Config</button>
+            <button id="whammy-cal-btn">Whammy Calibration</button>
+            <button id="toggle-hat-mode-btn">Toggle DPad/Joystick</button>
+            <button id="toggle-tilt-wave-btn">Toggle Tilt Wave Effect</button>
+            <button id="rename-device-btn">Rename Device</button>
+            <button id="restore-default-btn">Restore Config to Default</button>
+            <input type="file" id="presets-file-input" accept=".json" style="display:none" />
+            <button id="reboot-to-bootsel">Reflash Firmware &#128274;</button>
+          </div>
+        </div>
+        <span class="app-title">BumbleGum Guitar Configurator</span>
+      </div>
+
+      <div class="header-right">
+        <span id="status-text">Disconnected</span>
+        <button id="close-btn">×</button>
+      </div>
+    </div>
+
+
+
+    <div class="main">
+      <div class="left-panel">
+        <div class="fret-toggle">
+          <button class="fret-toggle-button selected" data-state="released">Released</button>
+          <button class="fret-toggle-button" data-state="pressed">Pressed</button>
+        </div>
+
+        <div class="fret-area">
+          <div class="fret-set released-set" style="display: flex;">
+            <!-- Released fret buttons -->
+            <div class="fret-wrapper">
+              <button class="fret-button" id="green-fret-released"></button>
+              <span class="fret-label">Green</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="red-fret-released"></button>
+              <span class="fret-label">Red</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="yellow-fret-released"></button>
+              <span class="fret-label">Yellow</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="blue-fret-released"></button>
+              <span class="fret-label">Blue</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="orange-fret-released"></button>
+              <span class="fret-label">Orange</span>
+            </div>
+          </div>
+
+          <div class="fret-set pressed-set" style="display: none;">
+            <!-- Pressed fret buttons -->
+            <div class="fret-wrapper">
+              <button class="fret-button" id="green-fret-pressed"></button>
+              <span class="fret-label">Green</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="red-fret-pressed"></button>
+              <span class="fret-label">Red</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="yellow-fret-pressed"></button>
+              <span class="fret-label">Yellow</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="blue-fret-pressed"></button>
+              <span class="fret-label">Blue</span>
+            </div>
+            <div class="fret-wrapper">
+              <button class="fret-button" id="orange-fret-pressed"></button>
+              <span class="fret-label">Orange</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="strum-area">
+          <div class="strum-set released-set" style="display: flex;">
+            <!-- Released strum buttons -->
+            <div class="strum-wrapper">
+              <button class="strum-button up" id="strum-up-released"></button>
+              <span class="strum-label">Strum Up</span>
+            </div>
+            <div class="strum-wrapper">
+              <button class="strum-button down" id="strum-down-released"></button>
+              <span class="strum-label">Strum Down</span>
+            </div>
+          </div>
+
+          <div class="strum-set active-set" style="display: none;">
+            <!-- Pressed (active) strum buttons -->
+            <div class="strum-wrapper">
+              <button class="strum-button up" id="strum-up-active"></button>
+              <span class="strum-label">Strum Up</span>
+            </div>
+            <div class="strum-wrapper">
+              <button class="strum-button down" id="strum-down-active"></button>
+              <span class="strum-label">Strum Down</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="picker-panel">
+        <div class="picker-area">
+          <div id="picker-root" style="width: 200px;"></div>
+          <input type="text" id="hexInput" maxlength="7" placeholder="#FF00FF" />
+          <div class="dropdown-wrapper">
+            <select id="preset-select" class="preset-dropdown"
+              style="font-size:16px;border: 2px solid #ffcc00;border-radius: 999px;">
+              <option disabled selected>Presets:</option>
+              <option value="Warm Glow">Warm Glow</option>
+              <option value="Cool Pulse">Cool Pulse</option>
+            </select>
+            <select id="user-preset-select" class="preset-dropdown" style="font-size:16px;border: 2px solid #ffcc00; ">
+              <option disabled selected>User Preset Slots:</option>
+              <option value="User 1">User 1</option>
+              <option value="User 2">User 2</option>
+              <option value="User 3">User 3</option>
+              <option value="User 4">User 4</option>
+              <option value="User 5">User 5</option>
+            </select>
+            <button id="save-custom-btn" class="text-button" style="display: none;">Save changes</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <span id="footer-device-name" style="color: #bbb; font-size: 0.9em;">No device connected</span>
+        <button id="apply-config-btn">Apply To Config</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="passcode-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; text-align:center; color:#fff; box-shadow:0 0 20px #000;">
+    <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Enter passcode to reflash firmware</h3>
+    <input type="password" id="passcode-input" style="width:80%; font-size:1.2em; padding:10px; border-radius:8px; border:1px solid #444; background:#333; color:#fff; margin:1em 0;" autofocus />
+    <div style="margin-top:1.5em; display:flex; gap:15px; justify-content:center;">
+      <button id="passcode-ok" class="modal-btn">OK</button>
+      <button id="passcode-cancel" class="modal-btn">Cancel</button>
+    </div>
+    <div id="passcode-error" style="color:#ff6b6b; margin-top:1em; display:none;">Incorrect passcode.</div>
+  </div>
+</div>
+
+  <div id="rename-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; text-align:center; color:#fff; box-shadow:0 0 20px #000;">
+    <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Rename Device</h3>
+    <input type="text" id="rename-input" placeholder="New device name" style="width:80%; font-size:1.2em; padding:10px; border-radius:8px; border:1px solid #444; background:#333; color:#fff; margin:1em 0;" maxlength="32" autofocus />
+    <div style="margin-top:1.5em; display:flex; gap:15px; justify-content:center;">
+      <button id="rename-apply" class="modal-btn">Apply</button>
+      <button id="rename-cancel" class="modal-btn">Cancel</button>
+    </div>
+    <div id="rename-error" style="color:#ff6b6b; margin-top:1em; display:none;">Invalid name.</div>
+  </div>
+</div>
+
+
+<!-- Whammy Calibration Modal -->
+<div id="whammy-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+  <div style="background:#222; padding:2em; border-radius:1em; min-width:350px; max-width:90vw; color:#fff; box-shadow:0 0 20px #000;">
+    <h2>Whammy Calibration</h2>
+    <!-- Live value above graph -->
+    <div id="whammy-live-val" style="font-weight:bold; margin-bottom:8px; text-align:center;"></div>
+    <!-- Graph -->
+    <div style="margin:1em 0;">
+      <canvas id="whammy-graph" width="360" height="80" style="background:#fff; border-radius:8px; display:block; margin:0 auto 8px auto;"></canvas>
+    </div>
+    <!-- Auto-calibrate section -->
+    <div id="whammy-auto-cal-section" style="margin-bottom:12px; text-align:center;">
+      <button id="whammy-auto-cal-btn" class="modal-btn">Auto Calibrate</button>
+      <div id="whammy-auto-cal-status" style="color:#bbb; font-size:13px; min-height:20px;"></div>
+    </div>
+    
+    <!-- Min/Max draggable bars only, no sliders -->
+    <div id="whammy-bar-instructions" style="margin-bottom:12px; text-align:center; color:#bbb; font-size:13px;">Drag the Min/Max bars below to set calibration or use Auto Calibrate above.</div>
+    <div style="display:flex; justify-content:space-between; margin:8px 0 0 0;">
+      <span>Min: <input id="whammy-min-val" type="number" min="0" max="65534" value="0" style="width:70px; text-align:right; font-size:15px; background:#222; color:#ffe066; border:1px solid #bfa500; border-radius:6px; padding:2px 6px;" /></span>
+      <span>Max: <input id="whammy-max-val" type="number" min="1" max="65535" value="65535" style="width:70px; text-align:right; font-size:15px; background:#222; color:#ffe066; border:1px solid #bfa500; border-radius:6px; padding:2px 6px;" /></span>
+    </div>
+    <!-- Reverse checkbox -->
+    <div style="margin-bottom:12px;">
+      <label for="whammy-reverse">Reverse</label>
+      <input type="checkbox" id="whammy-reverse">
+    </div>
+    <!-- Min/Max labels are drawn by JS below the graph -->
+    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
+      <button id="whammy-apply" class="modal-btn">Apply</button>
+      <button id="whammy-cancel" class="modal-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- Button Config Modal -->
+<div id="button-config-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; width:80vw; max-width:80vw; color:#fff; box-shadow:0 0 20px #000;">
+      <h2>Button Config</h2>
+      <div style="overflow-x:auto;">
+        <table id="button-config-table" style="width:100%; border-collapse:collapse; margin-bottom:1em;">
+          <thead>
+            <tr style="background:#333; color:#ffe066;">
+              <th>Name</th>
+              <th>Digital Pin</th>
+              <th>LED Index</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows will be populated by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="button-config-footer" style="display:flex; justify-content:center; gap:12px; margin-top:32px;"></div>
+    </div>
+</div>
+  <!-- Diagnostics Modal -->
+  <div id="diagnostics-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,30,30,0.95); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#222; color:#fff; width:100vw; height:100vh; position:relative; box-shadow:0 2px 16px #0003; text-align:left; border-radius:0; padding:0; overflow:auto;">
+      <!-- Top header bar similar to main window -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1a1a1a; border-bottom:1px solid #333;">
+        <span style="font-size:24px; color:#ffcc00; font-family:'Segoe UI', sans-serif; white-space:nowrap;">Diagnostics</span>
+        <button id="diag-close-btn" style="background:#444; color:#fff; border:none; border-radius:4px; padding:8px 10px; font-size:1.2em; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px #0008; pointer-events:auto; line-height:1; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
+      <!-- Diagnostics sections scaffold -->
+      <div id="diagnostics-content" style="padding:16px 48px; max-width:1800px; margin:0 auto;">
+        <!-- Compact Polling Mode Selector -->
+        <div style="text-align:center; margin-bottom:12px; padding:6px; background:#2a2a2a; border-radius:6px;">
+          <div style="display:flex; justify-content:center; gap:20px; align-items:center;">
+            <span style="color:#ffe066; font-size:14px; font-weight:bold; margin-right:10px;">Polling:</span>
+            <label style="display:flex; align-items:center; cursor:pointer;">
+              <input type="radio" id="diag-none" name="diagnostic-mode" checked style="margin-right:6px;">
+              <span style="color:#fff; font-size:14px;">None</span>
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer;">
+              <input type="radio" id="diag-input-enable" name="diagnostic-mode" style="margin-right:6px;">
+              <span style="color:#fff; font-size:14px;">Buttons</span>
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer;">
+              <input type="radio" id="diag-whammy-enable" name="diagnostic-mode" style="margin-right:6px;">
+              <span style="color:#fff; font-size:14px;">Whammy</span>
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer;">
+              <input type="radio" id="diag-hat-enable" name="diagnostic-mode" style="margin-right:6px;">
+              <span id="diag-hat-label" style="color:#fff; font-size:14px;">Hat</span>
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer;">
+              <input type="radio" id="diag-led-enable" name="diagnostic-mode" style="margin-right:6px;">
+              <span style="color:#fff; font-size:14px;">LED Test</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Single row with all diagnostic boxes -->
+        <section style="margin-bottom:16px; display:flex; flex-direction:row; justify-content:center; align-items:stretch; gap:20px; flex-wrap:nowrap;">
+          <!-- Input Status Box -->
+          <div style="flex:1; display:flex; flex-direction:column;">
+            <div id="diag-input-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:14px 20px; min-width:480px; max-width:480px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 style="margin:0 0 6px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Input Status</h3>
+              <!-- Input boxes row 1 -->
+              <div id="diag-input-boxes-row1" style="display:flex; justify-content:center; gap:12px; margin-bottom:4px;"></div>
+              <!-- Input boxes row 2 -->
+              <div id="diag-input-boxes-row2" style="display:flex; justify-content:center; gap:12px; margin-bottom:4px;"></div>
+              <div style="color:#bbb; font-size:12px; margin-top:auto;">Shows live input state for all buttons.</div>
+            </div>
+          </div>
+          
+          <!-- Whammy Box -->
+          <div style="flex:1; display:flex; flex-direction:column;">
+            <div id="diag-whammy-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:14px 16px; max-width:220px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 style="margin:0 0 6px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Whammy</h3>
+              <div id="diag-whammy-live-val" style="font-weight:bold; margin-bottom:6px; font-size:1.3em; color:#ffe066;">Live: -</div>
+              <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:6px; width:100%;">
+                <div style="color:#bbb; text-align:center;">Min: <span id="diag-whammy-min" style="color:#ffe066; font-weight:bold;">-</span></div>
+                <div style="color:#bbb; text-align:center;">Max: <span id="diag-whammy-max" style="color:#ffe066; font-weight:bold;">-</span></div>
+              </div>
+              <div style="color:#bbb; font-size:12px; margin-top:auto;">Move the whammy bar to see live values.</div>
+            </div>
+          </div>
+          
+          <!-- Hat Status Box - Expanded to fill LED test space -->
+          <div style="display:flex; flex-direction:column; flex:1;">
+            <div id="diag-hat-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:18px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 id="diag-hat-title" style="margin:0 0 10px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Joystick Status</h3>
+              <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; width:100%;">
+                <div style="color:#bbb; text-align:center;">X: <span id="diag-hat-x" style="color:#ffe066; font-weight:bold;">-</span></div>
+                <div style="color:#bbb; text-align:center;">Y: <span id="diag-hat-y" style="color:#ffe066; font-weight:bold;">-</span></div>
+              </div>
+              <div style="color:#bbb; font-size:12px; margin-top:auto;">Joystick X/Y axis values</div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Version and Device Info Section -->
+        <section style="display:flex; flex-direction:row; justify-content:space-between; align-items:flex-start; gap:40px; margin-top:8px; padding:8px 0;">
+          <div id="diag-version-info" style="font-size:1.0em; background:#1a1a1a; border-radius:8px; padding:12px; border:1px solid #444; flex:1;">
+            <div style="font-size:1.1em; font-weight:bold; color:#ffe066; margin-bottom:6px;">Version Information</div>
+            <div style="color:#ccc; font-size:0.9em; line-height:1.3;">
+              <div>App Version: Loading...</div>
+              <div>Presets Version: <span id="diag-presets-version">Loading...</span></div>
+              <div>Device Firmware: <span id="diag-device-firmware-version">-</span></div>
+              <div>Embedded Firmware: <span id="diag-embedded-firmware-version">-</span></div>
+            </div>
+          </div>
+          
+          <div id="diag-device-details" style="font-size:1.0em; background:#1a1a1a; border-radius:8px; padding:12px; border:1px solid #444; flex:1;">
+            <div style="font-size:1.1em; font-weight:bold; color:#ffe066; margin-bottom:6px;">Device Information</div>
+            <div style="color:#ccc; font-size:0.9em; line-height:1.3;">
+              <div>Device Name: <span id="diag-device-name">-</span></div>
+              <div>Device UID: <span id="diag-device-uid">-</span></div>
+              <div>CPU: <span id="diag-cpu-info">RP2040 Dual-Core ARM Cortex-M0+</span></div>
+              <div>Memory: <span id="diag-memory-info">264KB SRAM, 16MB Flash</span></div>
+              <div>Connectivity: <span id="diag-connectivity-info">USB 2.0 Full Speed</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Dialog -->
+  <div id="custom-confirm-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; max-width:600px; color:#fff; box-shadow:0 0 20px #000; text-align:center;">
+      <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Confirm Action</h3>
+      <div id="custom-confirm-message" style="margin:1.5em 0; line-height:1.4; white-space:pre-line;"></div>
+      <div style="display:flex; gap:15px; justify-content:center; margin-top:2em;">
+        <button id="custom-confirm-yes" class="modal-btn">Yes</button>
+        <button id="custom-confirm-no" class="modal-btn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Dialog -->
+  <div id="custom-alert-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; max-width:600px; color:#fff; box-shadow:0 0 20px #000; text-align:center;">
+      <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Notice</h3>
+      <div id="custom-alert-message" style="margin:1.5em 0; line-height:1.4; white-space:pre-line;"></div>
+      <div style="display:flex; justify-content:center; margin-top:2em;">
+        <button id="custom-alert-ok" class="modal-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
