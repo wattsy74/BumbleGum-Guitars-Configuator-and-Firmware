@@ -1,4 +1,9 @@
 const { SerialPort } = require('serialport');
+
+// Debug logging for serialport
+console.log('SerialPort module loaded:', !!SerialPort);
+console.log('SerialPort.list method available:', typeof SerialPort.list);
+
 const fs = require('fs');
 const path = require('path');
 const sudo = require('sudo-prompt');
@@ -1347,12 +1352,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const findSerialDeviceByVID = vid => {
     const matchVID = vid.toString().toLowerCase().padStart(4, '0');
-    return SerialPort.list().then(ports =>
-      ports.find(port =>
+    console.log('🔍 Looking for device with VID:', matchVID);
+    return SerialPort.list().then(ports => {
+      console.log('📋 Available ports:', ports);
+      const foundDevice = ports.find(port =>
         port.vendorId?.toLowerCase() === matchVID &&
         port.pnpId?.includes('MI_02')
-      )
-    );
+      );
+      console.log('🎯 Found matching device:', foundDevice);
+      return foundDevice;
+    }).catch(error => {
+      console.error('❌ Error listing ports:', error);
+      return null;
+    });
   };
 
   function requestDeviceUid(callback) {

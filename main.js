@@ -2,6 +2,13 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const sudo = require('sudo-prompt');
 
+// Handle portable app startup safely
+try {
+  if (require('electron-squirrel-startup')) app.quit();
+} catch (error) {
+  // electron-squirrel-startup not available, continue normally
+}
+
 app.disableHardwareAcceleration();
 
 let splash;
@@ -15,7 +22,8 @@ function createWindow() {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    resizable: false
+    resizable: false,
+    show: true
   });
 
   splash.loadFile(path.join(__dirname, 'renderer/splash.html'));
@@ -38,7 +46,9 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
   mainWindow.once('ready-to-show', () => {
-    splash.close();
+    if (splash && !splash.isDestroyed()) {
+      splash.close();
+    }
     mainWindow.show();
   });
 }

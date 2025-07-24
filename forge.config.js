@@ -5,16 +5,22 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: './bg-bee-icon',
-    name: 'BBG Configurator',
-    executableName: 'BBG Configurator'
+    name: 'BumbleGum Guitars Configurator',
+    files:[
+      'renderer/**/*',
+      'serial/**/*',
+      'main.js',
+      'preload.js',
+      'device.js',
+      'package.json'
+    ]
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'BBG Configurator',
-        setupExe: 'BBG Configurator Setup.exe',
+        setupExe: 'BumbleGum Guitars Configurator Setup.exe',
         setupIcon: './bg-bee-icon.ico',
         iconUrl: 'https://raw.githubusercontent.com/wattsy74/bgg-windows-app/main/bg-bee-icon.ico'
       },
@@ -22,9 +28,10 @@ module.exports = {
     {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
+        icon: './bg-bee-icon.ico',
         portable: {
-          artifactName: 'BBG-Configurator-portable-${version}.exe',
-          unpackDirName: 'BBG-Configurator-${version}'
+          artifactName: 'BumbleGum-Guitars-Configurator-v2.3-portable.exe',
+          requestExecutionLevel: 'user'
         }
       }
     },

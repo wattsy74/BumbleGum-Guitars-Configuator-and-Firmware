@@ -1,9 +1,9 @@
 {
   "name": "bgg-configurator",
-  "productName": "BBG Configurator",
+  "productName": "BumbleGum Guitars Configurator",
   "version": "2.3.0",
   "main": "main.js",
-  "description": "BBG Controller Configurator",
+  "description": "BumbleGum Guitars Configurator",
   "author": "Martyn L. Watts",
   "scripts": {
     "start": "electron-forge start",
