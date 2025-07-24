@@ -45,7 +45,7 @@ function createWindow() {
 
 ipcMain.handle('cleanup-registry', async (event, psScript) => {
   return new Promise((resolve) => {
-    sudo.exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, { name: 'BumbleGum Guitar Configurator' }, (err, stdout, stderr) => {
+    sudo.exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, { name: 'BBG Controller Configurator' }, (err, stdout, stderr) => {
       resolve({ err, stdout, stderr });
     });
   });

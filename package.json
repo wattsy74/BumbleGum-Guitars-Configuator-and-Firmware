@@ -1,9 +1,9 @@
 {
-  "name": "bgg-windows-app",
-  "productName": "BumbleGum",
+  "name": "bgg-configurator",
+  "productName": "BBG Configurator",
   "version": "2.3.0",
   "main": "main.js",
-  "description": "BumbleGum Guitar Controller Configurator",
+  "description": "BBG Controller Configurator",
   "author": "Martyn L. Watts",
   "scripts": {
     "start": "electron-forge start",

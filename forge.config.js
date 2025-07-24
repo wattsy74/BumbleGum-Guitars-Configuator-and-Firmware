@@ -5,16 +5,16 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: './bg-bee-icon',
-    name: 'BumbleGum',
-    executableName: 'BumbleGum'
+    name: 'BBG Configurator',
+    executableName: 'BBG Configurator'
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'BumbleGum',
-        setupExe: 'BumbleGum Setup.exe',
+        name: 'BBG Configurator',
+        setupExe: 'BBG Configurator Setup.exe',
         setupIcon: './bg-bee-icon.ico',
         iconUrl: 'https://raw.githubusercontent.com/wattsy74/bgg-windows-app/main/bg-bee-icon.ico'
       },
@@ -23,8 +23,8 @@ module.exports = {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
         portable: {
-          artifactName: 'BumbleGum-portable-${version}.exe',
-          unpackDirName: 'BumbleGum-${version}'
+          artifactName: 'BBG-Configurator-portable-${version}.exe',
+          unpackDirName: 'BBG-Configurator-${version}'
         }
       }
     },
