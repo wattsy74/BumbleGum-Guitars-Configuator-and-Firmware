@@ -1,4 +1,4 @@
-# pin_detect.py v2.2
+# pin_detect.py v2.3.1
 """
 Pin detection logic for BGG Firmware
 - Deinit all button pins

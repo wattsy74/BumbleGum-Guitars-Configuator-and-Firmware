@@ -1,10 +1,11 @@
 # serial_handler.py
-__version__ = "2.2"
+__version__ = "2.3.1"
 
 def get_version():
     return __version__
 # Serial command handler for BGG Firmware
 import json
+import time
 import microcontroller 
 from utils import hex_to_rgb, load_config
 from hardware import setup_leds, setup_buttons, setup_whammy, resolve_pin
@@ -153,9 +154,103 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                 # 🌊 Handle TILTWAVE command - trigger blue wave effect
                 elif mode is None and line == "TILTWAVE":
                     print("🌊 Triggering tilt wave effect")
-                    import code  # Import the main module to access tilt wave functions
-                    code.start_tilt_wave()
-                    serial.write(b"TILTWAVE:STARTED\n")
+                    try:
+                        if leds is not None:
+                            print("🌊 Starting exact tilt wave animation")
+                            
+                            # Store current LED colors before starting wave
+                            stored_colors = [(0, 0, 0)] * len(leds)
+                            for i in range(len(leds)):
+                                stored_colors[i] = tuple(leds[i])
+                            
+                            # Enhanced wave colors - exact same as main firmware
+                            WAVE_COLORS = [
+                                (0, 0, 255),      # Deep blue
+                                (0, 100, 255),    # Bright blue
+                                (0, 150, 255),    # Electric blue  
+                                (50, 200, 255),   # Cyan-blue
+                                (100, 220, 255),  # Light electric blue
+                                (150, 240, 255),  # Bright cyan
+                                (200, 250, 255),  # Nearly white-blue
+                                (255, 255, 255),  # Pure white (peak)
+                                (200, 250, 255),  # Bright cyan (fade back)
+                                (150, 240, 255),  # Light electric blue
+                                (100, 220, 255),  # Electric blue
+                                (50, 200, 255),   # Cyan-blue
+                                (0, 150, 255),    # Electric blue
+                                (0, 100, 255),    # Bright blue
+                                (0, 50, 255),     # Deep blue
+                                (0, 25, 128),     # Darker blue
+                                (0, 12, 64),      # Very dark blue
+                                (0, 0, 32),       # Almost off
+                                (0, 0, 0)         # Off
+                            ]
+                            
+                            # Animation parameters - exact same as firmware
+                            tilt_wave_max_steps = 120  # 2.4 seconds
+                            led_count = len(leds)
+                            wave_cycles = 3  # Number of complete sweeps
+                            total_sweep_steps = tilt_wave_max_steps // wave_cycles
+                            tilt_wave_led_counter = 0
+                            
+                            # Perform the exact tilt wave animation algorithm
+                            for tilt_wave_step in range(tilt_wave_max_steps):
+                                # Only update LEDs every 2nd cycle (50Hz from 100Hz)
+                                tilt_wave_led_counter += 1
+                                if tilt_wave_led_counter < 2:
+                                    time.sleep(0.01)  # 100Hz base rate
+                                    continue
+                                tilt_wave_led_counter = 0
+                                
+                                # Calculate wave position - exact algorithm from firmware
+                                current_cycle_step = tilt_wave_step % total_sweep_steps
+                                wave_position = (current_cycle_step * 12) // total_sweep_steps  # 0-11 range
+                                
+                                for led_index in range(led_count):
+                                    # Calculate distance from wave center
+                                    distance = abs(led_index * 2 - wave_position)  # Scale LED positions
+                                    
+                                    # Multiple wave effects - exact algorithm:
+                                    if distance == 0:
+                                        # Direct hit - brightest color
+                                        color_idx = 7  # Pure white peak
+                                    elif distance == 1:
+                                        # Adjacent - very bright
+                                        color_idx = 5 + (current_cycle_step % 3)  # Cycle through bright colors
+                                    elif distance == 2:
+                                        # Near - bright blue
+                                        color_idx = 3 + (current_cycle_step % 2)
+                                    elif distance <= 4:
+                                        # Trailing effect - medium blue
+                                        color_idx = max(0, 4 - distance)
+                                    else:
+                                        # Far from wave - dim or off
+                                        color_idx = 0
+                                    
+                                    # Add sparkle effects on secondary cycles
+                                    cycle_num = tilt_wave_step // total_sweep_steps
+                                    if cycle_num > 0 and (led_index + tilt_wave_step) % 7 == 0:
+                                        color_idx = min(len(WAVE_COLORS) - 1, color_idx + 3)  # Extra brightness
+                                    
+                                    # Clamp color index
+                                    color_idx = min(len(WAVE_COLORS) - 1, max(0, color_idx))
+                                    leds[led_index] = WAVE_COLORS[color_idx]
+                                
+                                leds.show()
+                                time.sleep(0.01)  # 100Hz base timing
+                            
+                            # Restore original colors
+                            for i in range(len(leds)):
+                                leds[i] = stored_colors[i]
+                            leds.show()
+                            
+                            serial.write(b"TILTWAVE:STARTED\n")
+                            print("✅ Exact tilt wave animation completed")
+                        else:
+                            serial.write(b"ERROR: No LEDs available\n")
+                    except Exception as e:
+                        serial.write(f"ERROR: TILTWAVE failed: {e}\n".encode("utf-8"))
+                        print(f"❌ TILTWAVE error: {e}")
 
                 # 💡 Handle SETLED:<index>:<r>:<g>:<b> command - set specific LED color
                 elif mode is None and line.startswith("SETLED:"):
