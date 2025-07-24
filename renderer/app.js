@@ -1558,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Fallback to static version if parsing fails
-    return normalizeVersion("v2.2");
+    return normalizeVersion("v2.3.1");
   }
 
 
@@ -1804,18 +1804,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const next = !current;
 
     try {
-      // Update config and save to device (this will cause a reboot to apply changes)
-      originalConfig.tilt_wave_enabled = next;
-      
-      connectedPort.write("WRITEFILE:config.json\n");
-      connectedPort.write(JSON.stringify(originalConfig) + "\n");
-      connectedPort.write("END\n");
-      
-      updateStatus(`Tilt wave effect ${next ? 'enabled' : 'disabled'} - device will reboot to apply changes ✅`, true);
-      updateTiltWaveButtonText();
+      if (next) {
+        // If enabling tilt wave, first send TILTWAVE command to demonstrate the effect
+        updateStatus("Triggering tilt wave demonstration... 🌊", true);
+        connectedPort.write("TILTWAVE\n");
+        
+        // Wait 2.5 seconds for the effect to complete, then apply config change
+        setTimeout(() => {
+          originalConfig.tilt_wave_enabled = next;
+          
+          connectedPort.write("WRITEFILE:config.json\n");
+          connectedPort.write(JSON.stringify(originalConfig) + "\n");
+          connectedPort.write("END\n");
+          
+          updateStatus(`Tilt wave effect enabled - device will reboot to apply changes ✅`, true);
+          updateTiltWaveButtonText();
+        }, 2500);
+      } else {
+        // If disabling, just update config directly
+        originalConfig.tilt_wave_enabled = next;
+        
+        connectedPort.write("WRITEFILE:config.json\n");
+        connectedPort.write(JSON.stringify(originalConfig) + "\n");
+        connectedPort.write("END\n");
+        
+        updateStatus(`Tilt wave effect disabled - device will reboot to apply changes ✅`, true);
+        updateTiltWaveButtonText();
+      }
     } catch (err) {
       console.error("Failed to toggle tilt wave:", err);
       updateStatus("Toggle failed", false);
+    }
+  });
+
+  // Trigger Tilt Wave for demo purposes
+  document.getElementById('trigger-tilt-wave-btn')?.addEventListener('click', () => {
+    closeConfigMenu();
+    if (!connectedPort) {
+      updateStatus("Device not connected", false);
+      return;
+    }
+
+    try {
+      // Send the TILTWAVE command to manually trigger the effect
+      connectedPort.write("TILTWAVE\n");
+      updateStatus("Tilt wave effect triggered! 🌊", true);
+    } catch (err) {
+      console.error("Failed to trigger tilt wave:", err);
+      updateStatus("Failed to trigger tilt wave", false);
     }
   });
 
