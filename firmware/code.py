@@ -1,16 +1,18 @@
 FIRMWARE_VERSIONS = {
-    "code.py": "2.3.1",
-    "hardware.py": "2.3.1",
-    "utils.py": "2.3.1",
-    "gamepad.py": "2.3.1",
-    "serial_handler.py": "2.3.1",
-    "pin_detect.py": "2.3.1"
+    "code.py": "2.4",
+    "hardware.py": "2.4",
+    "utils.py": "2.4",
+    "gamepad.py": "2.4",
+    "serial_handler.py": "2.4",
+    "pin_detect.py": "2.4"
 }
 
 def get_firmware_versions():
     return FIRMWARE_VERSIONS
 
 import usb_cdc
+from demo_routine import run_demo_generator
+from demo_state import demo_gen
 import time
 import json
 import board
@@ -309,8 +311,16 @@ while True:
     # PRIORITY 4: Serial communication (lowest priority)
     buffer, mode, filename, file_lines, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors = handle_serial(
         serial, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors,
-        buffer, mode, filename, file_lines, gp, update_leds, poll_inputs, joystick_x, joystick_y, 8  # Reduced from 32 to 8
+        buffer, mode, filename, file_lines, gp, update_leds, poll_inputs, joystick_x, joystick_y, 8, start_tilt_wave
     )
+
+    # Advance demo routine if active
+    import demo_state
+    if demo_state.demo_gen is not None:
+        try:
+            next(demo_state.demo_gen)
+        except StopIteration:
+            demo_state.demo_gen = None
     
     # Minimal sleep to prevent CPU spinning (1ms = 1000Hz max loop rate)
     time.sleep(0.001)

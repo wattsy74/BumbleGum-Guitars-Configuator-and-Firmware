@@ -1,5 +1,5 @@
 # serial_handler.py
-__version__ = "2.3.1"
+__version__ = "2.4"
 
 def get_version():
     return __version__
@@ -10,7 +10,7 @@ import microcontroller
 from utils import hex_to_rgb, load_config
 from hardware import setup_leds, setup_buttons, setup_whammy, resolve_pin
 
-def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors, buffer, mode, filename, file_lines, gp, update_leds, poll_inputs, joystick_x=None, joystick_y=None, max_bytes=8):
+def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors, buffer, mode, filename, file_lines, gp, update_leds, poll_inputs, joystick_x=None, joystick_y=None, max_bytes=8, start_tilt_wave=None):
     try:
         for _ in range(max_bytes):
             if not serial.in_waiting:
@@ -24,6 +24,18 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                 line = buffer.rstrip("\r\n")
                 buffer = ""
                 print(f"📩 Received line: {line}")
+
+                # 🎬 Handle DEMO command - run LED demo routine (non-blocking)
+                if mode is None and line == "DEMO":
+                    try:
+                        from demo_routine import run_demo_generator
+                        import demo_state
+                        demo_state.demo_gen = run_demo_generator(leds, config, preset_colors, start_tilt_wave)
+                        serial.write(b"DEMO:STARTED\n")
+                    except Exception as e:
+                        serial.write(f"ERROR: DEMO failed: {e}\n".encode("utf-8"))
+                        print(f"❌ DEMO error: {e}")
+                    return buffer, mode, filename, file_lines, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors
 
                 # --- Pin Detect Commands ---
                 if mode is None and line.startswith("DETECTPIN:"):
