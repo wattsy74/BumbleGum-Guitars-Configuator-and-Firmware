@@ -1,15 +1,15 @@
 {
   "_metadata": {
-    "version": "2.2.0",
+    "version": "2.3.1",
     "description": "BumbleGum Guitar Controller Presets",
-    "lastUpdated": "2025-01-23"
+    "lastUpdated": "2025-01-24"
   },
   "presets": {
     "GRYBO": {
       "red-fret-pressed": "#FF0000",
       "strum-up-released": "#454545",
       "strum-down-active": "#FFFFFF",
-      "orange-fret-pressed": "#B33E00",
+      "orange-fret-pressed": "#FF4D00",
       "orange-fret-released": "#521C00",
       "red-fret-released": "#8C0009",
       "blue-fret-pressed": "#0000FF",
@@ -106,7 +106,7 @@
     "red-fret-pressed": "#FF0000",
     "yellow-fret-pressed": "#FFFF00",
     "blue-fret-pressed": "#0000FF",
-    "orange-fret-pressed": "#FFA500",
+    "orange-fret-pressed": "#FF4D00",
     "green-fret-released": "#008000",
     "red-fret-released": "#008000",
     "yellow-fret-released": "#008000",
@@ -122,7 +122,7 @@
     "red-fret-pressed": "#FF0000",
     "yellow-fret-pressed": "#FFFF00",
     "blue-fret-pressed": "#0000FF",
-    "orange-fret-pressed": "#FFA500",
+    "orange-fret-pressed": "#FF4D00",
     "green-fret-released": "#FF00FF",
     "red-fret-released": "#FF00FF",
     "yellow-fret-released": "#FF00FF",
@@ -138,7 +138,7 @@
     "red-fret-pressed": "#FF0000",
     "yellow-fret-pressed": "#FFFF00",
     "blue-fret-pressed": "#0000FF",
-    "orange-fret-pressed": "#FFA500",
+    "orange-fret-pressed": "#FF4D00",
     "green-fret-released": "#0080FF",
     "red-fret-released": "#0080FF",
     "yellow-fret-released": "#0080FF",
@@ -154,7 +154,7 @@
     "red-fret-pressed": "#FF0000",
     "yellow-fret-pressed": "#FFFF00",
     "blue-fret-pressed": "#0000FF",
-    "orange-fret-pressed": "#FFA500",
+    "orange-fret-pressed": "#FF4D00",
     "green-fret-released": "#FF1F00",
     "red-fret-released": "#FF1F00",
     "yellow-fret-released": "#FF1F00",

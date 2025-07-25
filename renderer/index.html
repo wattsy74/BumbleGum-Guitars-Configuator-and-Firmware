@@ -163,7 +163,24 @@
 
     <div class="footer">
       <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-        <span id="footer-device-name" style="color: #bbb; font-size: 0.9em;">No device connected</span>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <!-- Multi-Device Selector -->
+          <div class="device-selector">
+            <button id="deviceSelectorButton" class="device-selector-button">
+              No devices connected
+            </button>
+            <div id="deviceDropdown" class="device-dropdown">
+              <div class="device-dropdown-header">
+                <span>Available Devices</span>
+                <button id="refreshDevicesBtn" class="refresh-devices-btn">🔄 Refresh</button>
+              </div>
+              <div id="deviceList" class="device-list">
+                <!-- Device list will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <button id="apply-config-btn">Apply To Config</button>
       </div>
     </div>
