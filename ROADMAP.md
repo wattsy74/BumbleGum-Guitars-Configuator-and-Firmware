@@ -38,11 +38,14 @@
 
 ## 🎯 Future Enhancements
 
+
+### Completed in v2.4
+- ✅ Multi-device management (robust selector, dropdown stays open on device actions, improved UX)
+
 ### Potential v2.4 Features
 - [ ] Backup/restore device configurations
 - [ ] Firmware update notification system
 - [ ] Advanced LED pattern editor
-- [ ] Multi-device management
 - [ ] Configuration profiles for different games
 - [ ] Performance monitoring and optimization tools
 

@@ -1,4 +1,4 @@
-# 🖥️ BGG Windows App v2.3
+# 🖥️ BGG Windows App v2.4
 
 A standalone desktop application for configuring and testing the BGG USB HID controller.
 
@@ -23,6 +23,15 @@ A standalone desktop application for configuring and testing the BGG USB HID con
 - **USB Communication**: Serial (CDC) over USB using SerialPort library
 - **UI Framework**: Custom HTML/CSS with Iro.js color picker
 - **File Access**: JSON-based config and presets
+
+
+## 🆕 What's New in v2.4
+
+### Multi-Device Management & UI Fixes
+- ✅ Robust multi-device selector with improved dropdown behavior
+- ✅ Device dropdown now stays open after connect/disconnect/set active/identify actions (timestamp-based suppression)
+- ✅ Improved device selector UI and styles for better workflow
+- ✅ Code and documentation cleanup
 
 ## 🆕 What's New in v2.3
 
@@ -50,6 +59,7 @@ A standalone desktop application for configuring and testing the BGG USB HID con
 - ✅ 4MB complete firmware package (vs 32MB with --all)
 - ✅ Single-file deployment with CircuitPython runtime included
 
+
 ## 🧠 Development Status
 
-All major roadmap items completed! See [ROADMAP.md](./ROADMAP.md) for original development plan.
+All major roadmap items completed! See [ROADMAP.md](./ROADMAP.md) for original development plan and v2.4 updates.
