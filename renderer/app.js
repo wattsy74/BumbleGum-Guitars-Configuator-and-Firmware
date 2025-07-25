@@ -245,6 +245,16 @@ class MultiDeviceManager {
                     const parsed = JSON.parse(jsonMatch[0]);
                     if (awaitingFile === 'config.json') {
                       applyConfig(parsed);
+                      // PATCH: After config is loaded, always request presets.json to repopulate dropdown
+                      try {
+                        device.port.write("READFILE:presets.json\n");
+                        awaitingFile = "presets.json";
+                        responseBuffers[awaitingFile] = '';
+                        // Do not call requestNextFile() here; let the handler process presets.json next
+                        return;
+                      } catch (err) {
+                        console.warn('Failed to request presets.json after config load:', err);
+                      }
                     } else if (awaitingFile === 'factory_config.json') {
                       applyConfig(parsed);
 
