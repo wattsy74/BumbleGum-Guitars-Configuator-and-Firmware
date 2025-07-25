@@ -267,6 +267,7 @@ class MultiDeviceManager {
                         console.error("Restore write failed:", err);
                         updateStatus("Restore failed", false);
                       }
+
                     } else if (awaitingFile === 'presets.json') {
                       // Store presets globally to access version info
                       window.loadedPresets = parsed;
@@ -372,7 +373,7 @@ class MultiDeviceManager {
   setActiveDevice(device, clearAutoReconnectInfo = false) {
     const previousDevice = this.activeDevice;
     this.activeDevice = device;
-    
+
     // Store device info for auto-reconnection after restart
     if (device && device.isConnected) {
       this.lastActiveDeviceInfo = {
@@ -392,14 +393,14 @@ class MultiDeviceManager {
       // Device disconnected unexpectedly - keep lastActiveDeviceInfo for auto-reconnection
       console.log('📤 Device disconnected unexpectedly - preserving auto-reconnect info');
     }
-    
+
     // Update legacy connectedPort for backward compatibility
     if (device && device.isConnected) {
       connectedPort = device.port;
     } else {
       connectedPort = null;
     }
-    
+
     this.emit('activeDeviceChanged', device, previousDevice);
   }
 
