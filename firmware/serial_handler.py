@@ -1,5 +1,5 @@
 # serial_handler.py
-__version__ = "2.4"
+__version__ = "3.0"
 
 def get_version():
     return __version__
@@ -32,6 +32,9 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                         import demo_state
                         demo_state.demo_gen = run_demo_generator(leds, config, preset_colors, start_tilt_wave)
                         serial.write(b"DEMO:STARTED\n")
+                    except ImportError as e:
+                        serial.write(b"ERROR: DEMO modules not found\n")
+                        print(f"❌ DEMO import error: {e}")
                     except Exception as e:
                         serial.write(f"ERROR: DEMO failed: {e}\n".encode("utf-8"))
                         print(f"❌ DEMO error: {e}")
@@ -108,18 +111,31 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                             print(f"⚠️ LED not found for key: {led_key}")
                     except Exception as e:
                         print("⚠️ PREVIEWLED failed:", e)
+                    return buffer, mode, filename, file_lines, config, raw_config, leds, buttons, whammy, current_state, user_presets, preset_colors
                 # 🧾 Handle READFILE commands
                 if mode is None and line.startswith("READFILE:"):
                     filename = "/" + line.split(":", 1)[1]
                     try:
+                        # Send START_<FILENAME> marker
+                        fname = filename.split("/")[-1]
+                        serial.write(f"START_{fname}\n".encode("utf-8"))
                         with open(filename, "r") as f:
                             lines = f.readlines()
+                        sent_content = False
                         if lines:
                             for l in lines:
+                                # Defensive: skip blank lines and FIRMWARE_READY:OK lines
+                                l_stripped = l.strip()
+                                if not l_stripped or l_stripped == "FIRMWARE_READY:OK":
+                                    continue
                                 serial.write(l.encode("utf-8"))
-                        serial.write(b"END\n")
+                                sent_content = True
+                        # Always send END_<FILENAME> marker, even if file is empty or all lines skipped
+                        serial.write(f"END_{fname}\n".encode("utf-8"))
                     except Exception as e:
-                        serial.write(f"ERROR: {e}\nEND\n".encode("utf-8"))
+                        # On error, still send END_<FILENAME> for protocol consistency
+                        fname = filename.split("/")[-1]
+                        serial.write(f"ERROR: {e}\nEND_{fname}\n".encode("utf-8"))
                 # 🎸 Handle READWHAMMY command
                 elif mode is None and line == "READWHAMMY":
                     if whammy:
@@ -319,15 +335,32 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                             raw = "\n".join(file_lines)
                             if filename.endswith(".json"):
                                 parsed = json.loads(raw)
-                                with open(filename, "w") as f:
-                                    f.write(raw + "\n")
-                                serial.write(f"✅ File {filename} written\n".encode("utf-8"))
-                                print("✅ File written successfully")
-
+                                # Validation for user_presets.json
                                 if filename == "/user_presets.json":
-                                    user_presets = parsed
-                                    preset_colors = user_presets.get("NewUserPreset1", {})
+                                    # Only allow if it's a dict of objects with keys that look like user preset names
+                                    if (
+                                        isinstance(parsed, dict) and
+                                        all(
+                                            isinstance(v, dict) and (
+                                                (isinstance(k, str) and (k.lower().startswith("user ") or "preset" in k.lower()))
+                                            )
+                                            for k, v in parsed.items()
+                                        )
+                                    ):
+                                        with open(filename, "w") as f:
+                                            f.write(json.dumps(parsed) + "\n")
+                                        serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                        print("✅ File written successfully (user_presets.json, validated)")
+                                        user_presets = parsed
+                                        preset_colors = user_presets.get("NewUserPreset1", {})
+                                    else:
+                                        serial.write(f"ERROR: Invalid user_presets.json structure, write rejected\n".encode("utf-8"))
+                                        print("❌ Invalid user_presets.json structure, write rejected")
                                 elif filename == "/config.json":
+                                    with open(filename, "w") as f:
+                                        f.write(raw + "\n")
+                                    serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                    print("✅ File written successfully")
                                     if leds:
                                         leds.deinit()
                                     for p in buttons.values():
@@ -342,6 +375,12 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                                             pass
                                     import microcontroller
                                     microcontroller.reset()
+                                else:
+                                    # Write raw text for other JSON files
+                                    with open(filename, "w") as f:
+                                        f.write(raw + "\n")
+                                    serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                    print("✅ File written successfully")
                             else:
                                 # Write raw text for non-JSON files
                                 with open(filename, "w") as f:
@@ -365,13 +404,28 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                                     existing = json.load(f)
                             except:
                                 existing = {}
-                            existing.update(new_data)
-                            with open(filename, "w") as f:
-                                f.write(json.dumps(existing) + "\n")
-                            user_presets = existing
-                            preset_colors = user_presets.get("NewUserPreset1", {})
-                            serial.write(f"✅ Merged into {filename}\n".encode("utf-8"))
-                            print("✅ Merge complete")
+                            # Validation for user_presets.json merge
+                            merged = existing.copy()
+                            merged.update(new_data)
+                            if (
+                                filename == "/user_presets.json" and
+                                isinstance(merged, dict) and
+                                all(
+                                    isinstance(v, dict) and (
+                                        (isinstance(k, str) and (k.lower().startswith("user ") or "preset" in k.lower()))
+                                    )
+                                    for k, v in merged.items()
+                                )
+                            ):
+                                with open(filename, "w") as f:
+                                    f.write(json.dumps(merged) + "\n")
+                                user_presets = merged
+                                preset_colors = user_presets.get("NewUserPreset1", {})
+                                serial.write(f"✅ Merged into {filename}\n".encode("utf-8"))
+                                print("✅ Merge complete (user_presets.json, validated)")
+                            else:
+                                serial.write(f"ERROR: Invalid user_presets.json structure, merge rejected\n".encode("utf-8"))
+                                print("❌ Invalid user_presets.json structure, merge rejected")
                         except Exception as e:
                             serial.write(f"ERROR: {e}\n".encode("utf-8"))
                             print("❌ Merge failed:", e)
@@ -399,6 +453,7 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     except Exception as e:
                         serial.write(f"ERROR: Failed to reboot: {e}\n".encode("utf-8"))
                         print("❌ Simple reboot failed:", e)
+
                 # Read cpu.uid and pass back
                 elif mode is None and line == "READUID":
                     print("🔍 READUID handler entered")
@@ -411,6 +466,51 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     except Exception as e:
                         serial.write(f"ERROR: {e}\nEND\n".encode("utf-8"))
                         print(f"❌ Error sending UID: {e}")
+
+                # ✅ Firmware ready status command
+                elif mode is None and (line == "FIRMWARE_READY?" or line == "READY?"):
+                    try:
+                        serial.write(b"FIRMWARE_READY:OK\n")
+                        print("✅ FIRMWARE_READY:OK sent over serial")
+                    except Exception as e:
+                        serial.write(f"ERROR: {e}\n".encode("utf-8"))
+                        print(f"❌ Error sending FIRMWARE_READY: {e}")
+
+                # 📛 Handle READDEVICENAME command
+                elif mode is None and line == "READDEVICENAME":
+                    try:
+                        # Read /boot.py as text and extract the product string
+                        with open("/boot.py", "r") as f:
+                            boot_lines = f.readlines()
+                        product_str = None
+                        for l in boot_lines:
+                            l = l.strip()
+                            if l.startswith("supervisor.set_usb_identification"):
+                                # Find the first quoted argument after the open paren
+                                parts = l.split(",")
+                                if len(parts) >= 2:
+                                    # The product string is usually the second argument
+                                    prod_part = parts[1].strip()
+                                    # Remove any surrounding quotes
+                                    if prod_part.startswith('"') and prod_part.endswith('"'):
+                                        product_str = prod_part[1:-1]
+                                    elif prod_part.startswith("'") and prod_part.endswith("'"):
+                                        product_str = prod_part[1:-1]
+                                    else:
+                                        product_str = prod_part
+                                    break
+                        prefix = "BumbleGum Guitars - "
+                        if product_str and prefix in product_str:
+                            device_name = product_str.split(prefix, 1)[1].strip()
+                        elif product_str:
+                            device_name = product_str.strip()
+                        else:
+                            device_name = "Unknown"
+                        serial.write((device_name + "\nEND\n").encode("utf-8"))
+                        print(f"✅ Device name sent: {device_name}")
+                    except Exception as e:
+                        serial.write(f"ERROR: {e}\nEND\n".encode("utf-8"))
+                        print(f"❌ Error sending device name: {e}")
 
                 # ❓ Fallback error for unknown command
                 elif mode is None:

@@ -1,5 +1,5 @@
 # gamepad.py
-__version__ = "2.3.1"
+__version__ = "3.0
 
 def get_version():
     return __version__
@@ -33,7 +33,7 @@ class CustomGamepad:
     def send(self):
         report = bytearray([
             self.buttons & 0xFF,
-            (self.buttons >> 8) & 0x03,
+            (self.buttons >> 8) & 0x07,
             (self.hat & 0x0F) | 0xF0,
             self.z_axis
         ])

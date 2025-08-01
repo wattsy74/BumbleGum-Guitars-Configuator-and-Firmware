@@ -1,18 +1,28 @@
 FIRMWARE_VERSIONS = {
-    "code.py": "2.4",
-    "hardware.py": "2.4",
-    "utils.py": "2.4",
-    "gamepad.py": "2.4",
-    "serial_handler.py": "2.4",
-    "pin_detect.py": "2.4"
+    "code.py": "3.0",
+    "hardware.py": "3.0",
+    "utils.py": "3.0",
+    "gamepad.py": "3.0",
+    "serial_handler.py": "3.0",
+    "pin_detect.py": "3.0"
 }
 
 def get_firmware_versions():
     return FIRMWARE_VERSIONS
 
 import usb_cdc
-from demo_routine import run_demo_generator
-from demo_state import demo_gen
+try:
+    from demo_routine import run_demo_generator
+    demo_routine_available = True
+except ImportError:
+    print("⚠️ demo_routine.py not found - demo functionality disabled")
+    demo_routine_available = False
+try:
+    from demo_state import demo_gen
+    demo_state_available = True
+except ImportError:
+    print("⚠️ demo_state.py not found - demo functionality disabled")
+    demo_state_available = False
 import time
 import json
 import board
@@ -37,6 +47,7 @@ gp = CustomGamepad()
 buttons = setup_buttons(config, raw_config)
 whammy = setup_whammy(config)
 leds = setup_leds(config)
+previous_virtual_guide = False
 
 # Setup joystick pins from config
 joystick_x = analogio.AnalogIn(config.get("joystick_x_pin", board.GP28))
@@ -67,7 +78,7 @@ tilt_wave_step = 0
 tilt_wave_max_steps = 120  # 2.4 seconds for longer, flashier effect
 previous_tilt_state = False
 tilt_wave_led_counter = 0  # Counter to throttle LED updates
-stored_led_colors = [(0, 0, 0)] * 7  # Store current LED state before wave
+stored_led_colors = []  # Store current LED state before wave (dynamic size)
 
 # Enhanced wave colors - brighter, more dynamic blues and whites
 WAVE_COLORS = [
@@ -96,9 +107,10 @@ def start_tilt_wave():
     """Start the enhanced blue tilt wave effect - stores current colors first"""
     global tilt_wave_active, tilt_wave_step, stored_led_colors
     if tilt_wave_enabled and leds is not None:
-        # Store current LED colors before starting wave
+        # Store current LED colors before starting wave (dynamic size)
+        stored_led_colors = []
         for i in range(len(leds)):
-            stored_led_colors[i] = tuple(leds[i])
+            stored_led_colors.append(tuple(leds[i]))
         
         tilt_wave_active = True
         tilt_wave_step = 0
@@ -126,18 +138,19 @@ def update_tilt_wave():
         tilt_wave_active = False
         return False
     
-    # Enhanced cascading wave effect across all 7 LEDs
+    # Enhanced cascading wave effect across all LEDs
     # Create a traveling wave that sweeps across LEDs with trailing effects
+    led_count = len(leds)
     
-    # Calculate wave position (0-6 LEDs, with extra time for full fade)
+    # Calculate wave position (0 to led_count-1, with extra time for full fade)
     wave_cycles = 3  # Number of complete sweeps
     total_sweep_steps = tilt_wave_max_steps // wave_cycles
     current_cycle_step = tilt_wave_step % total_sweep_steps
     
     # Wave position calculation - sweeps left to right multiple times
-    wave_position = (current_cycle_step * 12) // total_sweep_steps  # 0-11 range for smooth travel
+    wave_position = (current_cycle_step * (led_count * 2)) // total_sweep_steps  # 0 to (led_count*2-1) range for smooth travel
     
-    for led_index in range(7):
+    for led_index in range(led_count):
         # Calculate distance from wave center
         distance = abs(led_index * 2 - wave_position)  # Scale LED positions
         
@@ -160,7 +173,7 @@ def update_tilt_wave():
         
         # Add some sparkle effects on secondary cycles
         cycle_num = tilt_wave_step // total_sweep_steps
-        if cycle_num > 0 and (led_index + tilt_wave_step) % 7 == 0:
+        if cycle_num > 0 and (led_index + tilt_wave_step) % led_count == 0:
             color_idx = min(len(WAVE_COLORS) - 1, color_idx + 3)  # Extra brightness
         
         # Clamp color index
@@ -219,7 +232,8 @@ BUTTON_MAP = {
     "STRUM_DOWN": 7,
     "SELECT": 8,
     "START": 9,
-    "TILT": 10
+    "TILT": 10,
+    "GUIDE": 11
 }
 
 def compute_hat():
@@ -266,7 +280,7 @@ def compute_hat():
         return 1 if u and r else 3 if d and r else 5 if d and l else 7 if u and l else 0 if u else 2 if r else 4 if d else 6 if l else 0x0F
 
 def poll_inputs():
-    global previous_tilt_state
+    global previous_tilt_state, previous_virtual_guide
     changed = False
     
     for name, pin in buttons.items():
@@ -284,6 +298,21 @@ def poll_inputs():
             # Update tilt state tracking
             if name == "TILT":
                 previous_tilt_state = pressed
+
+    # Check for virtual GUIDE button (UP + DOWN pressed simultaneously)
+    # This handles devices that don't have a physical GUIDE button
+    up_pressed = current_state.get("UP", False)
+    down_pressed = current_state.get("DOWN", False)
+    virtual_guide_pressed = up_pressed and down_pressed
+    
+    # Handle virtual GUIDE button state changes
+    if virtual_guide_pressed != previous_virtual_guide:
+        if virtual_guide_pressed:
+            gp.press(BUTTON_MAP["GUIDE"])
+        else:
+            gp.release(BUTTON_MAP["GUIDE"])
+        changed = True
+        previous_virtual_guide = virtual_guide_pressed
     
     gp.set_hat(compute_hat())
     return changed
@@ -315,12 +344,13 @@ while True:
     )
 
     # Advance demo routine if active
-    import demo_state
-    if demo_state.demo_gen is not None:
-        try:
-            next(demo_state.demo_gen)
-        except StopIteration:
-            demo_state.demo_gen = None
+    if demo_state_available:
+        import demo_state
+        if demo_state.demo_gen is not None:
+            try:
+                next(demo_state.demo_gen)
+            except StopIteration:
+                demo_state.demo_gen = None
     
     # Minimal sleep to prevent CPU spinning (1ms = 1000Hz max loop rate)
     time.sleep(0.001)

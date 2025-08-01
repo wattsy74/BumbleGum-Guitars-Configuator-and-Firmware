@@ -44,7 +44,7 @@
       </div>
 
       <div class="header-right">
-        <span id="status-text">Disconnected</span>
+        <span id="status-text">Ready</span>
         <button id="close-btn">×</button>
       </div>
     </div>
@@ -142,17 +142,10 @@
           <div class="dropdown-wrapper">
             <select id="preset-select" class="preset-dropdown"
               style="font-size:16px;border: 2px solid #ffcc00;border-radius: 999px;">
-              <option disabled selected>Presets:</option>
-              <option value="Warm Glow">Warm Glow</option>
-              <option value="Cool Pulse">Cool Pulse</option>
+              
             </select>
             <select id="user-preset-select" class="preset-dropdown" style="font-size:16px;border: 2px solid #ffcc00; ">
-              <option disabled selected>User Preset Slots:</option>
-              <option value="User 1">User 1</option>
-              <option value="User 2">User 2</option>
-              <option value="User 3">User 3</option>
-              <option value="User 4">User 4</option>
-              <option value="User 5">User 5</option>
+              
             </select>
             <button id="save-custom-btn" class="text-button" style="display: none;">Save changes</button>
           </div>
@@ -172,13 +165,14 @@
             <div id="deviceDropdown" class="device-dropdown">
               <div class="device-dropdown-header">
                 <span>Available Devices</span>
-                <button id="refreshDevicesBtn" class="refresh-devices-btn">🔄 Refresh</button>
               </div>
               <div id="deviceList" class="device-list">
                 <!-- Device list will be populated here -->
               </div>
             </div>
           </div>
+          <!-- Footer device name/status -->
+          <span id="footer-device-name" style="margin-left: 24px; font-weight: 500; color: #2ecc40;"></span>
         </div>
         
         <button id="apply-config-btn">Apply To Config</button>

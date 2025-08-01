@@ -31,6 +31,19 @@ html, body {
   height: 50px;
   flex-shrink: 0;
   display: flex;
+
+.no-devices-btn {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 8px 24px;
+  margin: 0 auto;
+  box-shadow: none;
+  transition: background 0.2s;
+}
   align-items: center;
   justify-content: center;
 }
@@ -684,7 +697,7 @@ select option:disabled {
   overflow-y: auto;
   z-index: 1000;
   display: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
   margin-bottom: 4px;
 }
 
@@ -767,8 +780,10 @@ select option:disabled {
   cursor: pointer;
   font-size: 11px;
   font-weight: bold;
-}
+  box-shadow: none !important;
 
+    box-shadow: none;
+}
 .device-btn.connect {
   background: #3498db;
   color: white;
