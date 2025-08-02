@@ -3445,6 +3445,16 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       // If valid, send to device
       if (connectedPort) {
         console.log('[UPLOAD PRESETS] Writing to device...');
+        
+        // Show upload progress popover
+        showPresetUploadPopover();
+        
+        // Safety timeout to hide popover if upload takes too long (30 seconds)
+        const uploadTimeout = setTimeout(() => {
+          console.warn('[UPLOAD PRESETS] Upload timeout reached, hiding popover');
+          hidePresetUploadPopover();
+        }, 30000);
+        
         // Attach data handler BEFORE sending END to avoid missing response
         let buffer = '';
         let rebooted = false;
@@ -3456,6 +3466,8 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           if (!rebooted && (buffer.includes('END') || /file\s*\/presets\.json\s*written/i.test(buffer) || /presets\.json\s*written/i.test(chunk) || /presets\.json\s*saved/i.test(chunk) || /presets\.json\s*ok/i.test(chunk))) {
             rebooted = true;
             connectedPort.off('data', onData);
+            clearTimeout(uploadTimeout);
+            hidePresetUploadPopover();
             showToast("Presets file uploaded and saved ✅", 'success');
             populatePresetDropdown(parsed, false);
             setTimeout(() => {
@@ -3466,15 +3478,30 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         connectedPort.on('data', onData);
         // Write file in order, flush after each
         connectedPort.write("WRITEFILE:presets.json\n", err => {
-          if (err) console.error('[UPLOAD PRESETS] Error sending WRITEFILE:', err);
-          else console.log('[UPLOAD PRESETS] Sent WRITEFILE:presets.json');
+          if (err) {
+            console.error('[UPLOAD PRESETS] Error sending WRITEFILE:', err);
+            clearTimeout(uploadTimeout);
+            hidePresetUploadPopover();
+            return;
+          }
+          console.log('[UPLOAD PRESETS] Sent WRITEFILE:presets.json');
           const jsonString = JSON.stringify(parsed) + "\n";
           connectedPort.write(jsonString, err2 => {
-            if (err2) console.error('[UPLOAD PRESETS] Error sending JSON:', err2);
-            else console.log('[UPLOAD PRESETS] Sent JSON:', jsonString);
+            if (err2) {
+              console.error('[UPLOAD PRESETS] Error sending JSON:', err2);
+              clearTimeout(uploadTimeout);
+              hidePresetUploadPopover();
+              return;
+            }
+            console.log('[UPLOAD PRESETS] Sent JSON:', jsonString);
             connectedPort.write("END\n", err3 => {
-              if (err3) console.error('[UPLOAD PRESETS] Error sending END:', err3);
-              else console.log('[UPLOAD PRESETS] Sent END, waiting for device confirmation...');
+              if (err3) {
+                console.error('[UPLOAD PRESETS] Error sending END:', err3);
+                clearTimeout(uploadTimeout);
+                hidePresetUploadPopover();
+              } else {
+                console.log('[UPLOAD PRESETS] Sent END, waiting for device confirmation...');
+              }
             });
           });
         });
@@ -3484,6 +3511,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       }
     } catch (err) {
       console.error('[UPLOAD PRESETS] Exception:', err);
+      hidePresetUploadPopover();
       customAlert("Failed to upload presets file: " + err.message);
     }
   });
@@ -5135,6 +5163,27 @@ if (window.multiDeviceManager) {
     if (popover) {
       popover.style.display = 'none';
       bufferClearingActive = false;
+    }
+  }
+
+  function showPresetUploadPopover() {
+    const popover = document.getElementById('preset-upload-popover');
+    console.log('📁 Attempting to show preset upload popover, element found:', !!popover);
+    if (popover) {
+      popover.style.display = 'block';
+      popover.style.visibility = 'visible';
+      popover.style.opacity = '1';
+      console.log('📁 Preset upload popover displayed');
+    } else {
+      console.error('📁 Preset upload popover element not found!');
+    }
+  }
+
+  function hidePresetUploadPopover() {
+    const popover = document.getElementById('preset-upload-popover');
+    if (popover) {
+      popover.style.display = 'none';
+      console.log('📁 Preset upload popover hidden');
     }
   }
 
