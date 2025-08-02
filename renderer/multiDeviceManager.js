@@ -552,16 +552,20 @@ class MultiDeviceManager {
     console.log('[MultiDeviceManager] Device connected:', deviceId, device.displayName);
   }
 
-  async disconnectDevice(deviceId) {
+  async disconnectDevice(deviceId, skipManualFlag = false) {
     console.log('[MultiDeviceManager] disconnectDevice called for', deviceId);
     const device = this.devices.get(deviceId);
     // Log disconnect reason and stack
     console.warn(`[MultiDeviceManager] disconnectDevice called for ${deviceId}. Stack:`, new Error().stack);
     if (!device || !device.isConnected || !device.port) return;
     
-    // Mark device as manually disconnected to prevent auto-reconnection
-    this._manuallyDisconnectedDevices.add(deviceId);
-    console.log('[MultiDeviceManager] Device marked as manually disconnected:', deviceId);
+    // Mark device as manually disconnected to prevent auto-reconnection (unless skipped for firmware flash)
+    if (!skipManualFlag) {
+      this._manuallyDisconnectedDevices.add(deviceId);
+      console.log('[MultiDeviceManager] Device marked as manually disconnected:', deviceId);
+    } else {
+      console.log('[MultiDeviceManager] Skipping manual disconnect flag for automated disconnect:', deviceId);
+    }
     
     // Robust port cleanup on disconnect
     try {
@@ -675,6 +679,12 @@ class MultiDeviceManager {
   }
 
   async scanForDevices() {
+    // Check if scanning is paused (for BOOTSEL mode)
+    if (this.scanningPaused) {
+      console.log('[MultiDeviceManager] Scanning paused, skipping scan');
+      return;
+    }
+    
     // Prevent concurrent scans which can cause "Access denied" errors
     if (this._scanningInProgress) {
       console.log('[MultiDeviceManager] Scan already in progress, skipping');
@@ -1079,6 +1089,19 @@ class MultiDeviceManager {
 
   // ...existing code...
   // (rest of MultiDeviceManager methods unchanged)
+
+  // Methods to pause/resume scanning for BOOTSEL mode
+  pauseScanning() {
+    this.scanningPaused = true;
+    console.log('🛑 Multi-device scanning paused for BOOTSEL mode');
+  }
+
+  resumeScanning() {
+    this.scanningPaused = false;
+    console.log('▶️ Multi-device scanning resumed');
+    // Immediately scan for devices
+    this.scanForDevices();
+  }
 }
 
 // Dependency injection for shared state/functions

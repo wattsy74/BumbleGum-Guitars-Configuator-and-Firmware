@@ -871,3 +871,61 @@ select option:disabled {
   border-left-color: #3498db;
   background: #1a1a2c;
 }
+
+/* Button Config Modal Styles */
+#button-config-table {
+  border: 1px solid #444;
+}
+
+#button-config-table th {
+  background: #333 !important;
+  color: #ffe066 !important;
+  font-weight: bold;
+}
+
+#button-config-table td {
+  background: #2a2a2a;
+}
+
+#button-config-table tr:hover td {
+  background: #333;
+}
+
+/* Enhanced tooltip styling for button config */
+[title] {
+  position: relative;
+  cursor: help;
+}
+
+/* Custom tooltip for better visibility */
+.tooltip-cell {
+  position: relative;
+}
+
+.tooltip-cell:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  border: 1px solid #ffe066;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-cell:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 92%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #ffe066;
+  z-index: 1001;
+}

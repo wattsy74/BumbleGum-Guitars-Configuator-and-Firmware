@@ -21,27 +21,6 @@ function requestDeviceName(callback) {
   };
   connectedPort.on('data', onData);
 }
-// --- Serial helper: Request device UID over serial ---
-function requestDeviceUid(callback) {
-  if (!connectedPort) {
-    console.warn('[requestDeviceUid] No device connected.');
-    callback(null);
-    return;
-  }
-  let buffer = '';
-  connectedPort.write('READUID\n');
-  const onData = data => {
-    buffer += data.toString();
-    // Expecting UID as a hex string, ending with newline or END
-    if (buffer.includes('\n') || buffer.includes('END')) {
-      connectedPort.off('data', onData);
-      // Extract UID (strip END/newlines)
-      const uid = buffer.replace(/END|\r?\n/g, '').trim();
-      callback(uid || null);
-    }
-  };
-  connectedPort.on('data', onData);
-}
 // --- Serial helper: Request device UID ---
 // Usage: requestDeviceUid(uid => { ... })
 function requestDeviceUid(callback) {
@@ -50,19 +29,104 @@ function requestDeviceUid(callback) {
     callback(null);
     return;
   }
+  
+  console.log('[requestDeviceUid] Setting up data listener and sending READUID command');
+  
   let buffer = '';
+  let timeoutId = null;
+  let flushTimeout = null;
+  
   const onData = data => {
     buffer += data.toString();
-    // Expecting UID as a hex string, ending with newline or END
-    if (buffer.includes('\n') || buffer.includes('END')) {
-      connectedPort.off('data', onData);
-      // Extract UID (strip END/newlines)
-      const uid = buffer.replace(/END|\r?\n/g, '').trim();
-      callback(uid || null);
+    console.log('[requestDeviceUid] Received data chunk:', JSON.stringify(data.toString()));
+    console.log('[requestDeviceUid] Full buffer so far:', JSON.stringify(buffer));
+    
+    // Check if we have the complete response (ends with END)
+    if (buffer.includes('END')) {
+      cleanup();
+      console.log('[requestDeviceUid] Found END marker, processing response');
+      
+      // Split by lines and look for the UID
+      const lines = buffer.split(/[\r\n]+/);
+      console.log('[requestDeviceUid] Response lines:', lines);
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        console.log('[requestDeviceUid] Processing line:', JSON.stringify(trimmed));
+        
+        // Check if it's a 16-character hex string (the UID)
+        if (/^[0-9A-Fa-f]{16}$/.test(trimmed)) {
+          console.log('[requestDeviceUid] Found valid UID:', trimmed);
+          callback(trimmed);
+          return;
+        }
+      }
+      
+      // If we get here, no valid UID was found
+      console.warn('[requestDeviceUid] No valid UID found in response lines:', lines);
+      callback(null);
+      return;
+    }
+    
+    // Also handle case where UID comes on a single line without END
+    if (buffer.includes('\n')) {
+      const lines = buffer.split(/[\r\n]+/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        // Check if it's a 16-character hex string
+        if (/^[0-9A-Fa-f]{16}$/.test(trimmed)) {
+          cleanup();
+          console.log('[requestDeviceUid] Found UID on single line:', trimmed);
+          callback(trimmed);
+          return;
+        }
+      }
     }
   };
-  connectedPort.on('data', onData);
-  connectedPort.write('READUID\n');
+  
+  const cleanup = () => {
+    connectedPort.off('data', onData);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    if (flushTimeout) {
+      clearTimeout(flushTimeout);
+      flushTimeout = null;
+    }
+  };
+  
+  // Set a timeout to avoid hanging forever
+  timeoutId = setTimeout(() => {
+    cleanup();
+    console.warn('[requestDeviceUid] Timeout waiting for UID response, buffer was:', JSON.stringify(buffer));
+    callback(null);
+  }, 5000); // 5 second timeout
+  
+  // Try to flush any pending data first, then send the command
+  if (typeof connectedPort.flush === 'function') {
+    connectedPort.flush((err) => {
+      if (err) {
+        console.warn('[requestDeviceUid] Failed to flush buffer:', err);
+      } else {
+        console.log('[requestDeviceUid] Buffer flushed successfully');
+      }
+      
+      // Small delay after flush, then send command
+      flushTimeout = setTimeout(() => {
+        connectedPort.on('data', onData);
+        connectedPort.write('READUID\n');
+        console.log('[requestDeviceUid] READUID command sent');
+      }, 100);
+    });
+  } else {
+    // No flush available, just send the command with a small delay
+    flushTimeout = setTimeout(() => {
+      connectedPort.on('data', onData);
+      connectedPort.write('READUID\n');
+      console.log('[requestDeviceUid] READUID command sent (no flush available)');
+    }, 100);
+  }
 }
 // Call this function from your color picker logic when a pressed color is changed
 function callPressedPreviewFromColorPicker(btnId) {
@@ -368,6 +432,8 @@ function initializeDeviceSelector() {
 }
 const { SerialPort } = require('serialport');
 const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 // ===== MODULAR MULTI-DEVICE SUPPORT =====
 const MultiDeviceManager = require('./multiDeviceManager');
 const serialFileIO = require('./serialFileIO');
@@ -1021,6 +1087,15 @@ window.populatePresetDropdown = populatePresetDropdown;
   updateToggleButtonText();
   updateTiltWaveButtonText();
   console.log('[applyConfig] Updated toggle and tilt wave button text');
+  
+  // Update device information in diagnostics if modal is open
+  const diagnosticsModal = document.getElementById('diagnostics-modal');
+  if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+    setTimeout(() => {
+      setupDeviceInformation();
+      console.log('[applyConfig] Updated device information in diagnostics modal');
+    }, 100);
+  }
 };
 
 // Function to update the toggle button text based on current hat_mode
@@ -1084,6 +1159,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.responseBuffers = window.responseBuffers || {};
                 window.responseBuffers[window.awaitingFile] = '';
                 console.log('[app.js][EVENT] Device reconnected, requested config.json');
+                
+                // Update device information in diagnostics if modal is open
+                setTimeout(() => {
+                  const diagnosticsModal = document.getElementById('diagnostics-modal');
+                  if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+                    setupDeviceInformation();
+                    console.log('[app.js][EVENT] Updated device information in diagnostics modal');
+                  }
+                }, 1000); // Give time for config to load
               })
               .catch((err) => {
                 console.error('[app.js][EVENT] Firmware not ready after reconnect:', err);
@@ -1094,6 +1178,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+      
+      // Update device information immediately when active device changes
+      setTimeout(() => {
+        const diagnosticsModal = document.getElementById('diagnostics-modal');
+        if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+          setupDeviceInformation();
+          console.log('[app.js][EVENT] Updated device information after active device changed');
+        }
+      }, 100);
     });
 
   }
@@ -1114,6 +1207,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-scan for devices and update selector on load
   window.multiDeviceManager.scanForDevices().then(() => {
     initializeDeviceSelector();
+  });
+  
+  // Listen for device files loaded events to update diagnostics
+  document.addEventListener('deviceFilesLoaded', (event) => {
+    console.log('[app.js][EVENT] Device files loaded:', event.detail);
+    
+    // Update device information in diagnostics if modal is open
+    setTimeout(() => {
+      const diagnosticsModal = document.getElementById('diagnostics-modal');
+      if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+        setupDeviceInformation();
+        console.log('[app.js][EVENT] Updated device information after files loaded');
+      }
+    }, 200); // Small delay to ensure files are fully processed
   });
   // Whammy Calibration Modal logic
   // Live whammy feedback polling (must be top-level in DOMContentLoaded)
@@ -1765,10 +1872,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (input.value === "6997") {
         cleanup();
         try {
-          connectedPort.write("REBOOTBOOTSEL\n");
-          updateStatus("Preparing to Reflash...", false);
+          // Reset BOOTSEL detection flags before sending command
           bootselPrompted = false;
           isFlashingFirmware = false;
+          
+          connectedPort.write("REBOOTBOOTSEL\n");
+          updateStatus("Preparing to Reflash...", false);
+          
+          // Force disconnect from multi-device manager to avoid interference
+          setTimeout(() => {
+            const activeDevice = window.multiDeviceManager?.getActiveDevice();
+            if (activeDevice && window.multiDeviceManager.disconnectDevice) {
+              // Use skipManualFlag=true to avoid marking as manually disconnected during firmware flash
+              window.multiDeviceManager.disconnectDevice(activeDevice.id, true);
+            }
+          }, 2000);
+          
         } catch (err) {
           console.error("❌ Failed to send reboot command:", err);
           showToast("Reboot failed ❌", 'error');
@@ -1796,32 +1915,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   function detectUnprogrammedController() {
-    if (bootselPrompted || isFlashingFirmware || connectedPort) return;
-    //console.log("👀 Checking for BOOTSEL volumes...");
-    //updateStatus("Scanning for BOOTSEL devices...", false);
-    if (bootselPrompted) return;
-
+    // Don't detect if already prompted, currently flashing
+    if (bootselPrompted || isFlashingFirmware) {
+      console.log("🛑 BOOTSEL detection skipped - bootselPrompted:", bootselPrompted, "isFlashingFirmware:", isFlashingFirmware);
+      return;
+    }
+    
+    // Pause multi-device scanning during BOOTSEL detection
+    if (window.multiDeviceManager && window.multiDeviceManager.pauseScanning) {
+      window.multiDeviceManager.pauseScanning();
+    }
+    
+    console.log("👀 Checking for BOOTSEL volumes... bootselPrompted:", bootselPrompted, "isFlashingFirmware:", isFlashingFirmware);
+    
     for (let i = 65; i <= 90; i++) {
       const driveLetter = String.fromCharCode(i);
       const infoPath = driveLetter + ':\\INFO_UF2.TXT';
       try {
-        // Only log on detection, not every drive
         if (fs.existsSync(infoPath)) {
           const content = fs.readFileSync(infoPath, 'utf8');
-          if (/RP2040|RPI-RP2|Board-ID/i.test(content)) {
-            console.log('Detected BOOTSEL device at ' + driveLetter + ':\\INFO_UF2.TXT');
+          console.log(`📁 Found INFO_UF2.TXT at ${driveLetter}:\\`);
+          console.log(`📄 Content preview:`, content.substring(0, 200));
+          
+          if (/RP2040|RPI-RP2|Board-ID.*RP2|Model.*RP2/i.test(content)) {
+            console.log('✅ RP2040 BOOTSEL device detected at ' + driveLetter + ':\\');
+            console.log('🚀 Setting bootselPrompted = true and calling promptFirmwareFlash');
             bootselPrompted = true;
             updateStatus('Controller detected in BOOTSEL mode', false);
             promptFirmwareFlash(driveLetter + ':\\');
             break;
+          } else {
+            console.log('❌ Content does not match RP2040 pattern');
           }
         }
-      } catch (_) { }
+      } catch (err) {
+        console.log(`⚠️ Error accessing ${driveLetter}:\\INFO_UF2.TXT:`, err.message);
+      }
     }
+    
+    console.log("🔍 BOOTSEL scan complete");
   }
 
-  setInterval(detectUnprogrammedController, 3000); // Adjust to taste
+  setInterval(detectUnprogrammedController, 1000); // Changed from 3000 to 1000ms for better responsiveness
   console.log("🔁 BOOTSEL detection polling set up.");
+
+  // Debug function to manually reset BOOTSEL flags (remove after testing)
+  window.resetBootselFlags = function() {
+    bootselPrompted = false;
+    isFlashingFirmware = false;
+    console.log("🔄 BOOTSEL flags reset manually");
+    if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+      window.multiDeviceManager.resumeScanning();
+    }
+  };
+
+  // Debug function to manually trigger BOOTSEL detection (remove after testing)
+  window.testBootselDetection = function() {
+    console.log("🧪 Manual BOOTSEL detection test");
+    detectUnprogrammedController();
+  };
 
   function promptFirmwareFlash(drivePath) {
     updateStatus("Controller detected in BOOTSEL mode", false);
@@ -1838,32 +1990,74 @@ document.addEventListener('DOMContentLoaded', () => {
   function findFirmwareFile() {
     // Look for any firmware file matching bgg-fw*.uf2 pattern (with or without version)
     try {
+      // First check the parent directory (project root)
+      const parentDir = path.resolve(__dirname, '..');
+      console.log('[findFirmwareFile] Checking parent directory:', parentDir);
+      const parentFiles = fs.readdirSync(parentDir);
+      const parentFirmwareFile = parentFiles.find(file => file.match(/^bgg-fw.*\.uf2$/i));
+      if (parentFirmwareFile) {
+        const firmwarePath = path.resolve(parentDir, parentFirmwareFile);
+        console.log('[findFirmwareFile] Found firmware in parent:', firmwarePath);
+        return firmwarePath;
+      }
+      
+      // Then check the current directory (renderer folder)
+      console.log('[findFirmwareFile] Checking current directory:', __dirname);
       const files = fs.readdirSync(__dirname);
       const firmwareFile = files.find(file => file.match(/^bgg-fw.*\.uf2$/i));
       if (firmwareFile) {
-        return path.resolve(__dirname, firmwareFile);
+        const firmwarePath = path.resolve(__dirname, firmwareFile);
+        console.log('[findFirmwareFile] Found firmware in renderer:', firmwarePath);
+        return firmwarePath;
       }
+      
+      console.log('[findFirmwareFile] No firmware file found in either location');
     } catch (err) {
       console.error("Error searching for firmware file:", err);
     }
     
-    // Fallback to old hardcoded name if no pattern match found
-    return path.resolve(__dirname, 'bgg-fw.uf2');
+    // Fallback to old hardcoded name in parent directory if no pattern match found
+    const fallbackPath = path.resolve(__dirname, '..', 'bgg-fw.uf2');
+    console.log('[findFirmwareFile] Fallback to:', fallbackPath);
+    return fallbackPath;
   }
 
   function flashFirmwareTo(drivePath) {
     const firmwarePath = findFirmwareFile();
+    
+    // Check if firmware file actually exists
+    if (!fs.existsSync(firmwarePath)) {
+      console.error("❌ Firmware file not found:", firmwarePath);
+      showToast("Firmware file not found. Please run UF2MakerScript.ps1 to generate firmware.", 'error');
+      // Reset flags on error
+      isFlashingFirmware = false;
+      bootselPrompted = false;
+      // Resume scanning on error
+      if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+        window.multiDeviceManager.resumeScanning();
+      }
+      return;
+    }
+    
     const targetPath = path.join(drivePath, path.basename(firmwarePath));
     const start = Date.now();
 
     updateStatus(`Flashing firmware please wait...`, false);
     console.log('Attempting to copy ' + firmwarePath + ' -> ' + targetPath);
+    isFlashingFirmware = true; // Set flag during flashing
 
     try {
       fs.copyFile(firmwarePath, targetPath, err => {
         if (err) {
           console.error("❌ Flash error:", err);
           showToast("Flash failed ❌", "error");
+          // Reset flags on error
+          isFlashingFirmware = false;
+          bootselPrompted = false;
+          // Resume multi-device scanning
+          if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+            window.multiDeviceManager.resumeScanning();
+          }
           return;
         }
 
@@ -1871,32 +2065,145 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Firmware copied in ' + time + 's');
         showToast('Firmware flashed in ' + time + 's', 'success');
 
+        // Reset flags after successful flash
+        isFlashingFirmware = false;
+        bootselPrompted = false;
+
         setTimeout(() => {
           updateStatus("Waiting for controller to reboot...", false);
+          
+          // Resume multi-device scanning after device reboots
+          if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+            window.multiDeviceManager.resumeScanning();
+          }
+          
           detectRebootedController();
-        }, 3000);
+        }, 5000); // Increased from 3000 to 5000ms to give more time for device to reboot
       });
     } catch (err) {
       console.error("❌ Flash error:", err);
       showToast("Flash failed ❌", "error");
+      // Reset flags on error
+      isFlashingFirmware = false;
+      bootselPrompted = false;
+      // Resume scanning on error
+      if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+        window.multiDeviceManager.resumeScanning();
+      }
     }
   }
 
   function detectRebootedController() {
-    findSerialDeviceByVID(6997).then(device => {
-      if (device) {
-        showToast("Controller rebooted and ready 🎉", "success");
-        console.log("🔍 Checking for rebooted controller...");
-        isFlashingFirmware = false; // ✅ Reset flag
-        window.rp2040Detected = false;
-        bootselPrompted = false;
-
-        readQueue = initFileQueue();
-        requestNextFile();
-      } else {
-        updateStatus("Waiting for controller...", false);
+    console.log("🔍 Starting to detect rebooted controller after firmware flash...");
+    
+    // Reset flags
+    isFlashingFirmware = false;
+    window.rp2040Detected = false;
+    bootselPrompted = false;
+    
+    // Clear manually disconnected flag to allow auto-reconnection after firmware flash
+    if (window.multiDeviceManager && window.multiDeviceManager._manuallyDisconnectedDevices) {
+      window.multiDeviceManager._manuallyDisconnectedDevices.clear();
+      console.log("[detectRebootedController] Cleared manually disconnected devices to allow auto-reconnection");
+    }
+    
+    // Start polling for the device to reappear with multi-device manager
+    let attempts = 0;
+    const maxAttempts = 20; // Poll for up to 10 seconds
+    const pollInterval = 500; // Check every 500ms
+    
+    async function pollForDevice() {
+      attempts++;
+      console.log(`[detectRebootedController] Poll attempt ${attempts}/${maxAttempts}`);
+      
+      try {
+        // Use multi-device manager to scan for devices
+        if (window.multiDeviceManager && window.multiDeviceManager.scanForDevices) {
+          await window.multiDeviceManager.scanForDevices();
+          
+          // Get all available devices (both connected and disconnected)
+          const allDevices = window.multiDeviceManager.devices ? 
+                            Array.from(window.multiDeviceManager.devices.values()) : [];
+          
+          const connectedDevices = allDevices.filter(d => d.isConnected);
+          const availableDevices = allDevices.filter(d => !d.isConnected);
+          
+          console.log(`[detectRebootedController] Found ${connectedDevices.length} connected, ${availableDevices.length} available devices`);
+          
+          // First check if we already have a connected device
+          if (connectedDevices.length > 0) {
+            const device = connectedDevices[0];
+            console.log("🎉 Controller already connected after firmware flash:", device.getDisplayName ? device.getDisplayName() : device.id);
+            
+            // Set as active device if not already
+            if (window.multiDeviceManager.setActiveDevice) {
+              await window.multiDeviceManager.setActiveDevice(device);
+            }
+            
+            showToast("Controller rebooted and ready 🎉", "success");
+            updateStatus("Controller reconnected successfully", true);
+            
+            // Update UI
+            if (window.updateActiveButtonText) {
+              window.updateActiveButtonText(device);
+            }
+            
+            return; // Success - stop polling
+          }
+          
+          // If no connected devices, try to connect to available ones
+          if (availableDevices.length > 0) {
+            const device = availableDevices[0];
+            console.log("🔌 Attempting to connect to detected device after firmware flash:", device.getDisplayName ? device.getDisplayName() : device.id);
+            
+            try {
+              // Force connect to the device
+              if (window.multiDeviceManager.connectDevice) {
+                await window.multiDeviceManager.connectDevice(device.id);
+                console.log("✅ Successfully connected to device after firmware flash");
+                
+                showToast("Controller rebooted and ready 🎉", "success");
+                updateStatus("Controller reconnected successfully", true);
+                
+                // Update UI
+                if (window.updateActiveButtonText) {
+                  window.updateActiveButtonText(device);
+                }
+                
+                return; // Success - stop polling
+              }
+            } catch (connectErr) {
+              console.warn("⚠️ Failed to connect to device, will retry:", connectErr.message);
+            }
+          }
+        }
+        
+        // Device not found yet, continue polling if we haven't exceeded max attempts
+        if (attempts < maxAttempts) {
+          updateStatus(`Waiting for controller... (${attempts}/${maxAttempts})`, false);
+          // Use setTimeout to ensure proper timing
+          setTimeout(() => {
+            pollForDevice();
+          }, pollInterval);
+        } else {
+          // Give up after max attempts
+          console.warn("❌ Controller did not reconnect after firmware flash");
+          showToast("Controller did not reconnect. Please unplug and replug the device.", "warning", 6000);
+          updateStatus("Controller not detected - please unplug and replug", false);
+        }
+        
+      } catch (err) {
+        console.error("❌ Error during device detection poll:", err);
+        if (attempts < maxAttempts) {
+          setTimeout(() => {
+            pollForDevice();
+          }, pollInterval);
+        }
       }
-    });
+    }
+    
+    // Start polling after a short delay to let the device boot up
+    setTimeout(pollForDevice, 1000);
   }
 
   // Function moved to global scope before use
@@ -2340,7 +2647,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const sendPreviewForVisibleButtons = state => {
     const fretSelector = state === 'pressed' ? '.pressed-set .fret-button' : '.released-set .fret-button';
     const strumSelector = state === 'pressed' ? '.active-set .strum-button' : '.released-set .strum-button';
-    const elements = [...document.querySelectorAll(fretSelector), ...document.querySelectorAll(strumSelector)];
+    const controlSelector = state === 'pressed' ? '.active-set .control-button' : '.released-set .control-button';
+    const elements = [...document.querySelectorAll(fretSelector), ...document.querySelectorAll(strumSelector), ...document.querySelectorAll(controlSelector)];
 
     elements.forEach((el, i) => {
       let name = el.id || el.dataset.name || el.textContent || `button-${i}`;
@@ -2570,6 +2878,43 @@ document.addEventListener('DOMContentLoaded', () => {
     connectedPort.on('data', onData);
   }
 
+  function getAppVersion() {
+    // Get app version from package.json
+    try {
+      const packagePath = path.join(__dirname, '..', 'package.json');
+      const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+      return normalizeVersion(packageData.version || 'Unknown');
+    } catch (err) {
+      console.error("Error reading app version from package.json:", err);
+      return 'Unknown';
+    }
+  }
+
+  function getPresetsVersion() {
+    // Get presets version from active device or default
+    try {
+      const activeDevice = window.multiDeviceManager?.getActiveDevice();
+      if (activeDevice && activeDevice.presets) {
+        // Check if presets has _metadata.version info first
+        if (activeDevice.presets._metadata && activeDevice.presets._metadata.version) {
+          return normalizeVersion(activeDevice.presets._metadata.version);
+        }
+        // Check if presets has version info at root level
+        if (activeDevice.presets.version) {
+          return normalizeVersion(activeDevice.presets.version);
+        }
+        // Fallback to counting preset entries for version indicator
+        const presetsData = activeDevice.presets.presets || activeDevice.presets;
+        const presetCount = Object.keys(presetsData || {}).length;
+        return `${presetCount} presets loaded`;
+      }
+      return 'No presets loaded';
+    } catch (err) {
+      console.error("Error getting presets version:", err);
+      return 'Unknown';
+    }
+  }
+
   function getEmbeddedFirmwareVersion() {
     // Parse version from the firmware filename (e.g., bgg-fw-v2.3.uf2 -> v2.3)
     try {
@@ -2587,7 +2932,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Fallback to static version if parsing fails
-    return normalizeVersion("v2.3.1");
+    return normalizeVersion("v3.0.1");
   }
 
 
@@ -3416,7 +3761,8 @@ if (window.multiDeviceManager) {
       const btn = e.target.closest('.discover-btn');
       if (!btn || !connectedPort) return;
       const key = btn.getAttribute('data-key');
-      const pinInput = buttonConfigTableBody.querySelector(`.pin-input[data-key='${key}']`);
+      // Look for pin input in both table bodies
+      const pinInput = document.querySelector(`#button-config-table-left .pin-input[data-key='${key}'], #button-config-table-right .pin-input[data-key='${key}']`);
       let countdown = 10;
       let countdownInterval;
       function updateCountdown(msg) {
@@ -3447,6 +3793,8 @@ if (window.multiDeviceManager) {
         const detectedMatch = str.match(new RegExp(`PINDETECT:DETECTED:${key}:([A-Za-z0-9_]+)`));
         if (detectedMatch && pinInput && !resolved) {
           pinInput.value = detectedMatch[1];
+          // Trigger input event to ensure all validation and change handlers fire
+          pinInput.dispatchEvent(new Event('input', { bubbles: true }));
           if (typeof window.validatePins === 'function') window.validatePins();
           cleanupModal();
           connectedPort.off('data', onDetectData);
@@ -3479,7 +3827,8 @@ if (window.multiDeviceManager) {
     const buttonConfigModal = document.getElementById('button-config-modal');
     // Remove reference to bottom cancel button
     // const buttonConfigCancel = document.getElementById('button-config-cancel');
-    const buttonConfigTableBody = document.querySelector('#button-config-table tbody');
+    const buttonConfigTableLeftBody = document.querySelector('#button-config-table-left');
+    const buttonConfigTableRightBody = document.querySelector('#button-config-table-right');
     const buttonInputs = [
       { name: 'Green Fret', key: 'GREEN_FRET' },
       { name: 'Red Fret', key: 'RED_FRET' },
@@ -3488,6 +3837,9 @@ if (window.multiDeviceManager) {
       { name: 'Orange Fret', key: 'ORANGE_FRET' },
       { name: 'Strum Up', key: 'STRUM_UP' },
       { name: 'Strum Down', key: 'STRUM_DOWN' },
+      { name: 'Start', key: 'START' },
+      { name: 'Select', key: 'SELECT' },
+      { name: 'Guide*', key: 'GUIDE', tooltip: 'Not available on all devices' },
       { name: 'Tilt', key: 'TILT' },
       { name: 'Up', key: 'UP' },
       { name: 'Down', key: 'DOWN' },
@@ -3495,45 +3847,86 @@ if (window.multiDeviceManager) {
       { name: 'Right', key: 'RIGHT' }
     ];
 
-    function populateButtonConfigTable(config) {
-      if (!buttonConfigTableBody || !config) return;
-      buttonConfigTableBody.innerHTML = '';
-      buttonInputs.forEach(input => {
-        const pin = config[input.key] || '';
-        const ledIndex = config[input.key + '_led'] ?? '';
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td style="text-align:center;vertical-align:middle;padding:2px 0;font-size:1em;">${input.name}</td>
-          <td style="text-align:center;vertical-align:middle;padding:2px 0;">
-            <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:7px;">
-              <input type="text" class="pin-input" data-key="${input.key}" value="${pin}" style="width:70px;text-align:center;padding:3px 6px;font-size:0.98em;border-radius:4px;border:1px solid #ccc;background:#fff;" />
-              <button class="discover-btn" data-key="${input.key}" style="padding:3px 10px;font-size:0.98em;border-radius:4px;border:none;background:#222;color:#ffcc00;cursor:pointer;transition:background 0.2s;">Detect</button>
-              <span class="pin-status-box" data-key="${input.key}" style="display:inline-block;width:22px;height:22px;border-radius:6px;border:2px solid #ffe066;background:#111;margin-left:8px;vertical-align:middle;"></span>
-            </div>
-          </td>
-          <td style="text-align:center;vertical-align:middle;padding:2px 0;">
-            <input type="text" class="led-input" data-key="${input.key}_led" value="${ledIndex}" style="width:50px;text-align:center;padding:3px 6px;font-size:0.98em;border-radius:4px;border:1px solid #ccc;background:#fff;" />
-          </td>
-        `;
-        buttonConfigTableBody.appendChild(row);
-      });
-      // Only center table headers, do not redeclare 'table'
-      {
-        const table = document.getElementById('button-config-table');
-        if (table) {
-          const ths = table.querySelectorAll('th');
-          ths.forEach(th => {
-            th.style.textAlign = 'center';
-            th.style.verticalAlign = 'middle';
-          });
-        }
+    function createButtonConfigRow(input, config, includeLed = false) {
+      const pin = config[input.key] || '';
+      const ledIndex = config[input.key + '_led'] ?? '';
+      const row = document.createElement('tr');
+      row.style.borderBottom = '1px solid #444';
+      
+      const nameCell = input.tooltip 
+        ? `<td class="tooltip-cell" style="text-align:center;vertical-align:middle;padding:6px;font-size:0.9em;border:1px solid #444;cursor:help;position:relative;" title="${input.tooltip}">${input.name}</td>`
+        : `<td style="text-align:center;vertical-align:middle;padding:6px;font-size:0.9em;border:1px solid #444;">${input.name}</td>`;
+      
+      const pinCell = `<td style="text-align:center;vertical-align:middle;padding:6px;border:1px solid #444;">
+        <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;">
+          <input type="text" class="pin-input" data-key="${input.key}" value="${pin}" style="width:50px;text-align:center;padding:3px 5px;font-size:0.8em;border-radius:3px;border:1px solid #ccc;background:#fff;" />
+          <button class="discover-btn" data-key="${input.key}" style="padding:3px 6px;font-size:0.75em;border-radius:3px;border:none;background:#444;color:#ffcc00;cursor:pointer;transition:background 0.2s;">Detect</button>
+          <span class="pin-status-box" data-key="${input.key}" style="display:inline-block;width:14px;height:14px;border-radius:2px;border:1px solid #ffe066;background:#111;margin-left:3px;vertical-align:middle;"></span>
+        </div>
+      </td>`;
+      
+      if (includeLed) {
+        const ledCell = `<td style="text-align:center;vertical-align:middle;padding:6px;border:1px solid #444;">
+          <input type="text" class="led-input" data-key="${input.key}_led" value="${ledIndex}" style="width:40px;text-align:center;padding:3px 5px;font-size:0.8em;border-radius:3px;border:1px solid #ccc;background:#fff;" />
+        </td>`;
+        row.innerHTML = nameCell + pinCell + ledCell;
+      } else {
+        row.innerHTML = nameCell + pinCell;
       }
-      // Attach event listeners for all detect buttons
-      buttonConfigTableBody.querySelectorAll('.discover-btn').forEach(btn => {
+      
+      return row;
+    }
+
+    function populateButtonConfigTable(config) {
+      console.log('populateButtonConfigTable called with config:', config);
+      console.log('buttonConfigTableLeftBody:', buttonConfigTableLeftBody);
+      console.log('buttonConfigTableRightBody:', buttonConfigTableRightBody);
+      
+      if (!buttonConfigTableLeftBody || !buttonConfigTableRightBody) {
+        console.error('Table bodies not found!');
+        return;
+      }
+      
+      if (!config) {
+        console.log('No config provided, using empty config');
+        config = {};
+      }
+      
+      buttonConfigTableLeftBody.innerHTML = '';
+      buttonConfigTableRightBody.innerHTML = '';
+      
+      // Split inputs: Frets & Strum on left, everything else on right with Guide at bottom
+      const leftInputs = buttonInputs.filter(input => 
+        input.key.includes('FRET') || input.key.includes('STRUM')
+      );
+      
+      const rightInputs = buttonInputs.filter(input => 
+        !input.key.includes('FRET') && !input.key.includes('STRUM')
+      );
+      
+      // Sort right inputs to put Guide at the bottom
+      const rightInputsSorted = rightInputs.filter(input => input.key !== 'GUIDE')
+        .concat(rightInputs.filter(input => input.key === 'GUIDE'));
+      
+      // Populate left table (Frets & Strum with LED column)
+      leftInputs.forEach(input => {
+        const row = createButtonConfigRow(input, config, true); // Include LED column
+        buttonConfigTableLeftBody.appendChild(row);
+      });
+      
+      // Populate right table (Other controls without LED column)
+      rightInputsSorted.forEach(input => {
+        const row = createButtonConfigRow(input, config, false); // No LED column
+        buttonConfigTableRightBody.appendChild(row);
+      });
+      
+      // Attach event listeners for all detect buttons in both tables
+      document.querySelectorAll('.discover-btn').forEach(btn => {
         btn.addEventListener('click', handleDiscoverClick);
       });
-      // Attach input filter for LED Index fields (only allow 0-6)
-      buttonConfigTableBody.querySelectorAll('.led-input').forEach(input => {
+      
+      // Attach input filter for LED Index fields (only allow 0-6) - only for left table
+      document.querySelectorAll('#button-config-table-left .led-input').forEach(input => {
         input.addEventListener('input', function(e) {
           // Remove non-digit characters
           let val = input.value.replace(/[^0-9]/g, '');
@@ -3544,74 +3937,34 @@ if (window.multiDeviceManager) {
           input.value = val;
         });
       });
-
-      // Find or create modalFooter
-      let modalFooter = document.querySelector('#button-config-modal .modal-footer');
-      if (!modalFooter) {
-        modalFooter = document.createElement('div');
-        modalFooter.className = 'modal-footer';
-        modalFooter.style.display = 'flex';
-        modalFooter.style.justifyContent = 'center';
-        modalFooter.style.alignItems = 'center';
-        modalFooter.style.gap = '18px';
-        modalFooter.style.position = 'static';
-        modalFooter.style.width = '100%';
-        modalFooter.style.marginTop = '32px';
-        modalFooter.style.padding = '24px 0 0 0';
-        modalFooter.style.background = 'transparent';
-        const modalContent = document.getElementById('button-config-modal');
-        if (modalContent) {
-          const table = modalContent.querySelector('#button-config-table');
-          if (table && table.parentNode) {
-            table.parentNode.insertBefore(modalFooter, table.nextSibling);
-          } else {
-            modalContent.appendChild(modalFooter);
+      
+      // Add validation event listeners for manual input
+      document.querySelectorAll('.pin-input').forEach(input => {
+        input.addEventListener('input', () => {
+          // Find validatePins function if it exists in scope
+          if (typeof validatePins === 'function') {
+            validatePins();
           }
-        }
-      }
-      // Always remove any existing buttons before adding new ones
-      const oldApply = modalFooter.querySelector('#apply-pin-config-btn');
-      if (oldApply) oldApply.remove();
-      const oldCancel = modalFooter.querySelector('#button-config-cancel');
-      if (oldCancel) oldCancel.remove();
+        });
+      });
+      
+      // Add validation event listeners for LED Index input (only left table)
+      document.querySelectorAll('#button-config-table-left .led-input').forEach(input => {
+        input.addEventListener('input', () => {
+          // Find validatePins function if it exists in scope
+          if (typeof validatePins === 'function') {
+            validatePins();
+          }
+        });
+      });
 
-      // Create and style Cancel button
-      const modalCancelBtn = document.createElement('button');
-      modalCancelBtn.id = 'button-config-cancel';
-      modalCancelBtn.textContent = 'Cancel';
-      modalCancelBtn.style.background = '#111';
-      modalCancelBtn.style.color = '#ffcc00';
-      modalCancelBtn.style.border = 'none';
-      modalCancelBtn.style.borderRadius = '6px';
-      modalCancelBtn.style.padding = '8px 24px';
-      modalCancelBtn.style.fontWeight = 'bold';
-      modalCancelBtn.style.fontSize = '1.1em';
-      modalCancelBtn.style.boxShadow = '0 0 8px #222';
-      modalCancelBtn.style.cursor = 'pointer';
-      modalCancelBtn.style.transition = 'background 0.2s, color 0.2s, box-shadow 0.2s';
-
-      // Create and style Apply button
-      const modalApplyBtn = document.createElement('button');
-      modalApplyBtn.id = 'apply-pin-config-btn';
-      modalApplyBtn.textContent = 'Apply';
-      modalApplyBtn.style.background = '#ffcc00';
-      modalApplyBtn.style.color = '#000';
-      modalApplyBtn.style.border = 'none';
-      modalApplyBtn.style.borderRadius = '6px';
-      modalApplyBtn.style.padding = '8px  24px';
-      modalApplyBtn.style.fontWeight = 'bold';
-      modalApplyBtn.style.fontSize = '1.1em';
-      modalApplyBtn.style.boxShadow = '0 0 8px #ffe066';
-      modalApplyBtn.style.cursor = 'pointer';
-      modalApplyBtn.style.transition = 'background 0.2s, color 0.2s, box-shadow 0.2s';
-      modalApplyBtn.disabled = false;
-
-      // Insert Cancel and Apply buttons side by side in modal footer
-      modalFooter.appendChild(modalCancelBtn);
-      modalFooter.appendChild(modalApplyBtn);
+      // Get the existing modal buttons from HTML
+      const modalCancelBtn = document.getElementById('button-config-cancel');
+      const modalApplyBtn = document.getElementById('button-config-apply');
+      
       // --- Validation Logic ---
       function validatePins() {
-        const pinInputs = Array.from(buttonConfigTableBody.querySelectorAll('.pin-input'));
+        const pinInputs = Array.from(document.querySelectorAll('#button-config-table-left .pin-input, #button-config-table-right .pin-input'));
         const pins = pinInputs.map(input => input.value.trim());
         const hasEmptyPin = pins.some(pin => pin === '');
         const pinCounts = pins.reduce((acc, pin) => {
@@ -3634,8 +3987,8 @@ if (window.multiDeviceManager) {
           }
         });
 
-        // LED Index validation
-        const ledInputs = Array.from(buttonConfigTableBody.querySelectorAll('.led-input'));
+        // LED Index validation (only for left table - frets and strum)
+        const ledInputs = Array.from(document.querySelectorAll('#button-config-table-left .led-input'));
         const ledVals = ledInputs.map(input => input.value.trim()).filter(val => val !== '');
         const ledCounts = ledVals.reduce((acc, val) => {
           acc[val] = (acc[val] || 0) + 1;
@@ -3664,20 +4017,9 @@ if (window.multiDeviceManager) {
         // Disable Apply if any error
         updateApplyBtnState?.(hasEmptyPin || hasDuplicatePin || hasInvalidLed || hasDuplicateLed);
       }
-      // Attach event listeners for Detect buttons (only once)
-      buttonConfigTableBody.querySelectorAll('.discover-btn').forEach(btn => {
-        btn.onclick = function(e) {
-          handleDiscoverClick(e);
-        };
-      });
-      // Add validation on manual input
-      buttonConfigTableBody.querySelectorAll('.pin-input').forEach(input => {
-        input.oninput = validatePins;
-      });
-      // Add validation on LED Index input
-      buttonConfigTableBody.querySelectorAll('.led-input').forEach(input => {
-        input.oninput = validatePins;
-      });
+      // Attach event listeners for Detect buttons (only once) - these are now handled in populateButtonConfigTable
+      // Add validation on manual input - these are now handled in populateButtonConfigTable
+      // Add validation on LED Index input - these are now handled in populateButtonConfigTable
       // Initial validation
       validatePins();
       modalFooter.style.gap = '18px';
@@ -3705,13 +4047,15 @@ if (window.multiDeviceManager) {
       };
       // --- Fix: Always re-validate after pin detection ---
       window.validatePins = validatePins;
+      window.updatePinStatusUI = updatePinStatusUI;
       // --- Fix: Restore Apply button event handler ---
       modalApplyBtn.onclick = function() {
         if (!originalConfig) return;
         // Collect pin and LED assignments from table
         buttonInputs.forEach(input => {
-          const pinInput = buttonConfigTableBody.querySelector(`.pin-input[data-key='${input.key}']`);
-          const ledInput = buttonConfigTableBody.querySelector(`.led-input[data-key='${input.key}_led']`);
+          const pinInput = document.querySelector(`#button-config-table-left .pin-input[data-key='${input.key}'], #button-config-table-right .pin-input[data-key='${input.key}']`);
+          // Only look for LED inputs in the left table (frets and strum)
+          const ledInput = document.querySelector(`#button-config-table-left .led-input[data-key='${input.key}_led']`);
           if (pinInput) originalConfig[input.key] = pinInput.value.trim();
           if (ledInput) {
             const ledVal = ledInput.value.trim();
@@ -3784,7 +4128,7 @@ if (window.multiDeviceManager) {
       buttonInputs.forEach(input => {
         const key = input.key;
         const status = pinStatusMap[key];
-        const box = buttonConfigTableBody.querySelector(`.pin-status-box[data-key='${key}']`);
+        const box = document.querySelector(`#button-config-table-left .pin-status-box[data-key='${key}'], #button-config-table-right .pin-status-box[data-key='${key}']`);
         if (box) {
           if (status === '1') {
             box.style.background = '#ffe066';
@@ -3804,8 +4148,10 @@ if (window.multiDeviceManager) {
     if (buttonConfigBtn && buttonConfigModal) {
       buttonConfigBtn.addEventListener('click', function() {
         buttonConfigModal.style.display = 'flex';
-        if (typeof originalConfig !== 'undefined' && originalConfig) {
-          populateButtonConfigTable(originalConfig);
+        // Populate table with current config or empty config
+        const configToUse = originalConfig || {};
+        populateButtonConfigTable(configToUse);
+        if (originalConfig) {
           startPinStatusPolling(originalConfig);
         }
       });
@@ -3828,15 +4174,6 @@ if (window.multiDeviceManager) {
         if (e.key === 'Escape' && buttonConfigModal.style.display === 'flex') {
           buttonConfigModal.style.display = 'none';
           stopPinStatusPolling();
-        }
-      });
-    }
-
-    if (buttonConfigBtn && buttonConfigModal) {
-      buttonConfigBtn.addEventListener('click', function() {
-        buttonConfigModal.style.display = 'flex';
-        if (typeof originalConfig !== 'undefined' && originalConfig) {
-          populateButtonConfigTable(originalConfig);
         }
       });
     }
@@ -3916,8 +4253,132 @@ if (window.multiDeviceManager) {
     // Create the input status table
     const diagInputStatus = document.getElementById('diag-input-status');
     const diagInputBoxesRow1 = document.getElementById('diag-input-boxes-row1');
+    const diagInputBoxesRow2 = document.getElementById('diag-input-boxes-row2');
     
-    // ...existing code inside if block only...
+    if (!diagInputBoxesRow1 || !diagInputBoxesRow2) {
+      console.warn('Input status containers not found');
+      return;
+    }
+    
+    // Clear existing content
+    diagInputBoxesRow1.innerHTML = '';
+    diagInputBoxesRow2.innerHTML = '';
+    
+    // Define button layouts (matching the ones used in polling system)
+    const buttonInputsRow1 = [
+      { name: 'Green', key: 'GREEN_FRET' },
+      { name: 'Red', key: 'RED_FRET' },
+      { name: 'Yellow', key: 'YELLOW_FRET' },
+      { name: 'Blue', key: 'BLUE_FRET' },
+      { name: 'Orange', key: 'ORANGE_FRET' }
+    ];
+    
+    const buttonInputsRow2 = [
+      { name: 'Strum Up', key: 'STRUM_UP' },
+      { name: 'Strum Down', key: 'STRUM_DOWN' },
+      { name: 'Start', key: 'START' },
+      { name: 'Select', key: 'SELECT' },
+      { name: 'Tilt', key: 'TILT' }
+    ];
+    
+    // Create button status boxes for row 1
+    buttonInputsRow1.forEach(button => {
+      const box = document.createElement('div');
+      box.className = 'diag-input-box';
+      box.setAttribute('data-key', button.key);
+      box.style.cssText = `
+        width: 65px;
+        height: 45px;
+        background: #111;
+        border: 2px solid #ffe066;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+        color: #ffe066;
+        text-align: center;
+        transition: all 0.1s ease;
+      `;
+      box.innerHTML = `<div>${button.name}</div><div style="font-size:8px; margin-top:2px;">OFF</div>`;
+      diagInputBoxesRow1.appendChild(box);
+    });
+    
+    // Create button status boxes for row 2
+    buttonInputsRow2.forEach(button => {
+      const box = document.createElement('div');
+      box.className = 'diag-input-box';
+      box.setAttribute('data-key', button.key);
+      box.style.cssText = `
+        width: 65px;
+        height: 45px;
+        background: #111;
+        border: 2px solid #ffe066;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+        color: #ffe066;
+        text-align: center;
+        transition: all 0.1s ease;
+      `;
+      box.innerHTML = `<div>${button.name}</div><div style="font-size:8px; margin-top:2px;">OFF</div>`;
+      diagInputBoxesRow2.appendChild(box);
+    });
+    
+    console.log('✅ Input status table created with', buttonInputsRow1.length + buttonInputsRow2.length, 'buttons');
+  }
+
+  // Function to update input status display for diagnostic page
+  function updateDiagnosticInputStatus(inputStates) {
+    // Only update if diagnostic modal is open and input status is active
+    const diagModal = document.getElementById('diagnosticsModal');
+    const diagInputStatus = document.getElementById('diag-input-status');
+    
+    if (!diagModal?.style.display || diagModal.style.display === 'none' ||
+        !diagInputStatus?.classList.contains('active')) {
+      return; // Don't process if diagnostics isn't open/active
+    }
+    
+    // Map of input keys to their diagnostic box IDs
+    const inputMapping = {
+      'GREEN_FRET': 'diag-input-green_fret',
+      'RED_FRET': 'diag-input-red_fret', 
+      'YELLOW_FRET': 'diag-input-yellow_fret',
+      'BLUE_FRET': 'diag-input-blue_fret',
+      'ORANGE_FRET': 'diag-input-orange_fret',
+      'STRUM_UP': 'diag-input-strum_up',
+      'STRUM_DOWN': 'diag-input-strum_down',
+      'START': 'diag-input-start',
+      'SELECT': 'diag-input-select',
+      'TILT': 'diag-input-tilt'
+    };
+    
+    // Update each input's visual state
+    Object.entries(inputMapping).forEach(([inputKey, boxId]) => {
+      const box = document.getElementById(boxId);
+      if (box && inputStates.hasOwnProperty(inputKey)) {
+        const isPressed = inputStates[inputKey];
+        const statusText = box.querySelector('div:last-child');
+        
+        if (isPressed) {
+          box.style.background = '#27ae60';
+          box.style.borderColor = '#2ecc71';
+          box.style.color = '#fff';
+          if (statusText) statusText.textContent = 'ON';
+        } else {
+          box.style.background = '#444';
+          box.style.borderColor = '#666';
+          box.style.color = '#bbb';
+          if (statusText) statusText.textContent = 'OFF';
+        }
+      }
+    });
   }
   
   function setupWhammyStatusDisplay() {
@@ -4002,6 +4463,7 @@ if (window.multiDeviceManager) {
   
   // Setup whammy handler
   window.diagWhammyLiveHandler = function(data) {
+    try {
       const str = data.toString().trim();
       const match = str.match(/WHAMMY:([0-9]+)/);
       if (match) {
@@ -4010,27 +4472,38 @@ if (window.multiDeviceManager) {
           hideBufferClearingPopover();
         }
         
-        const diagLastWhammyValue = Number(match[1]);
-        const diagWhammyLiveVal = document.getElementById('diag-whammy-live-val');
-        if (diagWhammyLiveVal) {
-          diagWhammyLiveVal.textContent = `Live: ${diagLastWhammyValue}`;
-        }
+        const whammyValue = Number(match[1]);
         
-        // Update visual slider position
-        const slider = document.getElementById('diag-whammy-slider');
-        if (slider && diagLastWhammyValue !== null && originalConfig) {
-          const whammyMin = originalConfig.whammy_min || 0;
-          const whammyMax = originalConfig.whammy_max || 65535;
-          // Calculate position (0 to 134px, accounting for 6px dot width in 140px container)
-          const range = whammyMax - whammyMin;
-          const normalizedValue = Math.max(0, Math.min(1, (diagLastWhammyValue - whammyMin) / range));
-          const position = normalizedValue * 134; // 140px container - 6px dot width
-          slider.style.left = position + 'px';
+        // Validate whammy value is in expected range (0-65535)
+        if (!isNaN(whammyValue) && whammyValue >= 0 && whammyValue <= 65535) {
+          const diagWhammyLiveVal = document.getElementById('diag-whammy-live-val');
+          if (diagWhammyLiveVal) {
+            diagWhammyLiveVal.textContent = `Live: ${whammyValue}`;
+          }
+          
+          // Update visual slider position
+          const slider = document.getElementById('diag-whammy-slider');
+          if (slider && originalConfig) {
+            const whammyMin = originalConfig.whammy_min || 0;
+            const whammyMax = originalConfig.whammy_max || 65535;
+            
+            // Validate config values
+            if (whammyMin <= whammyMax) {
+              // Calculate position (0 to 134px, accounting for 6px dot width in 140px container)
+              const range = whammyMax - whammyMin;
+              if (range > 0) {
+                const normalizedValue = Math.max(0, Math.min(1, (whammyValue - whammyMin) / range));
+                const position = normalizedValue * 134; // 140px container - 6px dot width
+                slider.style.left = position + 'px';
+              }
+            }
+          }
         }
       } else if (str.startsWith("WHAMMY")) {
+        // Handle malformed whammy responses
         const diagWhammyLiveVal = document.getElementById('diag-whammy-live-val');
         if (diagWhammyLiveVal) {
-          diagWhammyLiveVal.textContent = "No whammy value received!";
+          diagWhammyLiveVal.textContent = "Live: Error reading whammy";
         }
         // Reset slider to start position
         const slider = document.getElementById('diag-whammy-slider');
@@ -4038,7 +4511,10 @@ if (window.multiDeviceManager) {
           slider.style.left = '0px';
         }
       }
-    };
+    } catch (err) {
+      console.warn('[DIAG] Whammy handler error:', err);
+    }
+  };
   
   function setupHatStatusDisplay() {
     console.log('setupHatStatusDisplay called');
@@ -4099,8 +4575,9 @@ if (window.multiDeviceManager) {
         const dpadButtons = [
           { key: 'UP', row: 1, col: 2, symbol: '▲' },
           { key: 'LEFT', row: 2, col: 1, symbol: '◀' },
-          { key: 'DOWN', row: 3, col: 2, symbol: '▼' },
-          { key: 'RIGHT', row: 2, col: 3, symbol: '▶' }
+          { key: 'GUIDE', row: 2, col: 2, symbol: 'G' },
+          { key: 'RIGHT', row: 2, col: 3, symbol: '▶' },
+          { key: 'DOWN', row: 3, col: 2, symbol: '▼' }
         ];
         
         // Create 3x3 grid
@@ -4127,7 +4604,7 @@ if (window.multiDeviceManager) {
             cell.style.border = '2px solid #ffe066';
             cell.style.borderRadius = '4px';
             cell.style.fontWeight = 'bold';
-            cell.style.fontSize = '14px';
+            cell.style.fontSize = button.key === 'GUIDE' ? '12px' : '14px';
             cell.style.transition = 'background 0.2s, color 0.2s';
           }
           
@@ -4141,7 +4618,7 @@ if (window.multiDeviceManager) {
         dpadDesc.style.color = '#bbb';
         dpadDesc.style.fontSize = '12px';
         dpadDesc.style.marginTop = 'auto';
-        dpadDesc.textContent = 'D-Pad directional buttons';
+        dpadDesc.textContent = 'D-Pad directional buttons + Guide';
         diagHatStatus.appendChild(dpadDesc);
         
       } else {
@@ -4275,6 +4752,10 @@ if (window.multiDeviceManager) {
   
   function setupDeviceInformation() {
     console.log('🔧 Setting up device information...');
+    console.log('🔌 Connected port status:', !!connectedPort);
+    console.log('🔌 Window connected port status:', !!window.connectedPort);
+    console.log('🔌 Active device:', window.multiDeviceManager?.getActiveDevice());
+    
     // Get the device information elements
     const deviceNameElement = document.getElementById('diag-device-name');
     const deviceUidElement = document.getElementById('diag-device-uid');
@@ -4285,167 +4766,345 @@ if (window.multiDeviceManager) {
     // Update app version from package.json
     const appVersionElement = document.querySelector('#diag-version-info div:first-child + div div:first-child');
     if (appVersionElement) {
-      appVersionElement.textContent = `App Version: ${getAppVersion()}`;
+      const appVersion = getAppVersion();
+      appVersionElement.textContent = `App Version: ${appVersion}`;
+      console.log('✅ Set app version to:', appVersion);
+    } else {
+      console.warn('⚠️ App version element not found in DOM');
     }
     
     // Update presets version
     if (presetsVersionElement) {
-      presetsVersionElement.textContent = getPresetsVersion();
+      const presetsVersion = getPresetsVersion();
+      presetsVersionElement.textContent = presetsVersion;
+      console.log('✅ Set presets version to:', presetsVersion);
+    } else {
+      console.warn('⚠️ Presets version element not found');
     }
     
     // Always show embedded firmware version (doesn't require device connection)
     if (embeddedFirmwareElement) {
-      embeddedFirmwareElement.textContent = getEmbeddedFirmwareVersion();
+      const embeddedVersion = getEmbeddedFirmwareVersion();
+      embeddedFirmwareElement.textContent = embeddedVersion;
+      console.log('✅ Set embedded firmware version to:', embeddedVersion);
+    } else {
+      console.warn('⚠️ Embedded firmware version element not found');
     }
     
-    console.log('🔌 Connected port status:', !!connectedPort);
-    if (connectedPort) {
-      // Chain requests sequentially to avoid data handler conflicts
-      console.log('🔄 Starting sequential device information requests...');
-      
-      // Step 1: Request device name first
+    // Get active device from multi-device manager
+    const activeDevice = window.multiDeviceManager?.getActiveDevice();
+    
+    console.log('🔌 Active device details:', activeDevice);
+    
+    if (!activeDevice || !activeDevice.isConnected) {
+      console.log('🔌 No active device or device not connected');
       if (deviceNameElement) {
-        requestDeviceName(name => {
-          const deviceName = name || 'Unable to read name';
-          deviceNameElement.textContent = deviceName;
+        deviceNameElement.textContent = 'No device connected';
+        console.log('✅ Set device name to: No device connected');
+      }
+      if (deviceUidElement) {
+        deviceUidElement.textContent = '-';
+        console.log('✅ Set device UID to: -');
+      }
+      if (deviceFirmwareElement) {
+        deviceFirmwareElement.textContent = '-';
+        console.log('✅ Set device firmware version to: -');
+      }
+      return;
+    }
+    
+    // Use cached device data from active device if available
+    console.log('🔌 Active device config:', activeDevice.config);
+    console.log('🔌 Active device presets:', activeDevice.presets);
+    console.log('🔌 Active device userPresets:', activeDevice.userPresets);
+    
+    // Update device name with better fallback logic
+    let deviceName = 'Unknown Device';
+    
+    // First try to get from config.device_name
+    if (activeDevice.config && activeDevice.config.device_name) {
+      deviceName = activeDevice.config.device_name;
+      console.log('📱 Device name from config.device_name:', deviceName);
+      
+      if (deviceNameElement) {
+        deviceNameElement.textContent = deviceName;
+        console.log('✅ Set device name to:', deviceName);
+      }
+    } 
+    // Then try boot.py product name (cached)
+    else if (activeDevice.deviceName) {
+      deviceName = activeDevice.deviceName;
+      console.log('📱 Device name from cached deviceName:', deviceName);
+      
+      if (deviceNameElement) {
+        deviceNameElement.textContent = deviceName;
+        console.log('✅ Set device name to:', deviceName);
+      }
+    } 
+    // If no cached name, try to request it from device
+    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
+      deviceName = 'Requesting...';
+      if (deviceNameElement) {
+        deviceNameElement.textContent = deviceName;
+        console.log('📱 Requesting device name from boot.py...');
+      }
+      
+      // Request device name from boot.py
+      requestDeviceName((name) => {
+        if (name && deviceNameElement) {
+          deviceNameElement.textContent = name;
+          console.log('✅ Updated device name from boot.py to:', name);
           
-          // Also update the footer device name
-          const footerDeviceName = document.getElementById('footer-device-name');
-          if (footerDeviceName) {
-            if (name) {
-              footerDeviceName.textContent = `Connected: ${name}`;
-              footerDeviceName.style.color = '#2ecc40'; // Green color for connected
-            } else {
-              footerDeviceName.textContent = 'Connected: Unknown device';
-              footerDeviceName.style.color = '#ff851b'; // Orange for unknown
-            }
+          // Cache the name in the active device
+          if (activeDevice) {
+            activeDevice.deviceName = name;
           }
-          
-          // Step 2: Request device UID after name completes
-          if (deviceUidElement) {
-            setTimeout(() => { // Small delay to ensure clean serial state
-              requestDeviceUid(uid => {
-                if (uid) {
-                  deviceUidElement.textContent = uid;
-                } else {
-                  deviceUidElement.textContent = 'Unable to read UID';
-                }
-                
-                // Step 3: Request firmware version after UID completes
-                if (deviceFirmwareElement) {
-                  setTimeout(() => { // Small delay to ensure clean serial state
-                    console.log('Starting device firmware version request process...');
-                    deviceFirmwareElement.textContent = 'Reading...';
-                    
-                    setTimeout(() => {
-                      console.log('Making initial firmware version request...');
-                      requestDeviceFirmwareVersion(version => {
-                        console.log('Initial firmware version callback received:', version);
-                        if (version) {
-                          console.log('Successfully got firmware version:', version);
-                          deviceFirmwareElement.textContent = version;
-                        } else {
-                          console.log('Initial firmware version request failed, showing fallback message');
-                          deviceFirmwareElement.textContent = 'Unable to read version';
-                        }
-                      });
-                    }, 200);
-                  }, 200);
-                }
-              });
-            }, 200);
-          } else {
-            // If no UID element, proceed directly to firmware version
-            if (deviceFirmwareElement) {
-              setTimeout(() => {
-                console.log('Starting device firmware version request process...');
-                deviceFirmwareElement.textContent = 'Reading...';
-                
-                setTimeout(() => {
-                  console.log('Making initial firmware version request...');
-                  requestDeviceFirmwareVersion(version => {
-                    console.log('Initial firmware version callback received:', version);
-                    if (version) {
-                      console.log('Successfully got firmware version:', version);
-                      deviceFirmwareElement.textContent = version;
-                    } else {
-                      console.log('Initial firmware version request failed, showing fallback message');
-                      deviceFirmwareElement.textContent = 'Unable to read version';
-                    }
-                  });
-                }, 200);
-              }, 200);
-            }
-          }
-        });
-      } else {
-        // If no name element, start with UID
-        if (deviceUidElement) {
-          requestDeviceUid(uid => {
-            if (uid) {
+        } else if (deviceNameElement) {
+          // Fallback to other sources
+          const fallbackName = activeDevice.displayName || 
+                              (activeDevice.portInfo && activeDevice.portInfo.friendlyName) || 
+                              'Unknown Device';
+          deviceNameElement.textContent = fallbackName;
+          console.log('⚠️ Could not get device name from boot.py, using fallback:', fallbackName);
+        }
+      });
+    }
+    // Finally try other fallback sources
+    else {
+      deviceName = activeDevice.displayName || 
+                  (activeDevice.portInfo && activeDevice.portInfo.friendlyName) || 
+                  'Unknown Device';
+      console.log('📱 Device name from fallback sources:', deviceName);
+      
+      if (deviceNameElement) {
+        deviceNameElement.textContent = deviceName;
+        console.log('✅ Set device name to:', deviceName);
+      }
+    }
+    
+    // Update device UID with better fallback logic
+    let deviceUid = 'Unknown';
+    
+    // First try to get from config.device_uid
+    if (activeDevice.config && activeDevice.config.device_uid) {
+      deviceUid = activeDevice.config.device_uid;
+      console.log('📱 Device UID from config.device_uid:', deviceUid);
+      
+      if (deviceUidElement) {
+        deviceUidElement.textContent = deviceUid;
+        console.log('✅ Set device UID to:', deviceUid);
+      }
+    }
+    // Then try cached UID
+    else if (activeDevice.uid) {
+      deviceUid = activeDevice.uid;
+      console.log('📱 Device UID from cached uid:', deviceUid);
+      
+      if (deviceUidElement) {
+        deviceUidElement.textContent = deviceUid;
+        console.log('✅ Set device UID to:', deviceUid);
+      }
+    }
+    // If no cached UID, try to request it from device (with delay for robustness)
+    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
+      deviceUid = 'Requesting...';
+      if (deviceUidElement) {
+        deviceUidElement.textContent = deviceUid;
+        console.log('📱 Requesting device UID...');
+      }
+      
+      // Add a small delay to avoid conflicts with other serial operations
+      setTimeout(() => {
+        // Double-check the connection is still valid before making the request
+        if (connectedPort && connectedPort.readable && connectedPort.writable && deviceUidElement) {
+          console.log('📱 Making delayed UID request...');
+          requestDeviceUid((uid) => {
+            if (uid && deviceUidElement) {
               deviceUidElement.textContent = uid;
-            } else {
-              deviceUidElement.textContent = 'Unable to read UID';
-            }
-            
-            // Then proceed to firmware version
-            if (deviceFirmwareElement) {
-              setTimeout(() => {
-                console.log('Starting device firmware version request process...');
-                deviceFirmwareElement.textContent = 'Reading...';
-                
-                setTimeout(() => {
-                  console.log('Making initial firmware version request...');
-                  requestDeviceFirmwareVersion(version => {
-                    console.log('Initial firmware version callback received:', version);
-                    if (version) {
-                      console.log('Successfully got firmware version:', version);
-                      deviceFirmwareElement.textContent = version;
-                    } else {
-                      console.log('Initial firmware version request failed, showing fallback message');
-                      deviceFirmwareElement.textContent = 'Unable to read version';
-                    }
-                  });
-                }, 200);
-              }, 200);
+              console.log('✅ Updated device UID from device to:', uid);
+              
+              // Cache the UID in the active device
+              if (activeDevice) {
+                activeDevice.uid = uid;
+              }
+            } else if (deviceUidElement) {
+              // Improved fallback that strictly avoids COM ports
+              let fallbackUid = 'Unknown';
+              
+              // Try port serial number first if it doesn't look like a path
+              if (activeDevice.portInfo && activeDevice.portInfo.serialNumber && 
+                  !activeDevice.portInfo.serialNumber.includes('&') &&
+                  !activeDevice.portInfo.serialNumber.includes('COM') &&
+                  !activeDevice.portInfo.serialNumber.includes('\\')) {
+                fallbackUid = activeDevice.portInfo.serialNumber;
+              }
+              // Try device ID only if it doesn't look like a COM port or path
+              else if (activeDevice.id && 
+                       !activeDevice.id.includes('COM') && 
+                       !activeDevice.id.includes('&') &&
+                       !activeDevice.id.includes('\\') &&
+                       activeDevice.id.length > 4) { // Avoid short generic IDs
+                fallbackUid = activeDevice.id;
+              }
+              
+              deviceUidElement.textContent = fallbackUid;
+              console.log('⚠️ Could not get device UID from device, using fallback:', fallbackUid);
             }
           });
         } else {
-          // If no name or UID elements, proceed directly to firmware version
-          if (deviceFirmwareElement) {
-            console.log('Starting device firmware version request process...');
-            deviceFirmwareElement.textContent = 'Reading...';
-            
-            setTimeout(() => {
-              console.log('Making initial firmware version request...');
-              requestDeviceFirmwareVersion(version => {
-                console.log('Initial firmware version callback received:', version);
-                if (version) {
-                  console.log('Successfully got firmware version:', version);
-                  deviceFirmwareElement.textContent = version;
-                } else {
-                  console.log('Initial firmware version request failed, showing fallback message');
-                  deviceFirmwareElement.textContent = 'Unable to read version';
-                }
-              });
-            }, 200);
+          console.log('📱 Connection lost before UID request could be made');
+          if (deviceUidElement) {
+            deviceUidElement.textContent = 'Unknown';
           }
         }
+      }, 500); // 500ms delay to let other operations complete
+    }
+    // Finally try fallback sources (but strictly avoid COM port paths)
+    else {
+      // Try port serial number first if it doesn't look like a path or COM port
+      if (activeDevice.portInfo && activeDevice.portInfo.serialNumber && 
+          !activeDevice.portInfo.serialNumber.includes('&') &&
+          !activeDevice.portInfo.serialNumber.includes('COM') &&
+          !activeDevice.portInfo.serialNumber.includes('\\') &&
+          activeDevice.portInfo.serialNumber.length > 4) {
+        deviceUid = activeDevice.portInfo.serialNumber;
       }
-    } else {
-      // Device not connected
-      if (deviceNameElement) {
-        deviceNameElement.textContent = 'Device not connected';
+      // Try device ID only if it clearly doesn't look like a COM port or path
+      else if (activeDevice.id && 
+               !activeDevice.id.includes('COM') && 
+               !activeDevice.id.includes('&') &&
+               !activeDevice.id.includes('\\') &&
+               !activeDevice.id.startsWith('COM') &&
+               activeDevice.id.length > 4) { // Avoid short generic IDs
+        deviceUid = activeDevice.id;
       }
+      // Last resort - show Unknown rather than COM port
+      else {
+        deviceUid = 'Unknown';
+      }
+      
+      console.log('📱 Device UID from fallback sources:', deviceUid);
+      
       if (deviceUidElement) {
-        deviceUidElement.textContent = 'Device not connected';
-      }
-      if (deviceFirmwareElement) {
-        deviceFirmwareElement.textContent = 'Device not connected';
+        deviceUidElement.textContent = deviceUid;
+        console.log('✅ Set device UID to:', deviceUid);
       }
     }
+    
+    // Update firmware version with better fallback logic
+    let firmwareVersion = 'Unknown';
+    
+    // First try to get from config.firmware_version  
+    if (activeDevice.config && activeDevice.config.firmware_version) {
+      firmwareVersion = normalizeVersion(activeDevice.config.firmware_version);
+      console.log('📱 Firmware version from config.firmware_version:', firmwareVersion);
+    }
+    // Then try cached firmwareVersion
+    else if (activeDevice.firmwareVersion) {
+      firmwareVersion = normalizeVersion(activeDevice.firmwareVersion);
+      console.log('📱 Firmware version from cached firmwareVersion:', firmwareVersion);
+    }
+    // If still no version, try to request it if we have a connection
+    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
+      firmwareVersion = 'Requesting...';
+      console.log('📱 Requesting firmware version from device...');
+      
+      // Try to get fresh firmware version from device
+      requestDeviceFirmwareVersion((version) => {
+        if (version && deviceFirmwareElement) {
+          const normalizedVersion = normalizeVersion(version);
+          deviceFirmwareElement.textContent = normalizedVersion;
+          console.log('✅ Updated firmware version from device to:', normalizedVersion);
+          
+          // Compare with embedded firmware version
+          const embeddedVersion = getEmbeddedFirmwareVersion();
+          if (embeddedVersion !== '-' && embeddedVersion !== 'Unable to read version') {
+            
+            // Helper function to compare version strings (returns true if v1 < v2)
+            const isVersionLower = (v1, v2) => {
+              // Remove 'v' prefix and split into parts
+              const cleanV1 = v1.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+              const cleanV2 = v2.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+              
+              // Pad arrays to same length
+              const maxLength = Math.max(cleanV1.length, cleanV2.length);
+              while (cleanV1.length < maxLength) cleanV1.push(0);
+              while (cleanV2.length < maxLength) cleanV2.push(0);
+              
+              // Compare each segment
+              for (let i = 0; i < maxLength; i++) {
+                if (cleanV1[i] < cleanV2[i]) return true;
+                if (cleanV1[i] > cleanV2[i]) return false;
+              }
+              return false; // Versions are equal
+            };
+            
+            if (isVersionLower(normalizedVersion, embeddedVersion)) {
+              deviceFirmwareElement.style.color = '#e74c3c'; // Red text for outdated firmware
+              deviceFirmwareElement.style.fontWeight = 'bold';
+              console.log('⚠️ Device firmware is outdated:', normalizedVersion, 'vs embedded:', embeddedVersion);
+            } else {
+              deviceFirmwareElement.style.color = ''; // Reset to default color
+              deviceFirmwareElement.style.fontWeight = '';
+              console.log('✅ Device firmware is up to date:', normalizedVersion, 'vs embedded:', embeddedVersion);
+            }
+          }
+          
+          // Cache the version in the active device
+          if (activeDevice) {
+            activeDevice.firmwareVersion = normalizedVersion;
+          }
+        }
+      });
+    }
+    
+    if (deviceFirmwareElement) {
+      deviceFirmwareElement.textContent = firmwareVersion;
+      console.log('✅ Set firmware version to:', firmwareVersion);
+      
+      // Compare device firmware version with embedded firmware version
+      const embeddedVersion = getEmbeddedFirmwareVersion();
+      if (firmwareVersion !== '-' && firmwareVersion !== 'Unknown' && firmwareVersion !== 'Requesting...' && 
+          embeddedVersion !== '-' && embeddedVersion !== 'Unable to read version') {
+        
+        // Helper function to compare version strings (returns true if v1 < v2)
+        const isVersionLower = (v1, v2) => {
+          // Remove 'v' prefix and split into parts
+          const cleanV1 = v1.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+          const cleanV2 = v2.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+          
+          // Pad arrays to same length
+          const maxLength = Math.max(cleanV1.length, cleanV2.length);
+          while (cleanV1.length < maxLength) cleanV1.push(0);
+          while (cleanV2.length < maxLength) cleanV2.push(0);
+          
+          // Compare each segment
+          for (let i = 0; i < maxLength; i++) {
+            if (cleanV1[i] < cleanV2[i]) return true;
+            if (cleanV1[i] > cleanV2[i]) return false;
+          }
+          return false; // Versions are equal
+        };
+        
+        if (isVersionLower(firmwareVersion, embeddedVersion)) {
+          deviceFirmwareElement.style.color = '#e74c3c'; // Red text for outdated firmware
+          deviceFirmwareElement.style.fontWeight = 'bold';
+          console.log('⚠️ Device firmware is outdated:', firmwareVersion, 'vs embedded:', embeddedVersion);
+        } else {
+          deviceFirmwareElement.style.color = ''; // Reset to default color
+          deviceFirmwareElement.style.fontWeight = '';
+          console.log('✅ Device firmware is up to date:', firmwareVersion, 'vs embedded:', embeddedVersion);
+        }
+      } else {
+        // Reset styling for invalid/placeholder versions
+        deviceFirmwareElement.style.color = '';
+        deviceFirmwareElement.style.fontWeight = '';
+      }
+    }
+    
+    console.log('✅ Device information setup completed');
   }
-  
+
   // Global polling variables
   let diagPinStatusInterval = null;
   let diagHatStatusInterval = null;
@@ -4524,6 +5183,14 @@ if (window.multiDeviceManager) {
   }
   
   function setupPollingFunctions() {
+    // Connection health check function
+    function isConnectionHealthy() {
+      return connectedPort && 
+             connectedPort.readable && 
+             connectedPort.writable && 
+             !connectedPort.closed;
+    }
+    
     // Define all polling start/stop functions
     window.startDiagPinStatusPolling = function() {
       const checkbox = document.getElementById('diag-input-enable');
@@ -4546,13 +5213,22 @@ if (window.multiDeviceManager) {
       ];
       
       const keys = [...buttonInputsRow1, ...buttonInputsRow2].map(b => b.key);
+      let currentKeyIndex = 0;
+      
+      // Round-robin polling: poll one button at a time to prevent serial buffer overflow
       diagPinStatusInterval = setInterval(() => {
-        if (document.getElementById('diag-input-enable')?.checked) {
-          keys.forEach(key => {
+        if (document.getElementById('diag-input-enable')?.checked && isConnectionHealthy()) {
+          try {
+            const key = keys[currentKeyIndex];
             connectedPort.write(`READPIN:${key}\n`);
-          });
+            currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+          } catch (err) {
+            console.warn('[DIAG] Pin status polling write error:', err);
+            // Don't stop polling on individual write errors, just skip this cycle
+          }
         }
-      }, 50); // High frequency for smooth real-time feedback
+      }, 20); // Faster individual polls but only one button at a time
+      
       if (!connectedPort.listeners('data').includes(diagPinStatusHandler)) {
         connectedPort.on('data', diagPinStatusHandler);
       }
@@ -4576,22 +5252,32 @@ if (window.multiDeviceManager) {
       const hatMode = originalConfig.hat_mode || 'joystick';
       
       if (hatMode === 'dpad') {
-        // Poll DPAD buttons
-        const dpadKeys = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+        // Round-robin polling for DPAD buttons including GUIDE
+        const dpadKeys = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'GUIDE'];
+        let currentDpadIndex = 0;
+        
         diagHatStatusInterval = setInterval(() => {
-          if (document.getElementById('diag-hat-enable')?.checked) {
-            dpadKeys.forEach(key => {
+          if (document.getElementById('diag-hat-enable')?.checked && isConnectionHealthy()) {
+            try {
+              const key = dpadKeys[currentDpadIndex];
               connectedPort.write(`READPIN:${key}\n`);
-            });
+              currentDpadIndex = (currentDpadIndex + 1) % dpadKeys.length;
+            } catch (err) {
+              console.warn('[DIAG] Hat status polling write error:', err);
+            }
           }
-        }, 50); // High frequency for smooth real-time feedback
+        }, 25); // Slower than individual pin polling since there are fewer buttons
       } else {
-        // Poll joystick values
+        // Poll joystick values - single command so no round-robin needed
         diagHatStatusInterval = setInterval(() => {
-          if (document.getElementById('diag-hat-enable')?.checked) {
-            connectedPort.write('READJOYSTICK\n');
+          if (document.getElementById('diag-hat-enable')?.checked && isConnectionHealthy()) {
+            try {
+              connectedPort.write('READJOYSTICK\n');
+            } catch (err) {
+              console.warn('[DIAG] Joystick polling write error:', err);
+            }
           }
-        }, 20); // Very high frequency for smooth joystick tracking
+        }, 30); // Slightly slower for joystick to reduce data flood
       }
       
       if (!connectedPort.listeners('data').includes(diagHatStatusHandler)) {
@@ -4615,10 +5301,14 @@ if (window.multiDeviceManager) {
       stopDiagWhammyPolling();
       
       diagWhammyInterval = setInterval(() => {
-        if (document.getElementById('diag-whammy-enable')?.checked) {
-          connectedPort.write('READWHAMMY\n');
+        if (document.getElementById('diag-whammy-enable')?.checked && isConnectionHealthy()) {
+          try {
+            connectedPort.write('READWHAMMY\n');
+          } catch (err) {
+            console.warn('[DIAG] Whammy polling write error:', err);
+          }
         }
-      }, 20); // Very high frequency for smooth whammy tracking
+      }, 25); // Slightly reduced frequency to prevent overwhelming the serial buffer
       
       if (!connectedPort.listeners('data').includes(window.diagWhammyLiveHandler)) {
         connectedPort.on('data', window.diagWhammyLiveHandler);
@@ -4837,25 +5527,37 @@ if (window.multiDeviceManager) {
   
   // Data handler functions for polling
   function diagPinStatusHandler(data) {
-    const str = data.toString();
-    const pinMatch = str.match(/PIN:([A-Z_]+):(\d+)/);
-    if (pinMatch) {
-      // Hide buffer clearing popover when pin data arrives
-      if (bufferClearingActive) {
-        hideBufferClearingPopover();
+    try {
+      const str = data.toString().trim();
+      
+      // Validate and parse PIN data
+      const pinMatch = str.match(/PIN:([A-Z_]+):(\d+)/);
+      if (pinMatch) {
+        // Hide buffer clearing popover when pin data arrives
+        if (bufferClearingActive) {
+          hideBufferClearingPopover();
+        }
+        
+        const key = pinMatch[1];
+        const val = pinMatch[2];
+        
+        // Validate the key is one we expect
+        const validKeys = ['GREEN_FRET', 'RED_FRET', 'YELLOW_FRET', 'BLUE_FRET', 'ORANGE_FRET', 
+                          'STRUM_UP', 'STRUM_DOWN', 'START', 'SELECT', 'TILT'];
+        if (validKeys.includes(key)) {
+          diagPinStatusMap[key] = val;
+          updateDiagInputBoxes();
+        }
       }
       
-      const key = pinMatch[1];
-      const val = pinMatch[2];
-      diagPinStatusMap[key] = val;
-      updateDiagInputBoxes();
-    }
-    
-    // Also hide popover for PREVIEWLED confirmations (LED test commands)
-    if (str.includes('PREVIEWLED applied') || str.includes('PREVIEWLED')) {
-      if (bufferClearingActive) {
-        hideBufferClearingPopover();
+      // Also hide popover for PREVIEWLED confirmations (LED test commands)
+      if (str.includes('PREVIEWLED applied') || str.includes('PREVIEWLED')) {
+        if (bufferClearingActive) {
+          hideBufferClearingPopover();
+        }
       }
+    } catch (err) {
+      console.warn('[DIAG] Pin status handler error:', err);
     }
   }
   
@@ -4880,53 +5582,72 @@ if (window.multiDeviceManager) {
       const status = diagPinStatusMap[key];
       const box = document.querySelector(`.diag-input-box[data-key='${key}']`);
       if (box) {
+        const statusElement = box.querySelector('div:last-child');
         if (status === '1') {
           box.style.background = '#ffe066';
           box.style.borderColor = '#ffe066';
           box.style.color = '#222';
+          if (statusElement) statusElement.textContent = 'ON';
         } else if (status === '0') {
           box.style.background = '#111';
           box.style.borderColor = '#ffe066';
           box.style.color = '#ffe066';
+          if (statusElement) statusElement.textContent = 'OFF';
         } else {
           box.style.background = '#333';
           box.style.borderColor = '#bbb';
           box.style.color = '#ffe066';
+          if (statusElement) statusElement.textContent = 'OFF';
         }
       }
     });
   }
   
   function diagHatStatusHandler(data) {
-    const str = data.toString();
-    
-    // Handle DPAD pin responses (PIN:UP:1, etc.)
-    const pinMatch = str.match(/PIN:(UP|DOWN|LEFT|RIGHT):(\d+)/);
-    if (pinMatch) {
-      // Hide buffer clearing popover when hat pin data arrives
-      if (bufferClearingActive) {
-        hideBufferClearingPopover();
+    try {
+      const str = data.toString().trim();
+      
+      // Handle DPAD pin responses (PIN:UP:1, etc.) and GUIDE button
+      const pinMatch = str.match(/PIN:(UP|DOWN|LEFT|RIGHT|GUIDE):(\d+)/);
+      if (pinMatch) {
+        // Hide buffer clearing popover when hat pin data arrives
+        if (bufferClearingActive) {
+          hideBufferClearingPopover();
+        }
+        
+        const key = pinMatch[1];
+        const val = pinMatch[2];
+        
+        // Validate the key is a valid D-pad key
+        const validDpadKeys = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'GUIDE'];
+        if (validDpadKeys.includes(key)) {
+          diagHatStatusMap[key] = val;
+          updateDiagHatStatus();
+        }
+        return;
       }
       
-      const key = pinMatch[1];
-      const val = pinMatch[2];
-      diagHatStatusMap[key] = val;
-      updateDiagHatStatus();
-      return;
-    }
-    
-    // Handle joystick responses (JOYSTICK:X:value:Y:value)
-    const joyMatch = str.match(/JOYSTICK:X:(\d+):Y:(\d+)/);
-    if (joyMatch) {
-      // Hide buffer clearing popover when joystick data arrives
-      if (bufferClearingActive) {
-        hideBufferClearingPopover();
+      // Handle joystick responses (JOYSTICK:X:value:Y:value)
+      const joyMatch = str.match(/JOYSTICK:X:(\d+):Y:(\d+)/);
+      if (joyMatch) {
+        // Hide buffer clearing popover when joystick data arrives
+        if (bufferClearingActive) {
+          hideBufferClearingPopover();
+        }
+        
+        const xVal = parseInt(joyMatch[1]);
+        const yVal = parseInt(joyMatch[2]);
+        
+        // Validate joystick values are in expected range (0-65535)
+        if (!isNaN(xVal) && !isNaN(yVal) && xVal >= 0 && xVal <= 65535 && yVal >= 0 && yVal <= 65535) {
+          diagHatStatusMap.X = xVal;
+          diagHatStatusMap.Y = yVal;
+          updateDiagHatStatus();
+        }
+        return;
       }
-      
-      diagHatStatusMap.X = parseInt(joyMatch[1]);
-      diagHatStatusMap.Y = parseInt(joyMatch[2]);
-      updateDiagHatStatus();
-      return;
+    } catch (err) {
+      console.warn('[DIAG] Hat status handler error:', err);
     }
   }
   
@@ -4948,6 +5669,19 @@ if (window.multiDeviceManager) {
           }
         }
       });
+      
+      // Update GUIDE button (only visible in D-Pad mode)
+      const guideStatus = diagHatStatusMap['GUIDE'];
+      const guideBtn = document.querySelector(`.diag-dpad-btn[data-key='GUIDE']`);
+      if (guideBtn) {
+        if (guideStatus === '1') {
+          guideBtn.style.background = '#ffe066';
+          guideBtn.style.color = '#222';
+        } else {
+          guideBtn.style.background = '#111';
+          guideBtn.style.color = '#ffe066';
+        }
+      }
     } else {
       // Update joystick display
       const xVal = diagHatStatusMap.X;
@@ -5005,6 +5739,11 @@ if (window.multiDeviceManager) {
     
     diagnosticsModal.style.display = 'flex';
     initializeDiagnosticsSections();
+    
+    // Refresh device information when modal opens
+    setTimeout(() => {
+      setupDeviceInformation();
+    }, 100);
     
     // Force update the hat section title immediately after the modal is visible
     const hatMode = (originalConfig && originalConfig.hat_mode) || 'joystick';
