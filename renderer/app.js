@@ -218,6 +218,16 @@ let isFlashingFirmware = false;
 const liveColors = new Map();
 // Global flag for bootsel prompt state
 let bootselPrompted = false;
+
+// Expose functions to control isFlashingFirmware flag for firmwareUpdater
+window.setFlashingFirmware = function(value) {
+  isFlashingFirmware = value;
+  console.log('[app.js] isFlashingFirmware set to:', value);
+};
+
+window.getFlashingFirmware = function() {
+  return isFlashingFirmware;
+};
 let originalConfig = null;
 // Fret index mapping for config <-> UI
 // 0: orange, 1: blue, 2: yellow, 3: red, 4: green
@@ -442,6 +452,24 @@ const serialFileIO = require('./serialFileIO');
 const multiDeviceManager = new MultiDeviceManager();
 window.multiDeviceManager = multiDeviceManager;
 
+// Make serialFileIO available globally for firmware updater
+window.serialFileIO = {
+  writeFile: (port, filename, content, timeoutMs) => {
+    const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+    if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
+      return Promise.reject(new Error('No active device connected'));
+    }
+    return serialFileIO.writeFile(port, filename, content, timeoutMs);
+  },
+  readFile: (filename, timeoutMs) => {
+    const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+    if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
+      return Promise.reject(new Error('No active device connected'));
+    }
+    return serialFileIO.readFile(activeDevice.port, filename, timeoutMs);
+  }
+};
+
 // Inject dependencies into multiDeviceManager
 MultiDeviceManager.inject({
   showToast: showToast
@@ -617,12 +645,19 @@ window.showToastWarning = (message, duration) => showToast(message, 'warning', d
 window.showToastInfo = (message, duration) => showToast(message, 'info', duration);
 
 // ===== DEVICE REBOOT AND RELOAD UTILITY =====
+let rebootInProgress = false;
 async function rebootAndReload(fileToReload = 'presets.json') {
   try {
-    if (!connectedPort) {
-      console.warn('[rebootAndReload] No connected port, cannot reboot');
+    if (rebootInProgress) {
+      console.warn('[rebootAndReload] Reboot already in progress, ignoring duplicate call');
       return;
     }
+    if (!connectedPort) {
+      console.warn('[rebootAndReload] No connected port, cannot reboot');
+      rebootInProgress = false;
+      return;
+    }
+    rebootInProgress = true;
     // --- Identify the device before reboot ---
     let rebootDeviceId = null;
     let rebootPID = null;
@@ -790,6 +825,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
             console.warn('[rebootAndReload] Could not fully reload config/presets after reconnect:', err);
             showToast('Device reconnected but failed to fully reload config/presets', 'error');
           }
+          rebootInProgress = false;
           return;
         }
       } else {
@@ -802,6 +838,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
           console.warn('[rebootAndReload] Device did not reconnect after reboot');
           showToast('Device did not reconnect after reboot', 'error');
           customAlert('Device did not reconnect after reboot. Please unplug and replug the device.');
+          rebootInProgress = false;
         }
       }
     }
@@ -809,6 +846,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
   } catch (err) {
     console.error('[rebootAndReload] Error sending REBOOT or reloading UI:', err);
     showToast('Error during reboot and reload', 'error');
+    rebootInProgress = false;
   }
 }
 
@@ -1578,45 +1616,6 @@ document.addEventListener('DOMContentLoaded', () => {
     whammyModal.style.display = 'flex';
     startWhammyLiveFeedback();
   }
-
-  // On apply, save values
-  whammyApplyBtn?.addEventListener('click', () => {
-    if (!originalConfig) return;
-    originalConfig.whammy_min = whammyMinValue;
-    originalConfig.whammy_max = whammyMaxValue;
-    originalConfig.whammy_reverse = whammyReverse.checked;
-    try {
-      connectedPort.write("WRITEFILE:config.json\n");
-      connectedPort.write(JSON.stringify(originalConfig) + "\n");
-      connectedPort.write("END\n");
-      showToast("Whammy calibration applied ✅", "success");
-      hideWhammyModal();
-
-      // --- Write config, wait 6.8s, then disconnect and reconnect ---
-      setTimeout(() => {
-        const activeDevice = window.multiDeviceManager?.activeDevice;
-        if (activeDevice && typeof window.multiDeviceManager.disconnectDevice === 'function') {
-          const deviceId = activeDevice.id;
-          window.multiDeviceManager.disconnectDevice(deviceId).then(() => {
-            // Removed header status update - device selector button provides status
-            if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-            connectedPort = null;
-            window.connectedPort = null;
-            // Wait 0ms (immediate), then reconnect the same device by ID
-            setTimeout(() => {
-              if (typeof window.multiDeviceManager.connectDevice === 'function') {
-                window.multiDeviceManager.connectDevice(deviceId);
-              }
-            }, 0);
-          });
-        }
-      }, 6800); // Wait 6.8s after writing config before disconnecting/reconnecting
-      // --- End manual disconnect/reconnect ---
-    } catch (err) {
-      console.error("Failed to apply whammy calibration:", err);
-      showToast("Failed to write config", "error");
-    }
-  });
 
   // Only reverse checkbox needs event handler
   whammyReverse?.addEventListener('change', drawWhammyGraph);
@@ -3006,63 +3005,11 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     document.getElementById('apply-config-btn').style.display = 'none';
     console.log('[DEBUG][apply-config] Config write complete, UI updated. Device will reboot, expect disconnect.');
 
-    // Immediately update UI to show device as rebooting
-    const selectorBtn = document.getElementById('deviceSelectorButton');
-    if (selectorBtn) {
-      selectorBtn.textContent = 'Device rebooting...';
-      selectorBtn.style.background = '#f39c12';
-      selectorBtn.style.color = '#fff';
-      selectorBtn.style.boxShadow = 'none';
-      selectorBtn.style.fontWeight = 'bold';
-    }
-    
-    // Also update header status to show device is rebooting
-    updateStatus('Device rebooting...', false, '#f39c12'); // Orange for rebooting
-    
-    // Also update any status displays to show device is rebooting
-    if (typeof window.updateActiveButtonText === 'function') {
-      // Temporarily override with rebooting state
-      window._deviceRebootingOverride = true;
-      setTimeout(() => {
-        window._deviceRebootingOverride = false;
-      }, 12000); // Clear override after 12 seconds (longer than our 10s reboot cycle)
-    }
-
-    // --- PATCH: Wait 8s, then disconnect and wait longer before reconnect to allow device reboot ---
+    // Use robust reboot and reload procedure
     setTimeout(() => {
-      if (window.multiDeviceManager && typeof window.multiDeviceManager.getActiveDevice === 'function' && typeof window.multiDeviceManager.disconnectDevice === 'function') {
-        const activeDevice = window.multiDeviceManager.getActiveDevice();
-        if (activeDevice && activeDevice.id) {
-          const deviceId = activeDevice.id;
-          window.multiDeviceManager.disconnectDevice(deviceId).then(() => {
-            if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-            if (typeof window.updateActiveButtonText === 'function') {
-              window.updateActiveButtonText(null);
-            }
-            // Wait 2 seconds to allow device to fully restart before manual reconnection attempt
-            setTimeout(() => {
-              if (typeof window.multiDeviceManager.connectDevice === 'function') {
-                window.multiDeviceManager.connectDevice(deviceId).then(() => {
-                  // Clear the rebooting override when successfully reconnected
-                  // The "Please wait..." state will show automatically via updateActiveButtonText
-                  window._deviceRebootingOverride = false;
-                  // No need to call updateActiveButtonText here as connectDevice handles it
-                }).catch((err) => {
-                  console.warn('[DEBUG][apply-config] Manual reconnection failed:', err);
-                  // Clear override to allow auto-reconnection UI updates
-                  window._deviceRebootingOverride = false;
-                  // Auto-reconnection will handle this via scanning
-                });
-              }
-            }, 2000);
-          });
-        }
-      }
-      // Update UI to show disconnected
-      if (typeof updateDeviceSelector === 'function') updateDeviceSelector();
-      if (typeof updateDeviceList === 'function') updateDeviceList();
-    }, 8000);
-    // --- END PATCH ---
+      showToast("Device rebooting to apply configuration", 'info');
+      rebootAndReload('config.json');
+    }, 500);
   } catch (err) {
     console.error('[DEBUG][apply-config] Failed to apply config:', err);
     showToast('Failed to write config', 'error');
@@ -6094,3 +6041,208 @@ window.addEventListener('beforeunload', () => {
     cleanupColorPicker(elementId);
   });
 });
+
+// ===== AUTOMATIC FIRMWARE UPDATE SYSTEM INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("🔍 [App] DOMContentLoaded event fired - starting firmware update initialization");
+  
+  // Get button references at the start
+  const updateButton = document.getElementById('check-for-updates');
+  const refreshButton = document.getElementById('refresh-device-version');
+  
+  console.log("🔍 [App] Button references obtained:");
+  console.log("🔍 [App] - updateButton found:", !!updateButton);
+  console.log("🔍 [App] - refreshButton found:", !!refreshButton);
+  
+  // Initialize firmware updater and automatic updater
+  let firmwareUpdater = null;
+  let automaticUpdater = null;
+  
+  // Wait for serial to be available
+  const initializeUpdaters = () => {
+    console.log("🔍 [App] initializeUpdaters() called");
+    
+    // Check if we have the classes and either window.serial or an active device with port
+    const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+    const hasSerial = window.serial || (activeDevice && activeDevice.port);
+    
+    console.log("🔍 [App] Checking initialization conditions:");
+    console.log("🔍 [App] - FirmwareUpdater available:", typeof FirmwareUpdater !== 'undefined');
+    console.log("🔍 [App] - AutomaticFirmwareUpdater available:", typeof AutomaticFirmwareUpdater !== 'undefined');
+    console.log("🔍 [App] - window.serial:", !!window.serial);
+    console.log("🔍 [App] - activeDevice:", !!activeDevice);
+    console.log("🔍 [App] - activeDevice.port:", !!activeDevice?.port);
+    console.log("🔍 [App] - hasSerial:", hasSerial);
+    
+    // FORCE BUTTON SETUP REGARDLESS OF CONDITIONS
+    console.log("� [App] FORCING button setup regardless of serial conditions...");
+    
+    if (updateButton) {
+      console.log("🔧 [App] Setting up check-for-updates button...");
+      // Clear any existing event listeners by cloning the node
+      const newUpdateButton = updateButton.cloneNode(true);
+      updateButton.parentNode.replaceChild(newUpdateButton, updateButton);
+      
+      newUpdateButton.addEventListener('click', async () => {
+        console.log("🔍 [App] CHECK FOR UPDATES BUTTON CLICKED!");
+        
+        console.log("🔍 [App] window.automaticUpdater type:", typeof window.automaticUpdater);
+        console.log("🔍 [App] window.automaticUpdater instance:", window.automaticUpdater);
+        
+        if (window.automaticUpdater) {
+          try {
+            console.log("🔍 [App] Calling automaticUpdater.manualUpdateCheck()...");
+            await window.automaticUpdater.manualUpdateCheck();
+            console.log("🔍 [App] manualUpdateCheck() completed successfully");
+          } catch (error) {
+            console.error("🔍 [App] manualUpdateCheck() error:", error);
+          }
+        } else {
+          console.log("🔍 [App] Creating new AutomaticFirmwareUpdater instance...");
+          if (typeof AutomaticFirmwareUpdater !== 'undefined') {
+            window.automaticUpdater = new AutomaticFirmwareUpdater();
+            console.log("🔍 [App] New instance created, trying manualUpdateCheck...");
+            try {
+              await window.automaticUpdater.manualUpdateCheck();
+              console.log("🔍 [App] manualUpdateCheck() completed with new instance");
+            } catch (error) {
+              console.error("🔍 [App] manualUpdateCheck() error with new instance:", error);
+            }
+          } else {
+            console.log("❌ [App] AutomaticFirmwareUpdater class not available!");
+          }
+        }
+      });
+      console.log("✅ [App] Event listener added to check-for-updates button");
+    } else {
+      console.log("❌ [App] check-for-updates button not found!");
+    }
+    
+    if (refreshButton) {
+      console.log("🔧 [App] Setting up refresh-device-version button...");
+      // Clear any existing event listeners by cloning the node
+      const newRefreshButton = refreshButton.cloneNode(true);
+      refreshButton.parentNode.replaceChild(newRefreshButton, refreshButton);
+      
+      newRefreshButton.addEventListener('click', async () => {
+        console.log("🔍 [App] REFRESH DEVICE VERSION BUTTON CLICKED!");
+        
+        console.log("🔍 [App] window.automaticUpdater type:", typeof window.automaticUpdater);
+        console.log("🔍 [App] window.automaticUpdater instance:", window.automaticUpdater);
+        
+        if (window.automaticUpdater) {
+          try {
+            console.log("🔍 [App] Calling automaticUpdater.refreshDeviceVersion()...");
+            await window.automaticUpdater.refreshDeviceVersion();
+            console.log("🔍 [App] refreshDeviceVersion() completed successfully");
+          } catch (error) {
+            console.error("🔍 [App] refreshDeviceVersion() error:", error);
+          }
+        } else {
+          console.log("🔍 [App] Creating new AutomaticFirmwareUpdater instance...");
+          if (typeof AutomaticFirmwareUpdater !== 'undefined') {
+            window.automaticUpdater = new AutomaticFirmwareUpdater();
+            console.log("🔍 [App] New instance created, trying refreshDeviceVersion...");
+            try {
+              await window.automaticUpdater.refreshDeviceVersion();
+              console.log("🔍 [App] refreshDeviceVersion() completed with new instance");
+            } catch (error) {
+              console.error("🔍 [App] refreshDeviceVersion() error with new instance:", error);
+            }
+          } else {
+            console.log("❌ [App] AutomaticFirmwareUpdater class not available!");
+          }
+        }
+      });
+      console.log("✅ [App] Event listener added to refresh-device-version button");
+    } else {
+      console.log("❌ [App] refresh-device-version button not found!");
+    }
+    
+    if (typeof FirmwareUpdater !== 'undefined' && typeof AutomaticFirmwareUpdater !== 'undefined' && hasSerial) {
+      console.log("🚀 Initializing firmware update system...");
+      
+      // Set up window.serial if not already available
+      if (!window.serial && activeDevice && activeDevice.port) {
+        window.serial = activeDevice.port;
+        console.log("📡 Using active device port for automatic updater");
+      }
+      
+      // Create firmware updater instance
+      firmwareUpdater = new FirmwareUpdater();
+      
+      // Create automatic updater instance  
+      automaticUpdater = new AutomaticFirmwareUpdater();
+      
+      // Initialize automatic updater with firmware updater and multiDeviceManager
+      automaticUpdater.initialize(firmwareUpdater, window.multiDeviceManager);
+      
+      // Make instances available globally for debugging
+      window.firmwareUpdater = firmwareUpdater;
+      window.automaticUpdater = automaticUpdater;
+      
+      console.log("✅ Firmware update system initialized");
+      
+    } else {
+      console.log("⚠️ [App] Not all conditions met for full initialization, but buttons are set up");
+      
+      // Still try to create instances even without full conditions
+      if (typeof AutomaticFirmwareUpdater !== 'undefined') {
+        window.automaticUpdater = new AutomaticFirmwareUpdater();
+        console.log("✅ Created AutomaticFirmwareUpdater instance for button testing");
+      }
+      
+      // Retry in 1 second if dependencies aren't ready
+      setTimeout(initializeUpdaters, 1000);
+    }
+  };
+  
+  // Start initialization
+  initializeUpdaters();
+  
+  // Also initialize when device connects
+  window.addEventListener('deviceConnected', () => {
+    console.log("🔌 Device connected, re-checking automatic updater...");
+    setTimeout(initializeUpdaters, 500);
+  });
+});
+
+// ===== DEBUGGING: Test button functionality directly =====
+window.testButtons = function() {
+  console.log("🔍 [Debug] Testing button functionality...");
+  
+  const updateButton = document.getElementById('check-for-updates');
+  const refreshButton = document.getElementById('refresh-device-version');
+  
+  console.log("🔍 [Debug] check-for-updates button found:", !!updateButton);
+  console.log("🔍 [Debug] refresh-device-version button found:", !!refreshButton);
+  console.log("🔍 [Debug] AutomaticFirmwareUpdater class available:", typeof AutomaticFirmwareUpdater !== 'undefined');
+  console.log("🔍 [Debug] window.automaticUpdater:", typeof window.automaticUpdater);
+  
+  return {
+    updateButton: !!updateButton,
+    refreshButton: !!refreshButton,
+    automaticUpdater: typeof window.automaticUpdater
+  };
+};
+
+// ===== DEBUGGING: Auto-test when diagnostics modal opens =====
+document.addEventListener('click', function(event) {
+  if (event.target && event.target.textContent && event.target.textContent.includes('Diagnostics')) {
+    console.log("🔍 [Debug] Diagnostics clicked, will test buttons in 2 seconds...");
+    setTimeout(() => {
+      console.log("🔍 [Debug] Running button test...");
+      window.testButtons();
+    }, 2000);
+  }
+});
+
+// ===== IMMEDIATE DEBUGGING: Log app startup =====
+console.log("🚀 [DEBUG] app.js script loaded and executing!");
+console.log("🚀 [DEBUG] Current DOM ready state:", document.readyState);
+
+// Force button test immediately
+setTimeout(() => {
+  console.log("🚀 [DEBUG] 5-second delayed test starting...");
+  window.testButtons();
+}, 5000);
