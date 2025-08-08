@@ -1200,7 +1200,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
 }
 
 // ===== FIRMWARE READY POLLING UTILITY =====
-function waitForFirmwareReady(port, maxAttempts = 20, intervalMs = 300) {
+function waitForFirmwareReady(port, maxAttempts = 10, intervalMs = 500) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     let buffer = '';
@@ -3901,15 +3901,17 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       try {
         console.log(`[updateDeviceName] Starting device rename process for "${newName}"`);
         
-        // 0. Ensure firmware is ready and clear any pending states
-        console.log(`[updateDeviceName] Ensuring firmware is ready...`);
+        // 0. Clear all pending states and stop any ongoing polling
+        console.log(`[updateDeviceName] Clearing serial buffer and stopping polling...`);
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for any pending operations
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Longer wait to let device settle
         
-        // Send a firmware ready check to ensure device is responsive
-        activeDevice.port.write('FIRMWARE_READY\n');
-        await new Promise(resolve => setTimeout(resolve, 200));
-        await multiDeviceManager.flushSerialBuffer(activeDevice.port);
+        // Stop any running FIRMWARE_READY polling to prevent interference
+        if (window.devicePollingInterval) {
+          clearInterval(window.devicePollingInterval);
+          window.devicePollingInterval = null;
+          console.log(`[updateDeviceName] Stopped device polling during rename`);
+        }
 
         // 1. Delete registry entry (no elevation)
         const uidHex = await getDeviceUid();
@@ -3923,47 +3925,66 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           }
         });
 
-        // 2. Read current boot.py using serialFileIO
+        // 2. Read current boot.py using serialFileIO with extended timeout
         console.log(`[updateDeviceName] Reading current boot.py...`);
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for buffer to clear
-        let bootPy = await serialFileIO.readFile(activeDevice.port, 'boot.py');
+        await new Promise(resolve => setTimeout(resolve, 800)); // Longer wait for buffer to clear
+        let bootPy = await serialFileIO.readFile(activeDevice.port, 'boot.py', 10000); // 10 second timeout for read
       
-      // 3. Update the device name in boot.py content
-      bootPy = bootPy.replace(/product\s*=\s*".*?"/, `product="${fullName}"`);
-      bootPy = bootPy.replace(/usb_hid\.set_interface_name\(\s*".*?"\s*\)/, `usb_hid.set_interface_name("${fullName}")`);
-      console.log("Writing boot.py to device:\n", bootPy);
+        // 3. Update the device name in boot.py content
+        console.log(`[updateDeviceName] Updating device name in boot.py content...`);
+        bootPy = bootPy.replace(/product\s*=\s*".*?"/, `product="${fullName}"`);
+        bootPy = bootPy.replace(/usb_hid\.set_interface_name\(\s*".*?"\s*\)/, `usb_hid.set_interface_name("${fullName}")`);
+        
+        // Verify the replacements were successful
+        if (!bootPy.includes(`product="${fullName}"`)) {
+          throw new Error('Failed to update product name in boot.py');
+        }
+        if (!bootPy.includes(`usb_hid.set_interface_name("${fullName}")`)) {
+          throw new Error('Failed to update USB interface name in boot.py');
+        }
+        
+        console.log(`[updateDeviceName] boot.py content updated successfully`);
 
-      // 4. Write updated boot.py using serialFileIO with reasonable timeout
-      await multiDeviceManager.flushSerialBuffer(activeDevice.port);
-      await new Promise(resolve => setTimeout(resolve, 200)); // Brief wait for buffer to clear
+        // 4. Write updated boot.py using serialFileIO with proper timeout and error handling
+        await multiDeviceManager.flushSerialBuffer(activeDevice.port);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for buffer to clear
         console.log(`[updateDeviceName] Starting boot.py write operation...`);
+        
         try {
-          await serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 2000); // 2 second timeout - CircuitPython reboots immediately
+          // Use longer timeout for boot.py write since it's a critical system file
+          await serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 5000); // 5 second timeout
           console.log(`[updateDeviceName] boot.py write completed successfully`);
         } catch (writeError) {
           console.error(`[updateDeviceName] boot.py write failed:`, writeError);
+          showToast(`Failed to write boot.py: ${writeError.message}`, 'error');
           throw writeError; // Re-throw to be caught by outer try-catch
         }      
-      // Note: Skipping verification for boot.py since CircuitPython automatically reboots 
-      // when boot.py is written, making verification impossible
-      console.log("✅ boot.py write completed! (CircuitPython will auto-reboot)");
-      showToast(`Device renamed to "${newName}" successfully!`, 'success');
-      
-      // Update stored device info with new name before reboot for auto-reconnection
-      if (multiDeviceManager.lastActiveDeviceInfo) {
-        multiDeviceManager.lastActiveDeviceInfo.deviceName = fullName;
-        console.log('📝 Updated stored device info with new name for auto-reconnection:', fullName);
-      }
-      
-      // CircuitPython will automatically reboot when boot.py is written
-      // Use the global rebootAndReload function for proper reconnection after a brief delay
-      setTimeout(() => {
-        rebootAndReload();
-      }, 1500); // Slightly longer delay to account for CircuitPython's automatic reboot
+        
+        // Note: CircuitPython automatically reboots when boot.py is written
+        console.log("✅ boot.py write completed! (CircuitPython will auto-reboot)");
+        showToast(`Device renamed to "${newName}" successfully!`, 'success');
+        
+        // Update stored device info with new name before reboot for auto-reconnection
+        if (multiDeviceManager.lastActiveDeviceInfo) {
+          multiDeviceManager.lastActiveDeviceInfo.deviceName = fullName;
+          console.log('📝 Updated stored device info with new name for auto-reconnection:', fullName);
+        }
+        
+        // CircuitPython will automatically reboot when boot.py is written
+        // Use the global rebootAndReload function for proper reconnection after a longer delay
+        setTimeout(() => {
+          rebootAndReload();
+        }, 2000); // Longer delay to account for CircuitPython's automatic reboot
+        
       } catch (error) {
         console.error('Error updating device name:', error);
         showToast(`Failed to rename device: ${error.message}`, 'error');
+        
+        // Restart device polling if it was stopped
+        if (window.multiDeviceManager && typeof window.multiDeviceManager.resumeScanning === 'function') {
+          window.multiDeviceManager.resumeScanning();
+        }
       }
     }); // End of pauseScanningDuringOperation
   }

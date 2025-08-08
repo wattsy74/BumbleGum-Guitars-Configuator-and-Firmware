@@ -1,7 +1,16 @@
 // serialFileIO.js
 // Robust serial file read/write for BGG Windows App
+// 
+// ENHANCEMENTS IMPLEMENTED:
+// ✅ Enhanced timeout system: 8s per KB + 60s bonus for files >10KB
+// ✅ Line-by-line transmission: 75ms delays for large files, 50ms for smaller files  
+// ✅ Refined error detection: Ignores "ERROR:" in echoed code content
+// ✅ Large file handling: Dynamic timeouts and optimized transmission
+// ✅ BOOTSEL interference prevention: Integrated with multiDeviceManager
 
-const DEFAULT_TIMEOUT = 15000; // Enhanced default timeout (15s) - Increased timeout for file operations
+const DEFAULT_TIMEOUT = 30000; // Enhanced default timeout (30s) - Increased timeout for file operations
+const TIMEOUT_PER_KB = 8000; // Additional 8 seconds per KB for large files (enhanced from 5s)
+const LARGE_FILE_BONUS = 60000; // Extra 60 seconds for files larger than 10KB
 
 /**
  * Reads a file from a serial device using the READFILE command.
@@ -150,21 +159,36 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
  * @param {number} [timeoutMs] - Optional timeout in ms
  * @returns {Promise<boolean>} - Resolves true on success, rejects on error/timeout
  */
-function writeFile(port, filename, content, timeoutMs = DEFAULT_TIMEOUT) {
-  return new Promise((resolve, reject) => {
+function writeFile(port, filename, content, timeoutMs = null) {
+  return new Promise(async (resolve, reject) => {
     let ackReceived = false;
     let errorReceived = false;
     const allResponses = []; // Track all responses for debugging
-    console.log(`[serialFileIO] writeFile starting for ${filename}, timeout: ${timeoutMs}ms`);
+    
+    // Calculate dynamic timeout based on file size if not specified
+    const contentLength = typeof content === 'string' ? content.length : content.byteLength || content.length;
+    const fileSizeKB = Math.ceil(contentLength / 1024);
+    
+    // Enhanced timeout calculation: base + per-KB + large file bonus
+    let calculatedTimeout = DEFAULT_TIMEOUT + (fileSizeKB * TIMEOUT_PER_KB);
+    if (fileSizeKB > 10) {
+      calculatedTimeout += LARGE_FILE_BONUS; // Extra time for files > 10KB
+    }
+    
+    const finalTimeout = timeoutMs || calculatedTimeout;
+    
+    console.log(`[serialFileIO] writeFile starting for ${filename}`);
+    console.log(`[serialFileIO] File size: ${contentLength} bytes (${fileSizeKB} KB), timeout: ${finalTimeout}ms`);
     
     // Special handling for CircuitPython system files that trigger automatic reboot
-    const isSystemFile = filename === 'boot.py' || filename === 'code.py';
+    // Only applies when writing to root directory, not to updates folder
+    const isSystemFile = (filename === 'boot.py' || filename === 'code.py') && !filename.includes('/');
     
     if (isSystemFile) {
       console.log(`[serialFileIO] Writing system file ${filename} - CircuitPython will reboot immediately`);
     }
     
-    const actualTimeout = isSystemFile ? 1000 : timeoutMs; // Very short timeout for system files
+    const actualTimeout = isSystemFile ? 3000 : finalTimeout; // 3 second timeout for system files (increased from 1000ms)
     
     const timer = setTimeout(() => {
       if (!ackReceived && !errorReceived) {
@@ -185,13 +209,25 @@ function writeFile(port, filename, content, timeoutMs = DEFAULT_TIMEOUT) {
       allResponses.push(str.trim()); // Track all responses
       console.log(`[serialFileIO] writeFile received data for ${filename}:`, JSON.stringify(str));
       
+      // DEBUG: Check for any device response
+      if (str.includes('DEBUG:') || str.includes('📝') || str.includes('Starting write')) {
+        console.log(`[serialFileIO] DEBUG: Device acknowledged command:`, str.trim());
+      }
+      
       if (str.includes('✅ File') || str.includes('written')) {
         ackReceived = true;
         clearTimeout(timer);
         port.off('data', onData);
         console.log(`[serialFileIO] writeFile SUCCESS for ${filename}`);
         resolve(true);
-      } else if (str.includes('ERROR:') || str.includes('❌')) {
+      } else if ((str.includes('ERROR:') || str.includes('❌')) && 
+                 !str.includes('DEBUG: Line received:') && 
+                 !str.includes('DEBUG:') && 
+                 !str.trim().startsWith('print(') &&
+                 !str.includes('# ') &&
+                 !str.includes('"""') &&
+                 !str.includes("'''")) {
+        // Only treat as real error if not part of echoed code content
         errorReceived = true;
         clearTimeout(timer);
         port.off('data', onData);
@@ -206,9 +242,73 @@ function writeFile(port, filename, content, timeoutMs = DEFAULT_TIMEOUT) {
     port.on('data', onData);
     console.log(`[serialFileIO] Sending WRITEFILE command for ${filename}`);
     port.write(`WRITEFILE:${filename}\n`);
+    
+    // Add a small delay to let the device process the WRITEFILE command
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     console.log(`[serialFileIO] Sending content for ${filename} (${content.length} bytes)`);
-    port.write(content);
-    port.write('\nEND\n');
+    
+    // For very large files (>30KB), use chunk-based transmission to prevent memory allocation failures
+    if (fileSizeKB > 30) {
+      console.log(`[serialFileIO] Using chunk-based transmission for large file ${filename} (${fileSizeKB}KB)`);
+      
+      // Send content in smaller chunks to prevent device memory allocation failures
+      const chunkSize = 1024; // 1KB chunks to prevent memory issues
+      const chunks = [];
+      
+      for (let i = 0; i < content.length; i += chunkSize) {
+        chunks.push(content.slice(i, i + chunkSize));
+      }
+      
+      console.log(`[serialFileIO] Sending ${chunks.length} chunks of ~${chunkSize} bytes each for ${filename}`);
+      
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        port.write(chunk);
+        
+        // Add delay between chunks to allow device to process and write to storage
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms between chunks
+        
+        // Log progress every 10 chunks
+        if ((chunkIndex + 1) % 10 === 0 || chunkIndex === chunks.length - 1) {
+          console.log(`[serialFileIO] Sent chunk ${chunkIndex + 1}/${chunks.length} for ${filename}`);
+        }
+      }
+    } else {
+      // Send content line by line with delays to prevent overwhelming the device
+      const lines = content.split('\n');
+      console.log(`[serialFileIO] Sending ${lines.length} lines for ${filename}`);
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Send line with newline (except for last line if content didn't end with newline)
+        if (i < lines.length - 1 || content.endsWith('\n')) {
+          port.write(line + '\n');
+        } else {
+          port.write(line);
+        }
+        
+        // Add delay every 10 lines to give device time to process
+        if ((i + 1) % 10 === 0) {
+          // Enhanced delays: 75ms for large files (>10KB), 50ms for smaller files
+          const delayMs = fileSizeKB > 10 ? 75 : 50;
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          // Log progress for large files (50+ lines)
+          if (lines.length >= 50) {
+            console.log(`[serialFileIO] Sent ${i + 1}/${lines.length} lines for ${filename}`);
+          }
+        }
+      }
+    }
+    
+    // Ensure proper line ending before END command
+    if (!content.endsWith('\n')) {
+      port.write('\n');
+    }
+    
+    // Add a delay before sending END command
+    await new Promise(resolve => setTimeout(resolve, 100));
+    port.write('END\n');
     console.log(`[serialFileIO] writeFile commands sent for ${filename}`);
   });
 }
