@@ -1,132 +1,360 @@
-// Helper: Request device name from boot.py (for diagnostics, etc)
-function requestDeviceName(callback) {
-  if (!connectedPort) {
-    console.warn('[requestDeviceName] No connected port');
-    return callback(null);
+// ===== MANUAL DEVICE FILE LOADING FUNCTIONS =====
+// These functions allow users to manually load device files when needed,
+// avoiding automatic file reads that cause cycling behavior
+
+window.manuallyRefreshDeviceName = async function() {
+  const activeDevice = window.multiDeviceManager?.getActiveDevice();
+  if (!activeDevice || !activeDevice.isConnected) {
+    showToastError('No device connected');
+    return;
   }
-  let buffer = '';
-  connectedPort.write('READFILE:boot.py\n');
-  const onData = data => {
-    buffer += data.toString();
-    if (buffer.includes('END')) {
-      connectedPort.off('data', onData);
-      // Extract product name from boot.py (look for product="..." or product='...')
-      const match = buffer.match(/product\s*=\s*["']([^"']+)["']/);
-      if (match && match[1]) {
-        callback(match[1]);
-      } else {
-        callback(null);
+  
+  console.log('[manuallyRefreshDeviceName] Refreshing device name using direct command');
+  showToast('Refreshing device name...', 'info');
+  
+  requestDeviceNameDirect((deviceName) => {
+    if (deviceName && deviceName.trim()) {
+      console.log('[manuallyRefreshDeviceName] Got device name:', deviceName);
+      activeDevice.displayName = deviceName.trim();
+      activeDevice.nameNeedsRefresh = false;
+      
+      // Update UI
+      if (typeof window.updateActiveButtonText === 'function') {
+        window.updateActiveButtonText(activeDevice);
+      }
+      
+      // Update diagnostic modal if open
+      const diagnosticsModal = document.getElementById('diagnostics-modal');
+      if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+        setupDeviceInformation();
+      }
+      
+      showToastSuccess('Device name refreshed: ' + deviceName);
+    } else {
+      console.warn('[manuallyRefreshDeviceName] Failed to get device name');
+      showToastError('Failed to get device name');
+    }
+  });
+};
+
+window.manuallyLoadDeviceFiles = async function() {
+  const activeDevice = window.multiDeviceManager?.getActiveDevice();
+  if (!activeDevice || !activeDevice.isConnected) {
+    showToastError('No device connected');
+    return;
+  }
+  
+  console.log('[manuallyLoadDeviceFiles] Loading device files manually');
+  showToast('Loading device files...', 'info');
+  
+  try {
+    // Set loading state
+    window._deviceLoadingOverride = true;
+    if (typeof window.updateActiveButtonText === 'function') {
+      const selectorBtn = document.getElementById('deviceSelectorButton');
+      if (selectorBtn) {
+        selectorBtn.textContent = 'Loading device files...';
+        selectorBtn.style.background = '#f39c12';
+        selectorBtn.style.color = '#fff';
       }
     }
-  };
-  connectedPort.on('data', onData);
-}
-// --- Serial helper: Request device UID ---
-// Usage: requestDeviceUid(uid => { ... })
-function requestDeviceUid(callback) {
+    
+    // Load config.json
+    const configResult = await window.serialFileIO.readFile('config.json', 5000);
+    if (configResult) {
+      console.log('[manuallyLoadDeviceFiles] Loaded config.json');
+      activeDevice.config = configResult;
+      
+      // Apply config to UI
+      if (typeof applyConfig === 'function') {
+        applyConfig(configResult);
+      }
+    }
+    
+    // Load presets.json  
+    const presetsResult = await window.serialFileIO.readFile('presets.json', 5000);
+    if (presetsResult) {
+      console.log('[manuallyLoadDeviceFiles] Loaded presets.json');
+      activeDevice.presets = presetsResult;
+      
+      // Update presets dropdown
+      if (typeof populatePresetDropdown === 'function') {
+        populatePresetDropdown(presetsResult);
+      }
+    }
+    
+    // Load user_presets.json
+    const userPresetsResult = await window.serialFileIO.readFile('user_presets.json', 5000);
+    if (userPresetsResult) {
+      console.log('[manuallyLoadDeviceFiles] Loaded user_presets.json');
+      activeDevice.userPresets = userPresetsResult;
+      
+      // Update user presets dropdown
+      if (typeof populatePresetDropdown === 'function') {
+        populatePresetDropdown(userPresetsResult, true);
+      }
+    }
+    
+    showToastSuccess('Device files loaded successfully');
+    
+  } catch (error) {
+    console.error('[manuallyLoadDeviceFiles] Error loading files:', error);
+    showToastError('Failed to load device files: ' + error.message);
+  } finally {
+    // Clear loading state
+    window._deviceLoadingOverride = false;
+    if (typeof window.updateActiveButtonText === 'function') {
+      window.updateActiveButtonText(activeDevice);
+    }
+  }
+};
+
+// ===== OPTIMIZED DIRECT FIRMWARE COMMAND FUNCTIONS =====
+// These functions use the efficient READUID, READVERSION, READDEVICENAME commands
+// instead of reading entire files, eliminating the "cycling through files" behavior
+
+function requestDeviceFirmwareVersionDirect(callback) {
   if (!connectedPort) {
-    console.warn('[requestDeviceUid] No device connected.');
+    console.log('❌ No connected port for direct firmware version request');
+    return callback(null);
+  }
+  
+  // Prevent multiple simultaneous requests
+  if (requestDeviceFirmwareVersionDirect.inProgress) {
+    console.warn('[requestDeviceFirmwareVersionDirect] Request already in progress, skipping duplicate');
+    return callback(null);
+  }
+  
+  requestDeviceFirmwareVersionDirect.inProgress = true;
+  
+  console.log('📱 [requestDeviceFirmwareVersionDirect] Requesting device firmware version via READVERSION command');
+  
+  let buffer = '';
+  let timeoutId = null;
+  
+  const cleanup = () => {
+    serialListenerManager.removeListener(connectedPort, 'requestDeviceFirmwareVersionDirect');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    requestDeviceFirmwareVersionDirect.inProgress = false;
+  };
+  
+  const onData = data => {
+    buffer += data.toString();
+    console.log('📥 [requestDeviceFirmwareVersionDirect] Received data:', JSON.stringify(data.toString()));
+    
+    if (buffer.includes('END')) {
+      cleanup();
+      console.log('✅ [requestDeviceFirmwareVersionDirect] Found END marker, processing response');
+      console.log('📄 [requestDeviceFirmwareVersionDirect] Full buffer:', JSON.stringify(buffer));
+      
+      // Parse the VERSION response
+      const lines = buffer.split(/[\r\n]+/);
+      console.log('📋 [requestDeviceFirmwareVersionDirect] Split lines:', lines);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        console.log('🔍 [requestDeviceFirmwareVersionDirect] Checking line:', JSON.stringify(trimmed));
+        if (trimmed.startsWith('VERSION:')) {
+          const version = trimmed.split('VERSION:')[1].trim();
+          console.log('✅ [requestDeviceFirmwareVersionDirect] Device firmware version:', version);
+          callback(normalizeVersion(version));
+          return;
+        }
+      }
+      
+      // If no VERSION line found, fallback
+      console.warn('⚠️ [requestDeviceFirmwareVersionDirect] No VERSION line found in response');
+      callback(null);
+    }
+  };
+  
+  // Set timeout to prevent hanging
+  timeoutId = setTimeout(() => {
+    cleanup();
+    console.warn('[requestDeviceFirmwareVersionDirect] Timeout waiting for READVERSION response');
+    callback(null);
+  }, 5000); // Increased timeout for debugging
+  
+  // Use new listener manager and send command
+  serialListenerManager.addListener(connectedPort, 'requestDeviceFirmwareVersionDirect', onData);
+  console.log('📤 [requestDeviceFirmwareVersionDirect] Sending READVERSION command...');
+  connectedPort.write('READVERSION\n');
+}
+
+function requestDeviceUidDirect(callback) {
+  if (!connectedPort) {
+    console.warn('[requestDeviceUidDirect] No device connected.');
     callback(null);
     return;
   }
   
-  console.log('[requestDeviceUid] Setting up data listener and sending READUID command');
+  // Prevent multiple simultaneous requests
+  if (requestDeviceUidDirect.inProgress) {
+    console.warn('[requestDeviceUidDirect] Request already in progress, skipping duplicate');
+    return callback(null);
+  }
+  
+  requestDeviceUidDirect.inProgress = true;
+  
+  console.log('[requestDeviceUidDirect] Requesting UID via READUID command');
   
   let buffer = '';
   let timeoutId = null;
-  let flushTimeout = null;
+  
+  const cleanup = () => {
+    serialListenerManager.removeListener(connectedPort, 'requestDeviceUidDirect');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    requestDeviceUidDirect.inProgress = false;
+  };
   
   const onData = data => {
     buffer += data.toString();
-    console.log('[requestDeviceUid] Received data chunk:', JSON.stringify(data.toString()));
-    console.log('[requestDeviceUid] Full buffer so far:', JSON.stringify(buffer));
+    console.log('[requestDeviceUidDirect] Received data:', JSON.stringify(data.toString()));
     
-    // Check if we have the complete response (ends with END)
     if (buffer.includes('END')) {
       cleanup();
-      console.log('[requestDeviceUid] Found END marker, processing response');
+      console.log('[requestDeviceUidDirect] Found END marker, processing response');
+      console.log('[requestDeviceUidDirect] Full buffer:', JSON.stringify(buffer));
       
-      // Split by lines and look for the UID
+      // Split by lines and look for the UID (16-character hex string)
       const lines = buffer.split(/[\r\n]+/);
-      console.log('[requestDeviceUid] Response lines:', lines);
-      
+      console.log('[requestDeviceUidDirect] Split lines:', lines);
       for (const line of lines) {
         const trimmed = line.trim();
-        console.log('[requestDeviceUid] Processing line:', JSON.stringify(trimmed));
-        
+        console.log('[requestDeviceUidDirect] Checking line:', JSON.stringify(trimmed));
         // Check if it's a 16-character hex string (the UID)
         if (/^[0-9A-Fa-f]{16}$/.test(trimmed)) {
-          console.log('[requestDeviceUid] Found valid UID:', trimmed);
+          console.log('[requestDeviceUidDirect] Found valid UID:', trimmed);
           callback(trimmed);
           return;
         }
       }
       
       // If we get here, no valid UID was found
-      console.warn('[requestDeviceUid] No valid UID found in response lines:', lines);
+      console.warn('[requestDeviceUidDirect] No valid UID found in response');
       callback(null);
-      return;
-    }
-    
-    // Also handle case where UID comes on a single line without END
-    if (buffer.includes('\n')) {
-      const lines = buffer.split(/[\r\n]+/);
-      for (const line of lines) {
-        const trimmed = line.trim();
-        // Check if it's a 16-character hex string
-        if (/^[0-9A-Fa-f]{16}$/.test(trimmed)) {
-          cleanup();
-          console.log('[requestDeviceUid] Found UID on single line:', trimmed);
-          callback(trimmed);
-          return;
-        }
-      }
-    }
-  };
-  
-  const cleanup = () => {
-    connectedPort.off('data', onData);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
-    if (flushTimeout) {
-      clearTimeout(flushTimeout);
-      flushTimeout = null;
     }
   };
   
   // Set a timeout to avoid hanging forever
   timeoutId = setTimeout(() => {
     cleanup();
-    console.warn('[requestDeviceUid] Timeout waiting for UID response, buffer was:', JSON.stringify(buffer));
+    console.warn('[requestDeviceUidDirect] Timeout waiting for UID response');
     callback(null);
-  }, 5000); // 5 second timeout
+  }, 5000); // Increased timeout for debugging
   
-  // Try to flush any pending data first, then send the command
-  if (typeof connectedPort.flush === 'function') {
-    connectedPort.flush((err) => {
-      if (err) {
-        console.warn('[requestDeviceUid] Failed to flush buffer:', err);
-      } else {
-        console.log('[requestDeviceUid] Buffer flushed successfully');
+  // Use new listener manager and send command
+  serialListenerManager.addListener(connectedPort, 'requestDeviceUidDirect', onData);
+  console.log('[requestDeviceUidDirect] Sending READUID command...');
+  connectedPort.write('READUID\n');
+  console.log('[requestDeviceUidDirect] READUID command sent');
+}
+
+function requestDeviceNameDirect(callback) {
+  if (!connectedPort) {
+    console.warn('[requestDeviceNameDirect] No connected port');
+    return callback(null);
+  }
+  
+  // Prevent multiple simultaneous requests
+  if (requestDeviceNameDirect.inProgress) {
+    console.warn('[requestDeviceNameDirect] Request already in progress, skipping duplicate');
+    return callback(null);
+  }
+  
+  requestDeviceNameDirect.inProgress = true;
+  
+  let buffer = '';
+  let timeoutId = null;
+  
+  const cleanup = () => {
+    serialListenerManager.removeListener(connectedPort, 'requestDeviceNameDirect');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    requestDeviceNameDirect.inProgress = false;
+  };
+  
+  const onData = data => {
+    buffer += data.toString();
+    console.log('[requestDeviceNameDirect] Received data:', JSON.stringify(data.toString()));
+    
+    if (buffer.includes('END')) {
+      cleanup();
+      console.log('[requestDeviceNameDirect] Found END marker, processing response');
+      
+      // Split by lines and look for the device name
+      const lines = buffer.split(/[\r\n]+/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        // Skip empty lines, END marker, error messages, ACK responses, and UID-like strings
+        if (!trimmed || 
+            trimmed === 'END' ||
+            trimmed.startsWith('ERROR:') ||
+            trimmed.startsWith('ACK:') ||
+            /^[0-9A-Fa-f]{16}$/.test(trimmed)) { // Skip UID format strings
+          continue;
+        }
+        
+        // Additional validation: device names should be reasonable
+        if (trimmed.length > 50 || trimmed.includes('.json') || trimmed.includes('.py')) {
+          console.warn('[requestDeviceNameDirect] Skipping invalid device name format:', trimmed);
+          continue;
+        }
+        
+        // This should be the device name
+        console.log('[requestDeviceNameDirect] Found device name:', trimmed);
+        callback(trimmed);
+        return;
       }
       
-      // Small delay after flush, then send command
-      flushTimeout = setTimeout(() => {
-        connectedPort.on('data', onData);
-        connectedPort.write('READUID\n');
-        console.log('[requestDeviceUid] READUID command sent');
-      }, 100);
-    });
-  } else {
-    // No flush available, just send the command with a small delay
-    flushTimeout = setTimeout(() => {
-      connectedPort.on('data', onData);
-      connectedPort.write('READUID\n');
-      console.log('[requestDeviceUid] READUID command sent (no flush available)');
-    }, 100);
-  }
+      // If we get here, no valid device name was found
+      console.warn('[requestDeviceNameDirect] No valid device name found in response, buffer was:', JSON.stringify(buffer));
+      callback('Unknown Device');
+    }
+  };
+  
+  // Set a timeout to avoid hanging forever
+  timeoutId = setTimeout(() => {
+    cleanup();
+    console.warn('[requestDeviceNameDirect] Timeout waiting for device name response');
+    callback(null);
+  }, 3000); // Fast timeout
+  
+  // Use new listener manager and send command
+  serialListenerManager.addListener(connectedPort, 'requestDeviceNameDirect', onData);
+  connectedPort.write('READDEVICENAME\n');
+  console.log('[requestDeviceNameDirect] READDEVICENAME command sent');
+}
+
+// Make direct command functions globally available
+window.requestDeviceNameDirect = requestDeviceNameDirect;
+window.requestDeviceUidDirect = requestDeviceUidDirect;
+window.requestDeviceFirmwareVersionDirect = requestDeviceFirmwareVersionDirect;
+
+// ===== ORIGINAL FUNCTIONS =====
+
+// Helper: Request device name from firmware (for diagnostics, etc)
+function requestDeviceName(callback) {
+  console.log('🔄 [requestDeviceName] Redirecting to optimized direct command');
+  
+  // Use the new direct command function for better performance
+  requestDeviceNameDirect(callback);
+}
+
+// --- Serial helper: Request device UID ---
+// Usage: requestDeviceUid(uid => { ... })
+function requestDeviceUid(callback) {
+  console.log('🔄 [requestDeviceUid] Redirecting to optimized direct command');
+  
+  // Use the new direct command function for better performance
+  requestDeviceUidDirect(callback);
 }
 // Call this function from your color picker logic when a pressed color is changed
 function callPressedPreviewFromColorPicker(btnId) {
@@ -198,8 +426,9 @@ window.updateActiveButtonText = function(device) {
       selectorBtn.style.background = '#2ecc40';
       selectorBtn.style.color = '#222';
     } else {
-      selectorBtn.textContent = `Connected: ${name} : Please wait...`;
-      selectorBtn.style.background = '#f39c12';
+      // Show connected but indicate files need manual loading
+      selectorBtn.textContent = `Connected: ${name}`;
+      selectorBtn.style.background = '#3498db';
       selectorBtn.style.color = '#fff';
     }
     selectorBtn.style.boxShadow = 'none';
@@ -322,6 +551,18 @@ function initializeDeviceSelector() {
     }
     const connectedCount = devices.filter(d => d.isConnected).length;
     html += `<div style="margin-top:10px; font-size:0.95em; color:#ccc;">${connectedCount} connected${window.multiDeviceManager.activeDevice ? ` (${window.multiDeviceManager.activeDevice.getDisplayName ? window.multiDeviceManager.activeDevice.getDisplayName() : window.multiDeviceManager.activeDevice.displayName} active)` : ' (none active)'}</div>`;
+    
+    // Add manual control buttons for active device
+    if (window.multiDeviceManager.activeDevice && window.multiDeviceManager.activeDevice.isConnected) {
+      html += `<div style="margin-top:16px; padding-top:12px; border-top:1px solid #444;">`;
+      html += `<div style="font-size:0.9em; color:#aaa; margin-bottom:8px;">Active Device Controls:</div>`;
+      html += `<div style="display:flex; gap:6px; flex-wrap:wrap;">`;
+      html += `<button class="manual-refresh-name-btn" style="background:#3498db; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.85em;">Refresh Name</button>`;
+      html += `<button class="manual-load-files-btn" style="background:#27ae60; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.85em;">Load Files</button>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+    
     deviceList.innerHTML = html;
 
     // Add event listeners for buttons
@@ -421,6 +662,30 @@ function initializeDeviceSelector() {
         }
       };
     });
+    
+    // Manual refresh name button
+    deviceList.querySelectorAll('.manual-refresh-name-btn').forEach(btn => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        if (typeof window.manuallyRefreshDeviceName === 'function') {
+          await window.manuallyRefreshDeviceName();
+          // Refresh the device list to show updated name
+          buildDeviceList();
+        }
+      };
+    });
+    
+    // Manual load files button  
+    deviceList.querySelectorAll('.manual-load-files-btn').forEach(btn => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        if (typeof window.manuallyLoadDeviceFiles === 'function') {
+          await window.manuallyLoadDeviceFiles();
+          // Refresh the device list to show updated status
+          buildDeviceList();
+        }
+      };
+    });
   }
 
   async function refreshAndBuild() {
@@ -430,7 +695,25 @@ function initializeDeviceSelector() {
 
   if (opening) {
     refreshAndBuild();
-    window.__deviceSelectorRefresh.interval = setInterval(refreshAndBuild, 1000);
+    // Use adaptive scanning: faster when no devices connected, slower when connected
+    const getScanInterval = () => {
+      const connectedDevices = window.multiDeviceManager?.getConnectedDevices?.() || [];
+      return connectedDevices.length > 0 ? 5000 : 2000; // 5s when connected, 2s when disconnected
+    };
+    
+    const startAdaptiveScanning = () => {
+      if (window.__deviceSelectorRefresh.interval) {
+        clearInterval(window.__deviceSelectorRefresh.interval);
+      }
+      window.__deviceSelectorRefresh.interval = setInterval(refreshAndBuild, getScanInterval());
+    };
+    
+    startAdaptiveScanning();
+    
+    // Listen for device connection changes to adjust scan interval
+    window.multiDeviceManager.on('activeDeviceChanged', () => {
+      setTimeout(startAdaptiveScanning, 100); // Small delay to let connection settle
+    });
   } else {
     if (window.__deviceSelectorRefresh.interval) {
       clearInterval(window.__deviceSelectorRefresh.interval);
@@ -441,6 +724,72 @@ function initializeDeviceSelector() {
   // REMOVED: Refresh button event handler
 }
 const { SerialPort } = require('serialport');
+
+// Configure SerialPort to allow more event listeners to prevent memory leak warnings
+// This is necessary because we may have multiple async requests running simultaneously
+SerialPort.prototype.setMaxListeners(20);
+
+// Helper function to safely clean up existing data listeners before adding new ones
+// Serial listener management to prevent memory leaks
+const serialListenerManager = {
+  activeListeners: new Map(),
+  
+  addListener(port, listenerId, handler) {
+    if (!port) return;
+    
+    // Remove any existing listener with this ID
+    this.removeListener(port, listenerId);
+    
+    // Add the new listener
+    port.on('data', handler);
+    this.activeListeners.set(listenerId, { port, handler });
+    
+    console.log(`[SerialListener] Added listener '${listenerId}'. Total listeners: ${port.listenerCount('data')}`);
+    
+    // Warn if too many listeners
+    if (port.listenerCount('data') > 5) {
+      console.warn(`[SerialListener] WARNING: ${port.listenerCount('data')} data listeners active!`);
+    }
+  },
+  
+  removeListener(port, listenerId) {
+    const existing = this.activeListeners.get(listenerId);
+    if (existing && existing.port === port) {
+      port.off('data', existing.handler);
+      this.activeListeners.delete(listenerId);
+      console.log(`[SerialListener] Removed listener '${listenerId}'. Remaining: ${port.listenerCount('data')}`);
+    }
+  },
+  
+  removeAllListeners(port) {
+    if (!port) return;
+    
+    console.log(`[SerialListener] Removing all listeners. Current count: ${port.listenerCount('data')}`);
+    
+    // Remove all tracked listeners
+    for (const [listenerId, listener] of this.activeListeners.entries()) {
+      if (listener.port === port) {
+        port.off('data', listener.handler);
+        this.activeListeners.delete(listenerId);
+      }
+    }
+    
+    // Force remove any remaining listeners
+    port.removeAllListeners('data');
+    
+    console.log(`[SerialListener] All listeners removed. Final count: ${port.listenerCount('data')}`);
+  }
+};
+
+function cleanupSerialDataListeners(port, keepListeners = []) {
+  if (!port || !port.listenerCount) return;
+  
+  console.log(`[cleanupSerialDataListeners] DEPRECATED - Use serialListenerManager instead`);
+  
+  // Use new manager for cleanup
+  serialListenerManager.removeAllListeners(port);
+}
+
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -744,7 +1093,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
           if (match && typeof window.multiDeviceManager.connectDevice === 'function') {
             console.log('[rebootAndReload] Attempting to auto-connect to rebooted device:', match.id || match.path || match.getDisplayName?.());
             try {
-              await window.multiDeviceManager.connectDevice(match.id);
+              await window.multiDeviceManager.connectDevice(match.id, false); // Suppress toast during auto-reconnection after reboot
               // Wait a moment for connection to establish
               await new Promise(res => setTimeout(res, 300));
               activeDevice = window.multiDeviceManager.getActiveDevice?.();
@@ -1187,34 +1536,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     window.multiDeviceManager.on('activeDeviceChanged', (newDevice, previousDevice) => {
       if (newDevice && newDevice.isConnected) {
-        // Device reconnected, poll for firmware ready before reading config
-        if (newDevice.port) {
-          try {
-            waitForFirmwareReady(newDevice.port, 20, 300)
-              .then(() => {
-                newDevice.port.write('READFILE:config.json\n');
-                window.awaitingFile = 'config.json';
-                window.responseBuffers = window.responseBuffers || {};
-                window.responseBuffers[window.awaitingFile] = '';
-                console.log('[app.js][EVENT] Device reconnected, requested config.json');
-                
-                // Update device information in diagnostics if modal is open
-                setTimeout(() => {
-                  const diagnosticsModal = document.getElementById('diagnostics-modal');
-                  if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
-                    setupDeviceInformation();
-                    console.log('[app.js][EVENT] Updated device information in diagnostics modal');
-                  }
-                }, 1000); // Give time for config to load
-              })
-              .catch((err) => {
-                console.error('[app.js][EVENT] Firmware not ready after reconnect:', err);
-                showToast('Device reconnected but firmware not ready', 'warning');
-              });
-          } catch (err) {
-            console.error('[app.js][EVENT] Failed to request config.json after reconnect:', err);
-          }
+        // Skip automatic config reading if diagnostic setup is in progress
+        if (window.setupDeviceInformationInProgress) {
+          console.log('[app.js][EVENT] Skipping automatic config read - diagnostic setup in progress');
+          return;
         }
+        
+        // Only use direct firmware commands for basic device information
+        // File loading (config, presets) will be done manually by user request
+        console.log('[app.js][EVENT] Device connected - using direct commands only, no automatic file reading');
+        
+        // Update UI immediately with basic device info using direct commands
+        if (typeof window.updateActiveButtonText === 'function') {
+          window.updateActiveButtonText(newDevice);
+        }
+        
+        // Note: Config file loading will be done when user explicitly requests it
+        // through "Load Device Files" buttons or when opening specific functionality
+        
+        // Update device information in diagnostics if modal is open (using direct commands only)
+        setTimeout(() => {
+          const diagnosticsModal = document.getElementById('diagnostics-modal');
+          if (diagnosticsModal && diagnosticsModal.style.display === 'flex') {
+            setupDeviceInformation();
+            console.log('[app.js][EVENT] Updated device information in diagnostics modal using direct commands');
+          }
+          
+          // Clear automatic updater version cache after device reconnection
+          // This ensures fresh version detection after firmware updates
+          if (window.automaticUpdater && typeof window.automaticUpdater.clearVersionCache === 'function') {
+            window.automaticUpdater.clearVersionCache();
+            console.log('[app.js][EVENT] Cleared automatic updater version cache after device reconnection');
+          }
+        }, 500); // Shorter delay since we're not waiting for file reads
       }
       
       // Update device information immediately when active device changes
@@ -1350,13 +1704,13 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('[DEBUG] Polling device for whammy value');
       connectedPort.write("READWHAMMY\n");
     }, 100);
-    connectedPort?.on('data', whammyLiveHandler);
+    serialListenerManager.addListener(connectedPort, 'whammyLiveFeedback', whammyLiveHandler);
   }
 
   function stopWhammyLiveFeedback() {
     if (whammyLiveInterval) clearInterval(whammyLiveInterval);
     whammyLiveInterval = null;
-    connectedPort?.off('data', whammyLiveHandler);
+    serialListenerManager.removeListener(connectedPort, 'whammyLiveFeedback');
     lastWhammyValue = null;
     drawWhammyGraph();
   }
@@ -1791,6 +2145,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   multiDeviceManager.on('activeDeviceChanged', (newDevice, previousDevice) => {
     if (newDevice) {
+      // Clear all serial listeners from previous device if there was one
+      if (previousDevice && previousDevice.port) {
+        serialListenerManager.removeAllListeners(previousDevice.port);
+      }
+      
       // Set global connectedPort for legacy/compatibility and ensure window.connectedPort is always in sync
       if (newDevice.port) {
         connectedPort = newDevice.port;
@@ -1802,37 +2161,49 @@ document.addEventListener('DOMContentLoaded', () => {
       // Request device info for the newly active device
       console.log('🔄 Active device changed, requesting device info...');
       
+      // Throttle device info requests to prevent excessive commands
+      if (window._lastDeviceInfoRequest && (Date.now() - window._lastDeviceInfoRequest) < 1000) {
+        console.log('🔄 Device info request throttled');
+        return;
+      }
+      window._lastDeviceInfoRequest = Date.now();
+      
       setTimeout(() => {
         if (connectedPort) {
-          // Get device UID
+          // Get device UID first
           requestDeviceUid(uid => {
             console.log('📱 Device UID:', uid);
-          });
-          
-          // Get device name from boot.py
-          requestDeviceName(name => {
-            if (name && newDevice) {
-              newDevice.deviceName = name;
-              if (typeof updateDeviceList === 'function') updateDeviceList();
-              if (typeof updateDeviceSelector === 'function') updateDeviceSelector();
-              if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-                  if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-            if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-            if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-              console.log('📱 Device name from boot.py:', name);
-              
-              // Get the cleaned display name
-              const displayName = newDevice.getDisplayName();
-              
-              // Update footer device name
-              if (window.updateFooterDeviceName) window.updateFooterDeviceName();
-            }
+            
+            // Wait a moment before requesting device name to avoid command collision
+            setTimeout(() => {
+              if (connectedPort) {
+                // Get device name from boot.py
+                requestDeviceName(name => {
+                  if (name && newDevice) {
+                    newDevice.deviceName = name;
+                    console.log('📱 Device name from boot.py:', name);
+                    
+                    // Update UI elements
+                    if (typeof updateDeviceList === 'function') updateDeviceList();
+                    if (typeof updateDeviceSelector === 'function') updateDeviceSelector();
+                    if (window.updateFooterDeviceName) window.updateFooterDeviceName();
+                    
+                    // Note: Device files will be loaded automatically by multiDeviceManager
+                    // since ENABLE_AUTOMATIC_FILE_READING is now enabled
+                  }
+                });
+              }
+            }, 50); // Small delay to avoid command collision
           });
         }
-      }, 500); // Small delay to ensure port is ready
+      }, 50); // Reduced delay since we fixed the listener conflicts
     } else {
-      // No active device
+      // No active device - clear all listeners
+      if (connectedPort) {
+        serialListenerManager.removeAllListeners(connectedPort);
+      }
       connectedPort = null;
+      window.connectedPort = null;
       if (window.updateFooterDeviceName) window.updateFooterDeviceName();
     }
   });
@@ -1942,7 +2313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bootselPrompted = true;
             updateStatus('Controller detected in BOOTSEL mode', false);
             promptFirmwareFlash(driveLetter + ':\\');
-            break;
+            return; // Exit early when BOOTSEL device is found, don't resume scanning
           } else {
             console.log('❌ Content does not match RP2040 pattern');
           }
@@ -1953,6 +2324,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     console.log("🔍 BOOTSEL scan complete");
+    
+    // Resume multi-device scanning after BOOTSEL detection completes
+    if (window.multiDeviceManager && window.multiDeviceManager.resumeScanning) {
+      window.multiDeviceManager.resumeScanning();
+    }
   }
 
   setInterval(detectUnprogrammedController, 1000); // Changed from 3000 to 1000ms for better responsiveness
@@ -2158,7 +2534,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
               // Force connect to the device
               if (window.multiDeviceManager.connectDevice) {
-                await window.multiDeviceManager.connectDevice(device.id);
+                await window.multiDeviceManager.connectDevice(device.id, false); // Suppress toast during auto-reconnection after firmware flash
                 console.log("✅ Successfully connected to device after firmware flash");
                 
                 showToast("Controller rebooted and ready 🎉", "success");
@@ -2472,6 +2848,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Defensive: Only update color arrays, never overwrite required fields
       if (!originalConfig) {
+        // Skip automatic config reading if diagnostic setup is in progress
+        if (window.setupDeviceInformationInProgress) {
+          console.log('[applyUserPreset] Skipping config reload - diagnostic setup in progress');
+          customAlert('Diagnostic setup in progress. Please try again in a moment.');
+          return;
+        }
+        
         // Try to reload config from device
         if (window.connectedPort) {
           updateStatus('No config loaded, reloading from device...', false);
@@ -2749,132 +3132,57 @@ document.addEventListener('DOMContentLoaded', () => {
       return callback(null);
     }
     
-    // Skip firmware version request if file operations are in progress
-    if (window.multiDeviceManager && window.multiDeviceManager._fileOperationInProgress) {
-      console.log('📱 Skipping firmware version request - file operation in progress');
+    // Prevent multiple simultaneous requests
+    if (requestDeviceFirmwareVersion.inProgress) {
+      console.warn('[requestDeviceFirmwareVersion] Request already in progress, skipping duplicate');
       return callback(null);
     }
     
-    console.log('📱 Requesting device firmware version via READFILE:code.py');
-    console.log('📡 Connected port state:', {
-      path: connectedPort?.path,
-      isOpen: connectedPort?.isOpen,
-      readable: connectedPort?.readable,
-      writable: connectedPort?.writable
+    requestDeviceFirmwareVersion.inProgress = true;
+    
+    // Skip firmware version request if file operations are in progress
+    if (window.multiDeviceManager && window.multiDeviceManager._fileOperationInProgress) {
+      console.log('📱 Skipping firmware version request - file operation in progress');
+      requestDeviceFirmwareVersion.inProgress = false;
+      return callback(null);
+    }
+    
+    // Skip if automatic updater is currently running version detection
+    if (window.automaticUpdater && window.automaticUpdater._versionDetectionInProgress) {
+      console.log('📱 Skipping firmware version request - automatic updater version detection in progress');
+      requestDeviceFirmwareVersion.inProgress = false;
+      return callback(null);
+    }
+    
+    console.log('📱 Using optimized READVERSION command instead of file reading');
+    
+    // Use the new direct command function
+    requestDeviceFirmwareVersionDirect((version) => {
+      requestDeviceFirmwareVersion.inProgress = false;
+      console.log('✅ Got firmware version via direct command:', version);
+      callback(version);
     });
-    
-    let buffer = '';
-    console.log('📤 Sending READFILE:code.py command...');
-    connectedPort.write("READFILE:code.py\n");
-    
-    const onData = data => {
-      console.log('📥 Received data chunk:', data.toString().length, 'chars');
-      buffer += data.toString();
-      console.log('📥 Total buffer length so far:', buffer.length);
-      
-      if (buffer.includes('END')) {
-        console.log('✅ Received END marker, processing response...');
-        connectedPort.off('data', onData);
-        let codePy = buffer.replace(/END\s*$/, '');
-        
-        console.log('📄 Processed code.py content length:', codePy.length);
-        console.log('📄 Received code.py content (first 300 chars):', codePy.substring(0, 300));
-        console.log('📄 Last 200 chars:', codePy.substring(Math.max(0, codePy.length - 200)));
-        
-        // Extract firmware version from FIRMWARE_VERSIONS dictionary
-        // Look for pattern: "code.py": "2.1" 
-        console.log('🔍 Searching for FIRMWARE_VERSIONS with "code.py" key...');
-        const firmwareVersionsMatch = codePy.match(/FIRMWARE_VERSIONS\s*=\s*{[^}]*"code\.py"\s*:\s*"([^"]+)"/);
-        if (firmwareVersionsMatch) {
-          console.log('✅ Device firmware version extracted from FIRMWARE_VERSIONS:', firmwareVersionsMatch[1]);
-          callback(normalizeVersion(firmwareVersionsMatch[1]));
-          return;
-        }
-        
-        // Also try with single quotes
-        console.log('🔍 Searching for FIRMWARE_VERSIONS with single quotes...');
-        const firmwareVersionsMatchSingle = codePy.match(/FIRMWARE_VERSIONS\s*=\s*{[^}]*'code\.py'\s*:\s*'([^']+)'/);
-        if (firmwareVersionsMatchSingle) {
-          console.log('✅ Device firmware version extracted from FIRMWARE_VERSIONS (single quotes):', firmwareVersionsMatchSingle[1]);
-          callback(normalizeVersion(firmwareVersionsMatchSingle[1]));
-          return;
-        }
-        
-        // Fallback 1: Look for direct __version__ in code.py
-        console.log('🔍 Searching for __version__ variable...');
-        const versionMatch = codePy.match(/__version__\s*=\s*["']([^"']+)["']/);
-        if (versionMatch) {
-          console.log('✅ Device firmware version extracted from __version__:', versionMatch[1]);
-          callback(normalizeVersion(versionMatch[1]));
-          return;
-        }
-        
-        // Fallback 2: Look for any version pattern in the file
-        console.log('🔍 Searching for generic version pattern...');
-        const anyVersionMatch = codePy.match(/version\s*[:=]\s*["']([^"']+)["']/i);
-        if (anyVersionMatch) {
-          console.log('✅ Device firmware version extracted from generic pattern:', anyVersionMatch[1]);
-          callback(normalizeVersion(anyVersionMatch[1]));
-          return;
-        }
-        
-        console.log('⚠️ No firmware version found in device code.py');
-        console.log('📄 Full code.py content for debugging:');
-        console.log('-----START CODE.PY DEBUG-----');
-        console.log(codePy);
-        console.log('-----END CODE.PY DEBUG-----');
-        
-        // Try searching for any version-like patterns
-        console.log('🔍 Searching for any version-like patterns...');
-        const versionPatterns = [
-          /([0-9]+\.[0-9]+(?:\.[0-9]+)?)/g,
-          /"([^"]*[0-9]+\.[0-9]+[^"]*)"/g,
-          /'([^']*[0-9]+\.[0-9]+[^']*)'/g
-        ];
-        
-        versionPatterns.forEach((pattern, index) => {
-          const matches = [...codePy.matchAll(pattern)];
-          console.log(`🎯 Pattern ${index + 1} (${pattern.toString()}) found ${matches.length} matches:`, matches.map(m => m[1] || m[0]));
-        });
-        
-        callback(null);
-      }
-    };
-    connectedPort.on('data', onData);
+    return; // Exit early since we're using the direct command
   }
 
   function requestDetailedFirmwareVersions(callback) {
-    // Get detailed version information for all firmware components
-    if (!connectedPort) return callback(null);
-    let buffer = '';
-    connectedPort.write("READFILE:code.py\n");
-    const onData = data => {
-      buffer += data.toString();
-      if (buffer.includes('END')) {
-        connectedPort.off('data', onData);
-        let codePy = buffer.replace(/END\s*$/, '');
-        
-        // Extract the entire FIRMWARE_VERSIONS dictionary
-        const firmwareVersionsMatch = codePy.match(/FIRMWARE_VERSIONS\s*=\s*({[^}]+})/);
-        if (firmwareVersionsMatch) {
-          try {
-            // Parse the dictionary (convert Python dict syntax to JSON)
-            let versionsStr = firmwareVersionsMatch[1]
-              .replace(/'/g, '"')  // Convert single quotes to double quotes
-              .replace(/(\w+):/g, '"$1":');  // Quote unquoted keys
-            
-            const versions = JSON.parse(versionsStr);
-            callback(versions);
-          } catch (e) {
-            console.error('Error parsing firmware versions:', e);
-            callback(null);
-          }
-        } else {
-          callback(null);
-        }
+    console.log('🔄 [requestDetailedFirmwareVersions] Using optimized READVERSION command instead of file reading');
+    
+    // Use the direct version command instead of reading code.py file
+    requestDeviceFirmwareVersionDirect((version) => {
+      if (version) {
+        // Return version info in the expected format
+        const versionInfo = {
+          main: version,
+          boot: version, // Assume same version for all components
+          gamepad: version,
+          hardware: version
+        };
+        callback(versionInfo);
+      } else {
+        callback(null);
       }
-    };
-    connectedPort.on('data', onData);
+    });
   }
 
   function getAppVersion() {
@@ -4725,11 +5033,40 @@ if (window.multiDeviceManager) {
     window.startLedTest = startLedTest;
   }
   
+  // Add guard to prevent multiple simultaneous calls
+  let setupDeviceInformationInProgress = false;
+  let pendingAsyncRequests = 0;
+  
+  function resetSetupDeviceInformationGuard() {
+    if (pendingAsyncRequests <= 0) {
+      setupDeviceInformationInProgress = false;
+      window.setupDeviceInformationInProgress = false;
+      console.log('🔧 setupDeviceInformation guard flag reset (all async operations complete)');
+    } else {
+      console.log('🔧 Waiting for', pendingAsyncRequests, 'async operations to complete before resetting guard');
+    }
+  }
+  
   function setupDeviceInformation() {
-    console.log('🔧 Setting up device information...');
-    console.log('🔌 Connected port status:', !!connectedPort);
-    console.log('🔌 Window connected port status:', !!window.connectedPort);
-    console.log('🔌 Active device:', window.multiDeviceManager?.getActiveDevice());
+    // Prevent multiple simultaneous calls
+    if (setupDeviceInformationInProgress) {
+      console.log('🔧 setupDeviceInformation already in progress, skipping duplicate call');
+      return;
+    }
+    
+    setupDeviceInformationInProgress = true;
+    window.setupDeviceInformationInProgress = true;
+    
+    // Shorter failsafe timeout since we're using direct commands
+    setTimeout(() => {
+      if (setupDeviceInformationInProgress) {
+        console.warn('🔧 setupDeviceInformation guard reset by failsafe timeout');
+        setupDeviceInformationInProgress = false;
+        window.setupDeviceInformationInProgress = false;
+      }
+    }, 5000); // Reduced to 5 seconds since direct commands are fast
+    
+    console.log('🔧 Setting up device information using optimized direct commands...');
     
     // Get the device information elements
     const deviceNameElement = document.getElementById('diag-device-name');
@@ -4744,8 +5081,6 @@ if (window.multiDeviceManager) {
       const appVersion = getAppVersion();
       appVersionElement.textContent = `App Version: ${appVersion}`;
       console.log('✅ Set app version to:', appVersion);
-    } else {
-      console.warn('⚠️ App version element not found in DOM');
     }
     
     // Update presets version
@@ -4753,8 +5088,6 @@ if (window.multiDeviceManager) {
       const presetsVersion = getPresetsVersion();
       presetsVersionElement.textContent = presetsVersion;
       console.log('✅ Set presets version to:', presetsVersion);
-    } else {
-      console.warn('⚠️ Presets version element not found');
     }
     
     // Always show embedded firmware version (doesn't require device connection)
@@ -4762,322 +5095,112 @@ if (window.multiDeviceManager) {
       const embeddedVersion = getEmbeddedFirmwareVersion();
       embeddedFirmwareElement.textContent = embeddedVersion;
       console.log('✅ Set embedded firmware version to:', embeddedVersion);
-    } else {
-      console.warn('⚠️ Embedded firmware version element not found');
     }
     
     // Get active device from multi-device manager
     const activeDevice = window.multiDeviceManager?.getActiveDevice();
     
-    console.log('🔌 Active device details:', activeDevice);
-    
-    if (!activeDevice || !activeDevice.isConnected) {
+    if (!activeDevice || !activeDevice.isConnected || !connectedPort) {
       console.log('🔌 No active device or device not connected');
-      if (deviceNameElement) {
-        deviceNameElement.textContent = 'No device connected';
-        console.log('✅ Set device name to: No device connected');
-      }
-      if (deviceUidElement) {
-        deviceUidElement.textContent = '-';
-        console.log('✅ Set device UID to: -');
-      }
-      if (deviceFirmwareElement) {
-        deviceFirmwareElement.textContent = '-';
-        console.log('✅ Set device firmware version to: -');
-      }
+      if (deviceNameElement) deviceNameElement.textContent = 'No device connected';
+      if (deviceUidElement) deviceUidElement.textContent = '-';
+      if (deviceFirmwareElement) deviceFirmwareElement.textContent = '-';
+      
+      setupDeviceInformationInProgress = false;
+      window.setupDeviceInformationInProgress = false;
       return;
     }
     
-    // Use cached device data from active device if available
-    console.log('🔌 Active device config:', activeDevice.config);
-    console.log('🔌 Active device presets:', activeDevice.presets);
-    console.log('🔌 Active device userPresets:', activeDevice.userPresets);
+    console.log('🔌 Using sequential direct commands to prevent serial collisions');
     
-    // Update device name with better fallback logic
-    let deviceName = 'Unknown Device';
+    // Execute commands sequentially to prevent serial collision issues
     
-    // First try to get from config.device_name
-    if (activeDevice.config && activeDevice.config.device_name) {
-      deviceName = activeDevice.config.device_name;
-      console.log('📱 Device name from config.device_name:', deviceName);
+    // === Device Name (READDEVICENAME) ===
+    if (deviceNameElement) {
+      deviceNameElement.textContent = 'Loading...';
       
-      if (deviceNameElement) {
-        deviceNameElement.textContent = deviceName;
-        console.log('✅ Set device name to:', deviceName);
-      }
-    } 
-    // Then try boot.py product name (cached)
-    else if (activeDevice.deviceName) {
-      deviceName = activeDevice.deviceName;
-      console.log('📱 Device name from cached deviceName:', deviceName);
-      
-      if (deviceNameElement) {
-        deviceNameElement.textContent = deviceName;
-        console.log('✅ Set device name to:', deviceName);
-      }
-    } 
-    // If no cached name, try to request it from device
-    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
-      deviceName = 'Requesting...';
-      if (deviceNameElement) {
-        deviceNameElement.textContent = deviceName;
-        console.log('📱 Requesting device name from boot.py...');
-      }
-      
-      // Request device name from boot.py
-      requestDeviceName((name) => {
+      requestDeviceNameDirect((name) => {
         if (name && deviceNameElement) {
           deviceNameElement.textContent = name;
-          console.log('✅ Updated device name from boot.py to:', name);
-          
-          // Cache the name in the active device
-          if (activeDevice) {
-            activeDevice.deviceName = name;
-          }
+          console.log('✅ Device name:', name);
+          // Cache in active device
+          if (activeDevice) activeDevice.deviceName = name;
         } else if (deviceNameElement) {
-          // Fallback to other sources
+          // Fallback to display name or port info
           const fallbackName = activeDevice.displayName || 
                               (activeDevice.portInfo && activeDevice.portInfo.friendlyName) || 
                               'Unknown Device';
           deviceNameElement.textContent = fallbackName;
-          console.log('⚠️ Could not get device name from boot.py, using fallback:', fallbackName);
+          console.log('⚠️ Using fallback device name:', fallbackName);
         }
-      });
-    }
-    // Finally try other fallback sources
-    else {
-      deviceName = activeDevice.displayName || 
-                  (activeDevice.portInfo && activeDevice.portInfo.friendlyName) || 
-                  'Unknown Device';
-      console.log('📱 Device name from fallback sources:', deviceName);
-      
-      if (deviceNameElement) {
-        deviceNameElement.textContent = deviceName;
-        console.log('✅ Set device name to:', deviceName);
-      }
-    }
-    
-    // Update device UID with better fallback logic
-    let deviceUid = 'Unknown';
-    
-    // First try to get from config.device_uid
-    if (activeDevice.config && activeDevice.config.device_uid) {
-      deviceUid = activeDevice.config.device_uid;
-      console.log('📱 Device UID from config.device_uid:', deviceUid);
-      
-      if (deviceUidElement) {
-        deviceUidElement.textContent = deviceUid;
-        console.log('✅ Set device UID to:', deviceUid);
-      }
-    }
-    // Then try cached UID
-    else if (activeDevice.uid) {
-      deviceUid = activeDevice.uid;
-      console.log('📱 Device UID from cached uid:', deviceUid);
-      
-      if (deviceUidElement) {
-        deviceUidElement.textContent = deviceUid;
-        console.log('✅ Set device UID to:', deviceUid);
-      }
-    }
-    // If no cached UID, try to request it from device (with delay for robustness)
-    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
-      deviceUid = 'Requesting...';
-      if (deviceUidElement) {
-        deviceUidElement.textContent = deviceUid;
-        console.log('📱 Requesting device UID...');
-      }
-      
-      // Add a small delay to avoid conflicts with other serial operations
-      setTimeout(() => {
-        // Double-check the connection is still valid before making the request
-        if (connectedPort && connectedPort.readable && connectedPort.writable && deviceUidElement) {
-          console.log('📱 Making delayed UID request...');
-          requestDeviceUid((uid) => {
+        
+        // === Device UID (READUID) - Sequential after device name ===
+        if (deviceUidElement) {
+          deviceUidElement.textContent = 'Loading...';
+          
+          requestDeviceUidDirect((uid) => {
             if (uid && deviceUidElement) {
               deviceUidElement.textContent = uid;
-              console.log('✅ Updated device UID from device to:', uid);
-              
-              // Cache the UID in the active device
-              if (activeDevice) {
-                activeDevice.uid = uid;
-              }
+              console.log('✅ Device UID:', uid);
+              // Cache in active device
+              if (activeDevice) activeDevice.uid = uid;
             } else if (deviceUidElement) {
-              // Improved fallback that strictly avoids COM ports
+              // Safe fallback that avoids COM port paths
               let fallbackUid = 'Unknown';
-              
-              // Try port serial number first if it doesn't look like a path
               if (activeDevice.portInfo && activeDevice.portInfo.serialNumber && 
-                  !activeDevice.portInfo.serialNumber.includes('&') &&
                   !activeDevice.portInfo.serialNumber.includes('COM') &&
-                  !activeDevice.portInfo.serialNumber.includes('\\')) {
+                  !activeDevice.portInfo.serialNumber.includes('&') &&
+                  activeDevice.portInfo.serialNumber.length > 4) {
                 fallbackUid = activeDevice.portInfo.serialNumber;
               }
-              // Try device ID only if it doesn't look like a COM port or path
-              else if (activeDevice.id && 
-                       !activeDevice.id.includes('COM') && 
-                       !activeDevice.id.includes('&') &&
-                       !activeDevice.id.includes('\\') &&
-                       activeDevice.id.length > 4) { // Avoid short generic IDs
-                fallbackUid = activeDevice.id;
-              }
-              
               deviceUidElement.textContent = fallbackUid;
-              console.log('⚠️ Could not get device UID from device, using fallback:', fallbackUid);
+              console.log('⚠️ Using fallback UID:', fallbackUid);
+            }
+            
+            // === Device Firmware Version (READVERSION) - Sequential after UID ===
+            if (deviceFirmwareElement) {
+              deviceFirmwareElement.textContent = 'Loading...';
+              // Reset any previous styling
+              deviceFirmwareElement.style.color = '';
+              deviceFirmwareElement.style.fontWeight = '';
+              
+              requestDeviceFirmwareVersionDirect((version) => {
+                if (version && deviceFirmwareElement) {
+                  const normalizedVersion = normalizeVersion(version);
+                  deviceFirmwareElement.textContent = normalizedVersion;
+                  console.log('✅ Device firmware version:', normalizedVersion);
+                  
+                  // Cache in active device
+                  if (activeDevice) activeDevice.firmwareVersion = normalizedVersion;
+                  
+                  setupDeviceInformationInProgress = false;
+                  window.setupDeviceInformationInProgress = false;
+                  console.log('✅ All device information operations completed');
+                } else if (deviceFirmwareElement) {
+                  console.log('⚠️ Could not determine firmware version');
+                  deviceFirmwareElement.textContent = 'Unknown';
+                  setupDeviceInformationInProgress = false;
+                  window.setupDeviceInformationInProgress = false;
+                  console.log('✅ All device information operations completed');
+                }
+              });
+            } else {
+              setupDeviceInformationInProgress = false;
+              window.setupDeviceInformationInProgress = false;
+              console.log('✅ All device information operations completed');
             }
           });
         } else {
-          console.log('📱 Connection lost before UID request could be made');
-          if (deviceUidElement) {
-            deviceUidElement.textContent = 'Unknown';
-          }
-        }
-      }, 500); // 500ms delay to let other operations complete
-    }
-    // Finally try fallback sources (but strictly avoid COM port paths)
-    else {
-      // Try port serial number first if it doesn't look like a path or COM port
-      if (activeDevice.portInfo && activeDevice.portInfo.serialNumber && 
-          !activeDevice.portInfo.serialNumber.includes('&') &&
-          !activeDevice.portInfo.serialNumber.includes('COM') &&
-          !activeDevice.portInfo.serialNumber.includes('\\') &&
-          activeDevice.portInfo.serialNumber.length > 4) {
-        deviceUid = activeDevice.portInfo.serialNumber;
-      }
-      // Try device ID only if it clearly doesn't look like a COM port or path
-      else if (activeDevice.id && 
-               !activeDevice.id.includes('COM') && 
-               !activeDevice.id.includes('&') &&
-               !activeDevice.id.includes('\\') &&
-               !activeDevice.id.startsWith('COM') &&
-               activeDevice.id.length > 4) { // Avoid short generic IDs
-        deviceUid = activeDevice.id;
-      }
-      // Last resort - show Unknown rather than COM port
-      else {
-        deviceUid = 'Unknown';
-      }
-      
-      console.log('📱 Device UID from fallback sources:', deviceUid);
-      
-      if (deviceUidElement) {
-        deviceUidElement.textContent = deviceUid;
-        console.log('✅ Set device UID to:', deviceUid);
-      }
-    }
-    
-    // Update firmware version with better fallback logic
-    let firmwareVersion = 'Unknown';
-    
-    // First try to get from config.firmware_version  
-    if (activeDevice.config && activeDevice.config.firmware_version) {
-      firmwareVersion = normalizeVersion(activeDevice.config.firmware_version);
-      console.log('📱 Firmware version from config.firmware_version:', firmwareVersion);
-    }
-    // Then try cached firmwareVersion
-    else if (activeDevice.firmwareVersion) {
-      firmwareVersion = normalizeVersion(activeDevice.firmwareVersion);
-      console.log('📱 Firmware version from cached firmwareVersion:', firmwareVersion);
-    }
-    // If still no version, try to request it if we have a connection
-    else if (connectedPort && connectedPort.readable && connectedPort.writable) {
-      firmwareVersion = 'Requesting...';
-      console.log('📱 Requesting firmware version from device...');
-      
-      // Try to get fresh firmware version from device
-      requestDeviceFirmwareVersion((version) => {
-        if (version && deviceFirmwareElement) {
-          const normalizedVersion = normalizeVersion(version);
-          deviceFirmwareElement.textContent = normalizedVersion;
-          console.log('✅ Updated firmware version from device to:', normalizedVersion);
-          
-          // Compare with embedded firmware version
-          const embeddedVersion = getEmbeddedFirmwareVersion();
-          if (embeddedVersion !== '-' && embeddedVersion !== 'Unable to read version') {
-            
-            // Helper function to compare version strings (returns true if v1 < v2)
-            const isVersionLower = (v1, v2) => {
-              // Remove 'v' prefix and split into parts
-              const cleanV1 = v1.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-              const cleanV2 = v2.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-              
-              // Pad arrays to same length
-              const maxLength = Math.max(cleanV1.length, cleanV2.length);
-              while (cleanV1.length < maxLength) cleanV1.push(0);
-              while (cleanV2.length < maxLength) cleanV2.push(0);
-              
-              // Compare each segment
-              for (let i = 0; i < maxLength; i++) {
-                if (cleanV1[i] < cleanV2[i]) return true;
-                if (cleanV1[i] > cleanV2[i]) return false;
-              }
-              return false; // Versions are equal
-            };
-            
-            if (isVersionLower(normalizedVersion, embeddedVersion)) {
-              deviceFirmwareElement.style.color = '#e74c3c'; // Red text for outdated firmware
-              deviceFirmwareElement.style.fontWeight = 'bold';
-              console.log('⚠️ Device firmware is outdated:', normalizedVersion, 'vs embedded:', embeddedVersion);
-            } else {
-              deviceFirmwareElement.style.color = ''; // Reset to default color
-              deviceFirmwareElement.style.fontWeight = '';
-              console.log('✅ Device firmware is up to date:', normalizedVersion, 'vs embedded:', embeddedVersion);
-            }
-          }
-          
-          // Cache the version in the active device
-          if (activeDevice) {
-            activeDevice.firmwareVersion = normalizedVersion;
-          }
+          setupDeviceInformationInProgress = false;
+          window.setupDeviceInformationInProgress = false;
+          console.log('✅ All device information operations completed');
         }
       });
+    } else {
+      setupDeviceInformationInProgress = false;
+      window.setupDeviceInformationInProgress = false;
+      console.log('✅ All device information operations completed');
     }
-    
-    if (deviceFirmwareElement) {
-      deviceFirmwareElement.textContent = firmwareVersion;
-      console.log('✅ Set firmware version to:', firmwareVersion);
-      
-      // Compare device firmware version with embedded firmware version
-      const embeddedVersion = getEmbeddedFirmwareVersion();
-      if (firmwareVersion !== '-' && firmwareVersion !== 'Unknown' && firmwareVersion !== 'Requesting...' && 
-          embeddedVersion !== '-' && embeddedVersion !== 'Unable to read version') {
-        
-        // Helper function to compare version strings (returns true if v1 < v2)
-        const isVersionLower = (v1, v2) => {
-          // Remove 'v' prefix and split into parts
-          const cleanV1 = v1.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-          const cleanV2 = v2.replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-          
-          // Pad arrays to same length
-          const maxLength = Math.max(cleanV1.length, cleanV2.length);
-          while (cleanV1.length < maxLength) cleanV1.push(0);
-          while (cleanV2.length < maxLength) cleanV2.push(0);
-          
-          // Compare each segment
-          for (let i = 0; i < maxLength; i++) {
-            if (cleanV1[i] < cleanV2[i]) return true;
-            if (cleanV1[i] > cleanV2[i]) return false;
-          }
-          return false; // Versions are equal
-        };
-        
-        if (isVersionLower(firmwareVersion, embeddedVersion)) {
-          deviceFirmwareElement.style.color = '#e74c3c'; // Red text for outdated firmware
-          deviceFirmwareElement.style.fontWeight = 'bold';
-          console.log('⚠️ Device firmware is outdated:', firmwareVersion, 'vs embedded:', embeddedVersion);
-        } else {
-          deviceFirmwareElement.style.color = ''; // Reset to default color
-          deviceFirmwareElement.style.fontWeight = '';
-          console.log('✅ Device firmware is up to date:', firmwareVersion, 'vs embedded:', embeddedVersion);
-        }
-      } else {
-        // Reset styling for invalid/placeholder versions
-        deviceFirmwareElement.style.color = '';
-        deviceFirmwareElement.style.fontWeight = '';
-      }
-    }
-    
-    console.log('✅ Device information setup completed');
   }
 
   // Global polling variables
@@ -6080,10 +6203,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (updateButton) {
       console.log("🔧 [App] Setting up check-for-updates button...");
       // Clear any existing event listeners by cloning the node
-      const newUpdateButton = updateButton.cloneNode(true);
-      updateButton.parentNode.replaceChild(newUpdateButton, updateButton);
+      let targetButton = updateButton;
+      if (updateButton.parentNode) {
+        const newUpdateButton = updateButton.cloneNode(true);
+        updateButton.parentNode.replaceChild(newUpdateButton, updateButton);
+        targetButton = newUpdateButton;
+      } else {
+        console.warn("🔍 [App] updateButton has no parent node, cannot replace. Using original button.");
+      }
       
-      newUpdateButton.addEventListener('click', async () => {
+      targetButton.addEventListener('click', async () => {
         console.log("🔍 [App] CHECK FOR UPDATES BUTTON CLICKED!");
         
         console.log("🔍 [App] window.automaticUpdater type:", typeof window.automaticUpdater);

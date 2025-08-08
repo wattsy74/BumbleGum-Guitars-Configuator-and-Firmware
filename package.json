@@ -1,7 +1,7 @@
 {
   "name": "bgg-configurator",
   "productName": "BumbleGum Guitars Configurator",
-  "version": "3.0.0",
+  "version": "3.9.15",
   "main": "main.js",
   "description": "BumbleGum Guitars Configurator",
   "author": "Martyn L. Watts",
