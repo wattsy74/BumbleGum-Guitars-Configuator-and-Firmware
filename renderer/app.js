@@ -4110,8 +4110,6 @@ if (window.multiDeviceManager) {
     const buttonConfigModal = document.getElementById('button-config-modal');
     // Remove reference to bottom cancel button
     // const buttonConfigCancel = document.getElementById('button-config-cancel');
-    const buttonConfigTableLeftBody = document.querySelector('#button-config-table-left');
-    const buttonConfigTableRightBody = document.querySelector('#button-config-table-right');
     const buttonInputs = [
       { name: 'Green Fret', key: 'GREEN_FRET' },
       { name: 'Red Fret', key: 'RED_FRET' },
@@ -4162,6 +4160,12 @@ if (window.multiDeviceManager) {
 
     function populateButtonConfigTable(config) {
       console.log('populateButtonConfigTable called with config:', config);
+      
+      // Query elements dynamically each time
+      const buttonConfigTableLeftBody = document.querySelector('#button-config-table-left');
+      const buttonConfigTableRightBody = document.querySelector('#button-config-table-right');
+      const modalFooter = buttonConfigModal.querySelector('div[style*="justify-content:center"]');
+      
       console.log('buttonConfigTableLeftBody:', buttonConfigTableLeftBody);
       console.log('buttonConfigTableRightBody:', buttonConfigTableRightBody);
       
@@ -4376,15 +4380,21 @@ if (window.multiDeviceManager) {
     let pinStatusInterval = null;
     let pinStatusMap = {};
     function startPinStatusPolling(config) {
-      if (!connectedPort || !config) return;
+      if (!connectedPort || !config) {
+        console.log('Cannot start pin status polling: no port or config');
+        return;
+      }
       stopPinStatusPolling();
       const keys = buttonInputs.map(b => b.key);
+      console.log('Starting pin status polling for keys:', keys);
       pinStatusInterval = setInterval(() => {
         keys.forEach(key => {
+          console.log(`Sending READPIN:${key}`);
           connectedPort.write(`READPIN:${key}\n`);
         });
       }, 250);
       connectedPort.on('data', pinStatusHandler);
+      console.log('Pin status polling started');
     }
 
     function stopPinStatusPolling() {
@@ -4397,32 +4407,42 @@ if (window.multiDeviceManager) {
 
     function pinStatusHandler(data) {
       const str = data.toString();
+      console.log('Pin status data received:', str);
+      
       // Parse PIN:<key>:<val> responses
       const pinMatch = str.match(/PIN:([A-Z_]+):(\d+)/);
       if (pinMatch) {
         const key = pinMatch[1];
         const val = pinMatch[2];
+        console.log(`Pin status update: ${key} = ${val}`);
         pinStatusMap[key] = val;
         updatePinStatusUI();
       }
     }
 
     function updatePinStatusUI() {
+      console.log('Updating pin status UI, pinStatusMap:', pinStatusMap);
       buttonInputs.forEach(input => {
         const key = input.key;
         const status = pinStatusMap[key];
         const box = document.querySelector(`#button-config-table-left .pin-status-box[data-key='${key}'], #button-config-table-right .pin-status-box[data-key='${key}']`);
+        console.log(`Looking for box with key: ${key}, status: ${status}, found box:`, box);
         if (box) {
           if (status === '1') {
             box.style.background = '#ffe066';
             box.style.borderColor = '#ffe066';
+            console.log(`Set ${key} box to pressed (yellow)`);
           } else if (status === '0') {
             box.style.background = '#111';
             box.style.borderColor = '#ffe066';
+            console.log(`Set ${key} box to not pressed (dark)`);
           } else {
             box.style.background = '#333';
             box.style.borderColor = '#bbb';
+            console.log(`Set ${key} box to unknown status (gray)`);
           }
+        } else {
+          console.log(`Could not find box for key: ${key}`);
         }
       });
     }
