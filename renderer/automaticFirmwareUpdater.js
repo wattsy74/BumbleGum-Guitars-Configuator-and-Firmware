@@ -865,6 +865,9 @@ class AutomaticFirmwareUpdater {
             <p style="margin: 15px 0;"><strong>Current:</strong> ${currentVersionDisplay}</p>
             <p style="margin: 15px 0;"><strong>Available:</strong> ${remoteVersionDisplay}</p>
             <p style="margin: 15px 0; font-size: 14px; color: #ccc;">${this.remoteManifest.release_notes || 'New firmware version available'}</p>
+            <div style="background: #ff5722; color: white; padding: 12px; border-radius: 4px; margin: 20px 0; font-size: 13px;">
+                <strong>⚠️ WARNING:</strong> Do not disconnect or power off the device during the firmware update process. Interrupting the update may render your device unusable and require manual recovery.
+            </div>
         `;
         
         // Create buttons
@@ -1017,6 +1020,10 @@ class AutomaticFirmwareUpdater {
             progressModal.innerHTML = `
                 <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center; min-width: 400px;">
                     <h3 style="margin-top: 0; color: #4CAF50;">🚀 Updating Firmware to v${this.remoteManifest.firmware_version}</h3>
+                    <div style="background: #ff5722; color: white; padding: 10px; border-radius: 4px; margin: 15px 0; font-size: 12px;">
+                        <strong>⚠️ DO NOT DISCONNECT DEVICE</strong><br>
+                        Disconnecting during update may damage firmware
+                    </div>
                     <div style="margin: 20px 0;">
                         <div style="background: #444; border-radius: 10px; overflow: hidden; height: 20px; margin: 10px 0;">
                             <div style="background: #4CAF50; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
@@ -1085,21 +1092,8 @@ class AutomaticFirmwareUpdater {
             console.log('✅ [AutomaticUpdater] Firmware update successful, clearing version cache for next detection...');
             this.clearVersionCache();
             
-            progressModal.innerHTML = `
-                <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
-                    <h3 style="margin-top: 0; color: #4CAF50;">✅ Update Complete!</h3>
-                    <p style="margin: 15px 0;">Firmware has been successfully updated to v${this.remoteManifest.firmware_version}</p>
-                    <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Device will reboot automatically. Please wait for reconnection.</p>
-                    <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
-                </div>
-            `;
-            
-            // Auto-close after 10 seconds
-            setTimeout(() => {
-                if (progressModal.parentNode) {
-                    progressModal.remove();
-                }
-            }, 10000);
+            // Don't show success dialog immediately - wait for version validation
+            this.showUpdateValidationDialog(progressModal);
             
         } catch (error) {
             console.error("❌ Update failed:", error);
@@ -1113,6 +1107,192 @@ class AutomaticFirmwareUpdater {
                 </div>
             `;
         }
+    }
+
+    /**
+     * Show update validation dialog that waits for device reconnection and version confirmation
+     */
+    async showUpdateValidationDialog(progressModal) {
+        const expectedVersion = this.remoteManifest.firmware_version;
+        console.log(`🔍 [AutomaticUpdater] Waiting for device reconnection and version validation. Expected: v${expectedVersion}`);
+        
+        // Show waiting for validation dialog
+        progressModal.innerHTML = `
+            <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                <h3 style="margin-top: 0; color: #ff9800;">🔄 Validating Update...</h3>
+                <p style="margin: 15px 0;">Device is rebooting with new firmware v${expectedVersion}</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Waiting for device to reconnect and confirm update success...</p>
+                <div style="background: #ff5722; color: white; padding: 10px; border-radius: 4px; margin: 15px 0; font-size: 12px;">
+                    <strong>⚠️ DO NOT DISCONNECT DEVICE</strong><br>
+                    Please wait for validation to complete
+                </div>
+                <div style="margin: 20px 0;">
+                    <div class="spinner" style="border: 3px solid #444; border-top: 3px solid #ff9800; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+                <p style="margin: 10px 0; font-size: 12px; color: #aaa;">This may take up to 30 seconds...</p>
+            </div>
+        `;
+        
+        // Add spinner animation if not already present
+        if (!document.getElementById('spinner-style')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-style';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Start validation process
+        this.startUpdateValidation(progressModal, expectedVersion);
+    }
+
+    /**
+     * Start the update validation process
+     */
+    async startUpdateValidation(progressModal, expectedVersion) {
+        const maxWaitTime = 45000; // 45 seconds max wait
+        const checkInterval = 2000; // Check every 2 seconds
+        const startTime = Date.now();
+        
+        const validationCheck = async () => {
+            try {
+                // Check if device is connected
+                const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+                if (!activeDevice || !activeDevice.isConnected) {
+                    console.log('🔍 [AutomaticUpdater] Device not yet reconnected, waiting...');
+                    
+                    // Check timeout
+                    if (Date.now() - startTime > maxWaitTime) {
+                        this.showValidationTimeout(progressModal, expectedVersion);
+                        return;
+                    }
+                    
+                    // Continue waiting
+                    setTimeout(validationCheck, checkInterval);
+                    return;
+                }
+                
+                console.log('🔌 [AutomaticUpdater] Device reconnected, checking firmware version...');
+                
+                // Clear version cache to force fresh detection
+                this.clearVersionCache();
+                
+                // Wait a moment for device to stabilize
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Try to get the current version
+                const currentVersion = await this.getCurrentVersion();
+                console.log('🔍 [AutomaticUpdater] Version check result:', currentVersion);
+                
+                if (currentVersion && currentVersion.firmware_version) {
+                    const detectedVersion = currentVersion.firmware_version.replace(/^v/, '');
+                    const expectedVersionClean = expectedVersion.replace(/^v/, '');
+                    
+                    console.log(`🔍 [AutomaticUpdater] Comparing versions: detected="${detectedVersion}" vs expected="${expectedVersionClean}"`);
+                    
+                    if (detectedVersion === expectedVersionClean) {
+                        // Success! Update validated
+                        this.showValidationSuccess(progressModal, expectedVersion);
+                        return;
+                    } else {
+                        // Version mismatch - possible update failure
+                        this.showValidationMismatch(progressModal, expectedVersion, detectedVersion);
+                        return;
+                    }
+                } else {
+                    console.log('⚠️ [AutomaticUpdater] Could not detect version after reconnection, retrying...');
+                    
+                    // Check timeout
+                    if (Date.now() - startTime > maxWaitTime) {
+                        this.showValidationTimeout(progressModal, expectedVersion);
+                        return;
+                    }
+                    
+                    // Continue waiting
+                    setTimeout(validationCheck, checkInterval);
+                    return;
+                }
+                
+            } catch (error) {
+                console.error('❌ [AutomaticUpdater] Error during validation:', error);
+                
+                // Check timeout
+                if (Date.now() - startTime > maxWaitTime) {
+                    this.showValidationTimeout(progressModal, expectedVersion);
+                    return;
+                }
+                
+                // Continue waiting
+                setTimeout(validationCheck, checkInterval);
+            }
+        };
+        
+        // Start the validation process
+        validationCheck();
+    }
+
+    /**
+     * Show successful validation result
+     */
+    showValidationSuccess(progressModal, expectedVersion) {
+        console.log('✅ [AutomaticUpdater] Firmware update successfully validated!');
+        
+        progressModal.innerHTML = `
+            <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                <h3 style="margin-top: 0; color: #4CAF50;">✅ Update Complete & Validated!</h3>
+                <p style="margin: 15px 0;">Firmware has been successfully updated to <strong>v${expectedVersion}</strong></p>
+                <p style="margin: 15px 0; font-size: 14px; color: #4CAF50;">✓ Device reconnected successfully</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #4CAF50;">✓ New firmware version confirmed</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Your device is now running the latest firmware and ready to use.</p>
+                <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Show validation timeout result
+     */
+    showValidationTimeout(progressModal, expectedVersion) {
+        console.warn('⚠️ [AutomaticUpdater] Update validation timed out');
+        
+        progressModal.innerHTML = `
+            <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                <h3 style="margin-top: 0; color: #ff9800;">⚠️ Update Validation Timeout</h3>
+                <p style="margin: 15px 0;">The firmware update has been deployed, but device validation timed out.</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Expected version: v${expectedVersion}</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ff9800;">• Device may still be rebooting</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ff9800;">• Check device connection and restart app if needed</p>
+                <div style="margin-top: 25px;">
+                    <button onclick="window.automaticFirmwareUpdater.refreshDeviceVersion(); this.parentNode.parentNode.parentNode.remove()" style="background: #ff9800; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">Refresh Version</button>
+                    <button onclick="this.parentNode.parentNode.parentNode.remove()" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">Close</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Show validation version mismatch result
+     */
+    showValidationMismatch(progressModal, expectedVersion, detectedVersion) {
+        console.warn(`⚠️ [AutomaticUpdater] Version mismatch - expected: v${expectedVersion}, detected: v${detectedVersion}`);
+        
+        progressModal.innerHTML = `
+            <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                <h3 style="margin-top: 0; color: #f44336;">❌ Update Validation Failed</h3>
+                <p style="margin: 15px 0;">The firmware update may not have completed successfully.</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ccc;"><strong>Expected:</strong> v${expectedVersion}</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ccc;"><strong>Detected:</strong> v${detectedVersion}</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #f44336;">The device is running a different version than expected.</p>
+                <div style="margin-top: 25px;">
+                    <button onclick="window.automaticFirmwareUpdater.manualUpdateCheck(); this.parentNode.parentNode.parentNode.remove()" style="background: #f44336; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">Retry Update</button>
+                    <button onclick="this.parentNode.parentNode.parentNode.remove()" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">Close</button>
+                </div>
+            </div>
+        `;
     }
 
     /**

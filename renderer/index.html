@@ -191,6 +191,9 @@
   <div id="passcode-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
   <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; text-align:center; color:#fff; box-shadow:0 0 20px #000;">
     <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Enter passcode to reflash firmware</h3>
+    <div style="background: #ff5722; color: white; padding: 12px; border-radius: 4px; margin: 15px 0; font-size: 13px; text-align: left;">
+        <strong>⚠️ WARNING:</strong> This will put the device into BOOTSEL mode for manual firmware flashing. Do not disconnect the device during this process as it may render it unusable and require manual recovery.
+    </div>
     <input type="password" id="passcode-input" style="width:80%; font-size:1.2em; padding:10px; border-radius:8px; border:1px solid #444; background:#333; color:#fff; margin:1em 0;" autofocus />
     <div style="margin-top:1.5em; display:flex; gap:15px; justify-content:center;">
       <button id="passcode-ok" class="modal-btn">OK</button>

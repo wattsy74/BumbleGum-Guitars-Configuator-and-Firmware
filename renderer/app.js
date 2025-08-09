@@ -3541,18 +3541,24 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           throw new Error('Invalid factory config format');
         }
         
-        // Apply the factory config to the UI
+        // Apply the factory config to the UI immediately (so user sees the change)
         applyConfig(parsedConfig);
         
         // Write the factory config as the new config.json
         await serialFileIO.writeFile(activeDevice.port, 'config.json', JSON.stringify(parsedConfig), 8000);
         
-        // Device will restart after config write - let the scanning system handle reconnection
-        console.log('[Restore] Factory config written successfully. Device will restart and reconnect automatically.');
+        console.log('[Restore] Factory config written successfully. Starting reboot and reload...');
         
-        showToast("Factory config restored and saved ✅", 'success');
-        updateStatus("Factory config restored successfully", true);
+        showToast("Factory config restored - rebooting device...", 'info');
+        updateStatus("Factory config restored - rebooting...", true);
       });
+      
+      // Use the proper rebootAndReload function to handle device restart and file reload
+      await rebootAndReload('config.json');
+      
+      console.log('[Restore] Reboot and reload completed successfully');
+      showToast("Factory config restored successfully ✅", 'success');
+      updateStatus("Factory config restored successfully", true);
       
     } catch (err) {
       console.error("Failed to restore factory config:", err);
@@ -6229,34 +6235,97 @@ function cleanupColorPicker(elementId) {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  // Override modal close to ensure LED test stops
+  // Create a comprehensive modal close handler function
+  window.handleDiagnosticsModalClose = async function() {
+    console.log('Diagnostics modal closing - handling cleanup and reload...');
+    
+    // Stop LED test
+    if (window.stopLedTest) {
+      window.stopLedTest();
+    }
+    
+    // Reload device files to refresh the main window state
+    console.log('Reloading device files after diagnostics modal close...');
+    const activeDevice = window.multiDeviceManager?.getActiveDevice();
+    if (activeDevice && activeDevice.isConnected) {
+      try {
+        // Use the forceReloadDeviceFiles function if available (more comprehensive)
+        if (window.multiDeviceManager && typeof window.multiDeviceManager.forceReloadDeviceFiles === 'function') {
+          console.log('Using multiDeviceManager.forceReloadDeviceFiles...');
+          await window.multiDeviceManager.forceReloadDeviceFiles(activeDevice);
+          console.log('forceReloadDeviceFiles completed successfully');
+        } else {
+          // Fallback to manual loading
+          console.log('Fallback to manuallyLoadDeviceFiles...');
+          await window.manuallyLoadDeviceFiles();
+        }
+        
+        // Update UI status after successful reload
+        updateStatus('Ready', true, '#2ecc40');
+        if (typeof window.updateActiveButtonText === 'function') {
+          window.updateActiveButtonText(activeDevice);
+        }
+        
+        console.log('Device files reloaded successfully after diagnostics modal close');
+      } catch (error) {
+        console.error('Failed to reload device files after diagnostics modal close:', error);
+        // Still update UI to show connection status
+        if (typeof window.updateActiveButtonText === 'function') {
+          window.updateActiveButtonText(activeDevice);
+        }
+      }
+    } else {
+      console.log('No active device - skipping file reload');
+      // Update status for no device
+      updateStatus('No device connected', false);
+      if (typeof window.updateActiveButtonText === 'function') {
+        window.updateActiveButtonText(null);
+      }
+    }
+  };
+
+  // Override modal close to ensure LED test stops and files reload
   const diagCloseBtn = document.getElementById('diag-close-btn');
   if (diagCloseBtn) {
-    diagCloseBtn.addEventListener('click', () => {
+    diagCloseBtn.addEventListener('click', async () => {
       console.log('Diagnostics modal close button clicked');
-      if (window.stopLedTest) {
-        window.stopLedTest(); // Ensure LED test is stopped
-      }
-      // Close the modal
+      
+      // Close the modal first
       const diagnosticsModal = document.getElementById('diagnostics-modal');
       if (diagnosticsModal) {
         diagnosticsModal.style.display = 'none';
       }
+      
+      // Handle cleanup and reload (will be called by MutationObserver)
+      // No need to call handleDiagnosticsModalClose here since MutationObserver will catch it
     });
   }
   
-  // Stop LED test when modal loses focus
+  // Stop LED test when modal loses focus and handle file reload
   const diagnosticsModal = document.getElementById('diagnostics-modal');
   if (diagnosticsModal) {
+    let modalWasOpen = false;
+    
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'style') {
           const display = diagnosticsModal.style.display;
-          if (display === 'none' && window.ledTestActive) {
-            console.log('Modal hidden - stopping LED test');
-            if (window.stopLedTest) {
-              window.stopLedTest();
-            }
+          
+          // Track when modal opens
+          if (display === 'flex' || display === 'block') {
+            modalWasOpen = true;
+            console.log('Diagnostics modal opened');
+          }
+          
+          // Handle when modal closes (from any method - outside click, escape, etc.)
+          if (display === 'none' && modalWasOpen) {
+            modalWasOpen = false;
+            console.log('Diagnostics modal closed via MutationObserver');
+            
+            // Use setTimeout to ensure the modal close completes first
+            setTimeout(() => {
+              window.handleDiagnosticsModalClose();
+            }, 100);
           }
         }
       });
