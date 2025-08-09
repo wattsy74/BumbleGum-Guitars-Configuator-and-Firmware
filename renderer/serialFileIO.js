@@ -43,6 +43,13 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
     let finished = false;
     let resolved = false;
     console.log(`[serialFileIO] readFile called for filename: ${filename}`);
+    
+    // Add special debugging for boot.py
+    const isBootPy = filename === 'boot.py';
+    if (isBootPy) {
+      console.log(`[serialFileIO][BOOT.PY] Starting boot.py read with ${timeoutMs}ms timeout`);
+    }
+    
     const timer = setTimeout(() => {
       if (!finished && !resolved) {
         finished = true;
@@ -50,6 +57,10 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
         port.off('data', onData);
         console.warn(`[serialFileIO] [TIMEOUT] Listener removed for ${filename}`);
         console.warn(`[serialFileIO] [TIMEOUT] Buffer dump for ${filename}:`, buffer);
+        if (isBootPy) {
+          console.error(`[serialFileIO][BOOT.PY] TIMEOUT - Buffer length: ${buffer.length} chars`);
+          console.error(`[serialFileIO][BOOT.PY] Buffer ends with:`, buffer.slice(-500));
+        }
         reject(new Error(`Timeout reading file: ${filename}`));
       }
     }, timeoutMs);
@@ -61,12 +72,26 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
       if (resolved) return;
       const str = data.toString();
       buffer += str;
+      
+      // Enhanced debugging for boot.py
+      if (isBootPy) {
+        console.log(`[serialFileIO][BOOT.PY] Received ${str.length} chars, total buffer: ${buffer.length}`);
+        if (buffer.length % 5000 === 0) { // Log every 5KB
+          console.log(`[serialFileIO][BOOT.PY] Progress: ${buffer.length} characters received`);
+        }
+      }
+      
       // Log the first 100 chars of the buffer for every chunk
       const preview = buffer.length > 100 ? buffer.slice(0, 100) + '...' : buffer;
       console.log(`[serialFileIO][DEBUG] Buffer preview for ${filename}:`, preview);
       console.log(`[serialFileIO] Data received for ${filename}:`, str);
+      
       // Robust END marker detection: match END_filename on its own line, at end, or with trailing whitespace
-      if (new RegExp(`END_${filename.replace('.', '\\.')}\\s*$`, 'm').test(buffer)) {
+      const endMarkerRegex = new RegExp(`END_${filename.replace('.', '\\.')}\\s*$`, 'm');
+      if (endMarkerRegex.test(buffer)) {
+        if (isBootPy) {
+          console.log(`[serialFileIO][BOOT.PY] END marker detected! Buffer length: ${buffer.length}`);
+        }
         finished = true;
         resolved = true;
         clearTimeout(timer);
@@ -80,6 +105,10 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
         let capturing = false;
         let startFound = false;
         
+        if (isBootPy) {
+          console.log(`[serialFileIO][BOOT.PY] Processing ${lines.length} lines, looking for START_${filename} and END_${filename}`);
+        }
+        
         for (const line of lines) {
           const trimmed = line.trim();
           
@@ -88,12 +117,18 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
             startFound = true;
             content = ''; // Reset content when we find the start marker
             console.log(`[serialFileIO][MARKER] Found START marker for ${filename}`);
+            if (isBootPy) {
+              console.log(`[serialFileIO][BOOT.PY] START marker found, beginning content capture`);
+            }
             continue;
           }
           
           if (trimmed === endMarker) {
             if (startFound) {
               console.log(`[serialFileIO][MARKER] Found END marker for ${filename}`);
+              if (isBootPy) {
+                console.log(`[serialFileIO][BOOT.PY] END marker found, content length: ${content.length}`);
+              }
               capturing = false;
               break;
             } else {
@@ -104,14 +139,15 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
           
           if (capturing && startFound) {
             // Enhanced contamination filtering - reject lines that look like firmware artifacts
+            // Be more specific to avoid filtering legitimate file content
             if (trimmed === 'FIRMWARE_READY:OK' || 
-                trimmed.includes('FIRMWARE_VERSIONS') ||
-                trimmed.includes('"code.py"') ||
-                trimmed.includes('"hardware.py"') ||
-                trimmed.includes('"utils.py"') ||
-                trimmed.includes('"gamepad.py"') ||
-                trimmed.includes('"serial_handler.py"') ||
-                trimmed.includes('"pin_detect.py"')) {
+                trimmed.startsWith('FIRMWARE_VERSIONS:') ||
+                (trimmed.includes('"code.py"') && trimmed.includes('FIRMWARE_FILES')) ||
+                (trimmed.includes('"hardware.py"') && trimmed.includes('FIRMWARE_FILES')) ||
+                (trimmed.includes('"utils.py"') && trimmed.includes('FIRMWARE_FILES')) ||
+                (trimmed.includes('"gamepad.py"') && trimmed.includes('FIRMWARE_FILES')) ||
+                (trimmed.includes('"serial_handler.py"') && trimmed.includes('FIRMWARE_FILES')) ||
+                (trimmed.includes('"pin_detect.py"') && trimmed.includes('FIRMWARE_FILES'))) {
               console.log(`[serialFileIO][FILTER] Filtered contamination for ${filename}: ${trimmed}`);
               continue;
             }
@@ -124,17 +160,37 @@ function readFile(port, filename, timeoutMs = DEFAULT_TIMEOUT) {
         // Additional validation - check if we actually found both markers
         if (!startFound) {
           console.error(`[serialFileIO][ERROR] No START marker found for ${filename} in buffer`);
+          if (isBootPy) {
+            console.error(`[serialFileIO][BOOT.PY] Buffer first 1000 chars:`, buffer.substring(0, 1000));
+            console.error(`[serialFileIO][BOOT.PY] Buffer last 1000 chars:`, buffer.substring(buffer.length - 1000));
+          }
           reject(new Error(`No START marker found for ${filename}`));
           return;
         }
         
         content = content.trim();
         
+        if (isBootPy) {
+          console.log(`[serialFileIO][BOOT.PY] Raw content length before cleanup: ${content.length}`);
+        }
+        
         // CRITICAL: Remove any trailing END marker that might have been included
         const endMarkerPattern = new RegExp(`\\s*END_${filename.replace('.', '\\.')}\\s*$`);
         if (endMarkerPattern.test(content)) {
           content = content.replace(endMarkerPattern, '').trim();
           console.log(`[serialFileIO][CLEANUP] Removed trailing END marker from ${filename} content`);
+          if (isBootPy) {
+            console.log(`[serialFileIO][BOOT.PY] Content length after END marker cleanup: ${content.length}`);
+          }
+        }
+        
+        if (isBootPy) {
+          console.log(`[serialFileIO][BOOT.PY] Final content validation:`);
+          console.log(`[serialFileIO][BOOT.PY] - Length: ${content.length} characters`);
+          console.log(`[serialFileIO][BOOT.PY] - Contains __version__: ${content.includes('__version__')}`);
+          console.log(`[serialFileIO][BOOT.PY] - Contains final print: ${content.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')}`);
+          console.log(`[serialFileIO][BOOT.PY] - Starts with: ${content.substring(0, 100)}`);
+          console.log(`[serialFileIO][BOOT.PY] - Ends with: ${content.substring(content.length - 100)}`);
         }
         
         // Log the first 100 chars of the final content
@@ -188,19 +244,15 @@ function writeFile(port, filename, content, timeoutMs = null) {
       console.log(`[serialFileIO] Writing system file ${filename} - CircuitPython will reboot immediately`);
     }
     
-    const actualTimeout = isSystemFile ? 3000 : finalTimeout; // 3 second timeout for system files (increased from 1000ms)
+    const actualTimeout = isSystemFile ? 45000 : finalTimeout; // 45 second timeout for system files to handle large files and reboot time
     
     const timer = setTimeout(() => {
       if (!ackReceived && !errorReceived) {
         port.off('data', onData);
-        if (isSystemFile) {
-          console.log(`[serialFileIO] ${filename} write completed (assuming success - CircuitPython rebooted)`);
-          resolve(true); // Assume success for system files since CircuitPython reboots immediately
-        } else {
-          console.error(`[serialFileIO] TIMEOUT writing ${filename} after ${actualTimeout}ms`);
-          console.error(`[serialFileIO] All responses received during timeout:`, allResponses);
-          reject(new Error(`Timeout writing file: ${filename}. Responses: ${allResponses.join(', ')}`));
-        }
+        port.off('error', onError);
+        console.error(`[serialFileIO] TIMEOUT writing ${filename} after ${actualTimeout}ms`);
+        console.error(`[serialFileIO] All responses received during timeout:`, allResponses);
+        reject(new Error(`Timeout writing file: ${filename}. Responses: ${allResponses.join(', ')}`));
       }
     }, actualTimeout);
     
@@ -210,17 +262,17 @@ function writeFile(port, filename, content, timeoutMs = null) {
       console.log(`[serialFileIO] writeFile received data for ${filename}:`, JSON.stringify(str));
       
       // DEBUG: Check for any device response
-      if (str.includes('DEBUG:') || str.includes('📝') || str.includes('Starting write')) {
+      if (str.includes('DEBUG:') || str.includes('Note:') || str.includes('Starting write')) {
         console.log(`[serialFileIO] DEBUG: Device acknowledged command:`, str.trim());
       }
       
-      if (str.includes('✅ File') || str.includes('written')) {
+      if (str.includes('File') || str.includes('written')) {
         ackReceived = true;
         clearTimeout(timer);
         port.off('data', onData);
         console.log(`[serialFileIO] writeFile SUCCESS for ${filename}`);
         resolve(true);
-      } else if ((str.includes('ERROR:') || str.includes('❌')) && 
+      } else if ((str.includes('ERROR:') || str.includes('Error')) && 
                  !str.includes('DEBUG: Line received:') && 
                  !str.includes('DEBUG:') && 
                  !str.trim().startsWith('print(') &&
@@ -239,7 +291,18 @@ function writeFile(port, filename, content, timeoutMs = null) {
         console.log(`[serialFileIO] Received unexpected response during ${filename} write:`, JSON.stringify(str));
       }
     }
+    
+    // Add error handler for port errors
+    function onError(error) {
+      console.error(`[serialFileIO] Port error during ${filename} write:`, error);
+      clearTimeout(timer);
+      port.off('data', onData);
+      port.off('error', onError);
+      reject(error);
+    }
+    
     port.on('data', onData);
+    port.on('error', onError);
     console.log(`[serialFileIO] Sending WRITEFILE command for ${filename}`);
     port.write(`WRITEFILE:${filename}\n`);
     

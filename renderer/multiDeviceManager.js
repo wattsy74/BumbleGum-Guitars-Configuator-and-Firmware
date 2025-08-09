@@ -2,6 +2,9 @@
 const { SerialPort } = require('serialport');
 const { readFile, writeFile } = require('./serialFileIO');
 
+// Flag to control automatic file reading (set to true to enable automatic loading)
+const ENABLE_AUTOMATIC_FILE_READING = true;
+
 // Shared state references (to be injected from app.js)
 let connectedPort = null;
 let awaitingFile = null;
@@ -94,6 +97,9 @@ class MultiDeviceManager {
    * @param {object} device - The device object (must have readFile method)
    */
   async forceReloadDeviceFiles(device) {
+    // Clear the file read cache to force reload
+    this._activeDeviceFileRead = null;
+    
     // Always reload config, presets, and user presets from the device and update the UI
     await this.setActiveDevice(device, true);
   }
@@ -326,8 +332,8 @@ class MultiDeviceManager {
     }
     // Only skip file reads if port is open and valid
     if (skipFileRead) return;
-    // Trigger file reads when a device is made active
-    if (device && device.port) {
+    // Trigger file reads when a device is made active, but only if automatic file reading is enabled
+    if (device && device.port && ENABLE_AUTOMATIC_FILE_READING) {
       if (typeof this.emit === 'function') {
         this.emit('deviceFilesRequested', device);
       }
@@ -515,39 +521,9 @@ class MultiDeviceManager {
         console.log('[MultiDeviceManager] scanForDevices after connect. Devices:', window.multiDeviceManager.getConnectedDevices());
       });
     }
-    // Only re-read boot.py if displayName is missing or generic
-    if (!device.displayName || device.displayName === device.portInfo.friendlyName || device.displayName === device.portInfo.path) {
-      await this.pauseScanningDuringOperation(async () => {
-        await this.flushSerialBuffer(device.port);
-        try {
-          let bootPy = await readFile(device.port, 'boot.py');
-          // Remove protocol markers if present
-          const startMarker = /^START_boot\.py\s*/;
-          const endMarker = /\s*END_boot\.py\s*$/;
-          bootPy = bootPy.replace(startMarker, '').replace(endMarker, '');
-          // Try both usb_hid.set_interface_name and supervisor.set_usb_identification
-          let nameMatch = bootPy.match(/usb_hid\.set_interface_name\s*\(\s*['"]([^'"]+)['"]\s*\)/s);
-          if (!nameMatch) {
-            // Try supervisor.set_usb_identification(..., "BumbleGum Guitars - Guns N Roses", ...)
-            nameMatch = bootPy.match(/supervisor\.set_usb_identification\s*\([^,]+,\s*['"]([^'"]+)['"]/s);
-          }
-          if (nameMatch && nameMatch[1]) {
-            // Remove 'BumbleGum Guitars - ' prefix if present
-            let displayName = nameMatch[1].replace(/^BumbleGum Guitars - /, '').trim();
-            device.displayName = displayName;
-            device.portInfo.bootPyName = displayName;
-            device.getDisplayName = function() { return this.displayName || this.portInfo.friendlyName || this.portInfo.path; };
-            if (typeof this.emit === 'function') this.emit('deviceNameUpdated', device);
-            if (typeof window !== 'undefined' && typeof window.updateDeviceList === 'function') {
-              window.updateDeviceList();
-            }
-          }
-          // If no valid name found, keep previous displayName
-        } catch (err) {
-          console.warn('[MultiDeviceManager] Error reading boot.py on connect:', err);
-        }
-      });
-    }
+    // Device name will be retrieved via READDEVICENAME command when needed
+    // boot.py is only read when writing a new device name, not for reading the current name
+    
     // Debug log connection state
     console.log('[MultiDeviceManager] Device connected:', deviceId, device.displayName);
   }
@@ -635,6 +611,108 @@ class MultiDeviceManager {
       });
     }
   }
+  /**
+   * Try to quickly connect to a device, get its name, and disconnect
+   * This allows showing device names in the selector before connection
+   */
+  async tryGetDeviceNameBeforeConnection(portInfo) {
+    let tempPort = null;
+    try {
+      // Quick connection attempt with short timeout
+      tempPort = new SerialPort({
+        path: portInfo.path,
+        baudRate: 115200,
+        autoOpen: false
+      });
+      
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout'));
+        }, 2000); // 2 second timeout
+        
+        tempPort.open((err) => {
+          clearTimeout(timeout);
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      // Wait a moment for device to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try to get device name using direct command
+      const deviceName = await this.requestDeviceNameQuick(tempPort);
+      return deviceName;
+      
+    } catch (err) {
+      console.log(`[MultiDeviceManager] Quick device name check failed for ${portInfo.path}:`, err.message);
+      return null;
+    } finally {
+      if (tempPort && tempPort.isOpen) {
+        try {
+          tempPort.close();
+        } catch (closeErr) {
+          console.warn(`[MultiDeviceManager] Failed to close temp port ${portInfo.path}:`, closeErr.message);
+        }
+      }
+    }
+  }
+
+  /**
+   * Quick device name request with short timeout
+   */
+  async requestDeviceNameQuick(port) {
+    return new Promise((resolve, reject) => {
+      let responseBuffer = '';
+      let timeoutHandle;
+      let dataHandler;
+      
+      const cleanup = () => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        if (dataHandler) port.removeListener('data', dataHandler);
+      };
+      
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Device name request timeout'));
+      }, 1500); // 1.5 second timeout
+      
+      dataHandler = (data) => {
+        responseBuffer += data.toString();
+        
+        if (responseBuffer.includes('END\n')) {
+          cleanup();
+          
+          // Parse the response
+          const lines = responseBuffer.split('\n').map(line => line.trim()).filter(line => line);
+          
+          // Find device name (skip ACK and UID-like responses)
+          for (const line of lines) {
+            if (line === 'END' || line.startsWith('ACK:') || /^[0-9A-F]{16}$/i.test(line)) {
+              continue;
+            }
+            if (line && line !== 'Unknown') {
+              resolve(line);
+              return;
+            }
+          }
+          
+          resolve('Unknown');
+        }
+      };
+      
+      port.on('data', dataHandler);
+      
+      // Send the command
+      port.write('READDEVICENAME\n', (err) => {
+        if (err) {
+          cleanup();
+          reject(err);
+        }
+      });
+    });
+  }
+
   constructor() {
     this.devices = new Map();
     this.connectedDevices = new Map();
@@ -648,6 +726,8 @@ class MultiDeviceManager {
     this._configWriteReconnectDelay = 3000; // Delay before auto-reconnection after config write (3 seconds)
     this._lastConfigWriteTime = 0; // Track when config was last written
     this._manuallyDisconnectedDevices = new Set(); // Track devices manually disconnected by user
+    this._lastScanTime = 0; // Track last scan time for throttling
+    this._minScanInterval = 500; // Minimum 500ms between scans
   }
 
   /**
@@ -691,7 +771,16 @@ class MultiDeviceManager {
       return;
     }
     
+    // Throttle scanning when devices are connected to prevent excessive loops
+    const now = Date.now();
+    if (this._lastScanTime && (now - this._lastScanTime) < this._minScanInterval) {
+      console.log('[MultiDeviceManager] Scan throttled, too soon since last scan');
+      return;
+    }
+    
     this._scanningInProgress = true;
+    this._lastScanTime = now;
+    
     try {
       const ports = await SerialPort.list();
       console.log('[MultiDeviceManager] SerialPort.list() returned:', ports.length, ports);
@@ -734,38 +823,24 @@ class MultiDeviceManager {
             isConnected = false;
             portObj = null;
           } else {
-            // Try to get name from open port, but only if no file operations are in progress
-            if (!this._fileOperationInProgress) {
-              try {
-                await this.flushSerialBuffer(portObj);
-                let bootPy = await readFile(portObj, 'boot.py');
-                // Remove protocol markers if present
-                const startMarker = /^START_boot\.py\s*/;
-                const endMarker = /\s*END_boot\.py\s*$/;
-                bootPy = bootPy.replace(startMarker, '').replace(endMarker, '');
-                let nameMatch = bootPy.match(/usb_hid\.set_interface_name\s*\(\s*['"]([^'"]+)['"]\s*\)/s);
-                if (!nameMatch) {
-                  nameMatch = bootPy.match(/supervisor\.set_usb_identification\s*\([^,]+,\s*['"]([^'"]+)['"]/s);
-                }
-                if (nameMatch && nameMatch[1]) {
-                  bootPyName = nameMatch[1].replace(/^BumbleGum Guitars - /, '').trim();
-                  port.bootPyName = bootPyName;
-                }
-              } catch (err) {
-                console.warn(`[MultiDeviceManager] Could not read boot.py from open port for ${deviceId}:`, err);
-                // If we can't read from the port, it's likely disconnected
-                console.warn(`[MultiDeviceManager] Port appears disconnected, removing device ${deviceId} from connectedDevices`);
-                this.connectedDevices.delete(deviceId);
-                if (this.activeDevice && this.activeDevice.id === deviceId) {
-                  this.activeDevice = null;
-                }
-                isConnected = false;
-                portObj = null;
-              }
-            }
+            // Device name will be retrieved via READDEVICENAME command when needed
+            // boot.py is only read when writing a new device name, not for reading the current name
           }
           
           if (isConnected) {
+            // Try to get fresh device name for connected devices if we don't have one
+            if (!activeDevice.displayName || activeDevice.displayName === activeDevice.portInfo.friendlyName || activeDevice.displayName === activeDevice.portInfo.path) {
+              try {
+                const freshName = await this.requestDeviceNameQuick(portObj);
+                if (freshName && freshName !== 'Unknown' && freshName.trim()) {
+                  bootPyName = freshName.trim();
+                  console.log(`[MultiDeviceManager] Got fresh device name for connected device: ${deviceId} -> ${bootPyName}`);
+                }
+              } catch (err) {
+                console.log(`[MultiDeviceManager] Could not get fresh device name for connected device ${deviceId}:`, err.message);
+              }
+            }
+            
             // Prefer bootPyName, then cachedName, then friendlyName
             if (bootPyName) {
               displayName = bootPyName;
@@ -789,123 +864,29 @@ class MultiDeviceManager {
             cachedName = prevDevice.displayName;
           }
         }
-        // Try to get name from boot.py only if not already cached
+        // Try to get device name before connection for better UX
+        let deviceNameBeforeConnection = null;
+        const isNewDevice = !this.devices.has(deviceId);
+        // Always try to get device name if we don't have a cached name, regardless of new/existing
         if (!cachedName) {
-          let tempPort;
-          let tempPortOpened = false;
-          let retryCount = 0;
-          const maxRetries = 3;
-          
-          while (retryCount < maxRetries && !bootPyName) {
-            try {
-              // Clean up any existing port before retry
-              if (tempPort) {
-                try {
-                  if (tempPort.isOpen) {
-                    await new Promise((resolve) => {
-                      tempPort.close(() => resolve());
-                    });
-                  }
-                } catch (cleanupErr) {
-                  console.warn(`[MultiDeviceManager] Error cleaning up temp port for ${deviceId}:`, cleanupErr);
-                }
-                tempPort = null;
-                tempPortOpened = false;
-              }
-              
-              // Wait longer between retries for access denied errors
-              if (retryCount > 0) {
-                const retryDelay = retryCount === 1 ? 1500 : 3000;
-                console.log(`[MultiDeviceManager] Retrying port access for ${deviceId} (attempt ${retryCount + 1}/${maxRetries}) after ${retryDelay}ms`);
-                await new Promise(res => setTimeout(res, retryDelay));
-              }
-              
-              tempPort = new SerialPort({ path: deviceId, baudRate: 115200, autoOpen: false });
-              if (tempPort.isOpen) {
-                await new Promise((resolve, reject) => {
-                  tempPort.close(err => {
-                    if (err) reject(err);
-                    else resolve();
-                  });
-                });
-              }
-              await new Promise((resolve, reject) => {
-                tempPort.open(err => {
-                  if (err) reject(err);
-                  else resolve();
-                });
-              });
-              tempPortOpened = true;
-              await this.flushSerialBuffer(tempPort);
-              
-              try {
-                let bootPy = await readFile(tempPort, 'boot.py', 12000); // Longer timeout for scanning to handle slower devices
-                // Remove protocol markers if present
-                const startMarker = /^START_boot\.py\s*/;
-                const endMarker = /\s*END_boot\.py\s*$/;
-                bootPy = bootPy.replace(startMarker, '').replace(endMarker, '');
-                let nameMatch = bootPy.match(/usb_hid\.set_interface_name\s*\(\s*['"]([^'"]+)['"]\s*\)/s);
-                if (!nameMatch) {
-                  nameMatch = bootPy.match(/supervisor\.set_usb_identification\s*\([^,]+,\s*['"]([^'"]+)['"]/s);
-                }
-                if (nameMatch && nameMatch[1]) {
-                  bootPyName = nameMatch[1].replace(/^BumbleGum Guitars - /, '').trim();
-                  port.bootPyName = bootPyName;
-                  console.log(`[MultiDeviceManager] Successfully read device name for ${deviceId}: ${bootPyName}`);
-                  break; // Success, exit retry loop
-                }
-              } catch (readErr) {
-                console.warn(`[MultiDeviceManager] Could not read boot.py for ${deviceId} (attempt ${retryCount + 1}):`, readErr);
-                if (retryCount === maxRetries - 1) {
-                  throw readErr; // Re-throw on final attempt
-                }
-              }
-              
-              // If we got here without success, try again
-              retryCount++;
-              
-            } catch (err) {
-              const isAccessDenied = err.message && err.message.includes('Access denied');
-              if (isAccessDenied && retryCount < maxRetries - 1) {
-                console.warn(`[MultiDeviceManager] Access denied for ${deviceId} (attempt ${retryCount + 1}/${maxRetries}), will retry`);
-                retryCount++;
-              } else {
-                console.warn(`[MultiDeviceManager] Could not open port for scan for ${deviceId} (final attempt):`, err);
-                break; // Exit retry loop on non-retryable error or final attempt
-              }
-            } finally {
-              // Always close tempPort if we opened it
-              if (tempPort && tempPortOpened && tempPort.isOpen) {
-                try {
-                  await new Promise((resolve, reject) => {
-                    tempPort.close(err => {
-                      if (err) reject(err);
-                      else resolve();
-                    });
-                  });
-                } catch (closeErr) {
-                  console.warn(`[MultiDeviceManager] Could not close port after scan for ${deviceId}:`, closeErr);
-                }
-              }
+          try {
+            deviceNameBeforeConnection = await this.tryGetDeviceNameBeforeConnection(port);
+            if (deviceNameBeforeConnection && deviceNameBeforeConnection !== 'Unknown') {
+              displayName = deviceNameBeforeConnection;
+              console.log(`[MultiDeviceManager] Got device name before connection: ${deviceId} -> ${displayName}`);
             }
+          } catch (err) {
+            console.log(`[MultiDeviceManager] Could not get device name before connection for ${deviceId}:`, err.message);
           }
-          
-          // Store the final retry count for use outside the loop
-          this._lastScanRetryCount = retryCount;
         }
-        // Prefer bootPyName, then cachedName, then friendlyName
-        // Add special indicator for devices that had access issues during scanning
-        if (bootPyName) {
-          displayName = bootPyName;
+        
+        // Prefer device name from firmware, cached name, then friendlyName
+        if (deviceNameBeforeConnection && deviceNameBeforeConnection !== 'Unknown') {
+          displayName = deviceNameBeforeConnection;
         } else if (cachedName) {
           displayName = cachedName.replace(/^BumbleGum Guitars - /, '').trim();
         } else {
-          // If we couldn't read boot.py, check if it was due to access issues
           displayName = port.friendlyName || port.path;
-          if (this._lastScanRetryCount && this._lastScanRetryCount > 0) {
-            // Add indicator that this device had connection issues during scan
-            console.log(`[MultiDeviceManager] Device ${deviceId} had access issues during scan but is available for manual connection`);
-          }
         }
         newDevices.set(deviceId, {
           id: deviceId,
@@ -955,8 +936,14 @@ class MultiDeviceManager {
           // Device is still connected, reload files/UI
           const stillActive = this.connectedDevices.get(this.activeDevice.id);
           if (stillActive && stillActive.isConnected && stillActive.port && stillActive.port.isOpen) {
-            // This will re-read files and update UI for the active device
-            this.setActiveDevice(stillActive);
+            // Only call setActiveDevice if it's actually a different device or first time
+            if (!this.activeDevice || this.activeDevice.id !== stillActive.id || this.activeDevice.port !== stillActive.port) {
+              console.log('[MultiDeviceManager] Setting active device during scan (device changed):', stillActive.id);
+              this.setActiveDevice(stillActive);
+            } else {
+              // Device is the same, just update the devices map without triggering events
+              console.log('[MultiDeviceManager] Active device unchanged during scan:', stillActive.id);
+            }
           } else {
             // Connected device has invalid port state, remove it and attempt reconnection
             console.warn('[MultiDeviceManager] Active device has invalid port state, scheduling reconnection:', this.activeDevice.id);
@@ -987,9 +974,14 @@ class MultiDeviceManager {
           } else if (this._manuallyDisconnectedDevices.has(this.lastActiveDeviceInfo.id)) {
             console.log('[MultiDeviceManager] Skipping auto-reconnection for manually disconnected last active device:', this.lastActiveDeviceInfo.id);
           } else {
-            console.log('[MultiDeviceManager] Last active device is already connected, setting as active:', this.lastActiveDeviceInfo.id);
+            console.log('[MultiDeviceManager] Last active device is already connected, checking if setActiveDevice needed:', this.lastActiveDeviceInfo.id);
             const alreadyConnected = this.connectedDevices.get(this.lastActiveDeviceInfo.id);
-            this.setActiveDevice(alreadyConnected);
+            // Only call setActiveDevice if it's not already the active device
+            if (!this.activeDevice || this.activeDevice.id !== alreadyConnected.id) {
+              this.setActiveDevice(alreadyConnected);
+            } else {
+              console.log('[MultiDeviceManager] Device already active, no setActiveDevice needed');
+            }
           }
         }
       }

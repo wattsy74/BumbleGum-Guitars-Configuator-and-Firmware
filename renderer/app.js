@@ -381,6 +381,9 @@ window.updateActiveButtonText = function(device) {
   const selectorBtn = document.getElementById('deviceSelectorButton');
   if (!selectorBtn) return;
   
+  // Don't override during rename operations
+  if (window._renameInProgress) return;
+  
   // Don't override rebooting state during device reboot sequence
   if (window._deviceRebootingOverride || (selectorBtn.textContent === 'Device rebooting...' && (!device || !device.isConnected))) {
     return;
@@ -552,17 +555,6 @@ function initializeDeviceSelector() {
     const connectedCount = devices.filter(d => d.isConnected).length;
     html += `<div style="margin-top:10px; font-size:0.95em; color:#ccc;">${connectedCount} connected${window.multiDeviceManager.activeDevice ? ` (${window.multiDeviceManager.activeDevice.getDisplayName ? window.multiDeviceManager.activeDevice.getDisplayName() : window.multiDeviceManager.activeDevice.displayName} active)` : ' (none active)'}</div>`;
     
-    // Add manual control buttons for active device
-    if (window.multiDeviceManager.activeDevice && window.multiDeviceManager.activeDevice.isConnected) {
-      html += `<div style="margin-top:16px; padding-top:12px; border-top:1px solid #444;">`;
-      html += `<div style="font-size:0.9em; color:#aaa; margin-bottom:8px;">Active Device Controls:</div>`;
-      html += `<div style="display:flex; gap:6px; flex-wrap:wrap;">`;
-      html += `<button class="manual-refresh-name-btn" style="background:#3498db; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.85em;">Refresh Name</button>`;
-      html += `<button class="manual-load-files-btn" style="background:#27ae60; color:#fff; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; font-size:0.85em;">Load Files</button>`;
-      html += `</div>`;
-      html += `</div>`;
-    }
-    
     deviceList.innerHTML = html;
 
     // Add event listeners for buttons
@@ -659,30 +651,6 @@ function initializeDeviceSelector() {
           }
         } else {
           window.customAlert && window.customAlert('Device not found or port unavailable for Identify.');
-        }
-      };
-    });
-    
-    // Manual refresh name button
-    deviceList.querySelectorAll('.manual-refresh-name-btn').forEach(btn => {
-      btn.onclick = async (e) => {
-        e.preventDefault();
-        if (typeof window.manuallyRefreshDeviceName === 'function') {
-          await window.manuallyRefreshDeviceName();
-          // Refresh the device list to show updated name
-          buildDeviceList();
-        }
-      };
-    });
-    
-    // Manual load files button  
-    deviceList.querySelectorAll('.manual-load-files-btn').forEach(btn => {
-      btn.onclick = async (e) => {
-        e.preventDefault();
-        if (typeof window.manuallyLoadDeviceFiles === 'function') {
-          await window.manuallyLoadDeviceFiles();
-          // Refresh the device list to show updated status
-          buildDeviceList();
         }
       };
     });
@@ -912,6 +880,9 @@ function closeConfigMenu() {
 }
 
 const updateStatus = (text, isConnected = false, customColor = null) => {
+  // Don't override status during rename operations
+  if (window._renameInProgress) return;
+  
   const statusText = document.getElementById('status-text');
   if (statusText) {
     statusText.textContent = text;
@@ -925,6 +896,9 @@ const updateStatus = (text, isConnected = false, customColor = null) => {
 
 // Enhanced status update that mirrors device selector button logic
 window.updateHeaderStatus = function(device) {
+  // Don't override status during rename operations
+  if (window._renameInProgress) return;
+  
   // Don't override rebooting state during device reboot sequence
   if (window._deviceRebootingOverride) {
     updateStatus('Device rebooting...', false, '#f39c12'); // Orange for rebooting
@@ -993,6 +967,12 @@ window.showToastError = (message, duration) => showToast(message, 'error', durat
 window.showToastWarning = (message, duration) => showToast(message, 'warning', duration);
 window.showToastInfo = (message, duration) => showToast(message, 'info', duration);
 
+// ===== FOOTER DEVICE NAME UPDATE =====
+window.updateFooterDeviceName = function() {
+  // Function exists for compatibility but does nothing - footer text not wanted
+  // Device name is shown in the device selector button instead
+};
+
 // ===== DEVICE REBOOT AND RELOAD UTILITY =====
 let rebootInProgress = false;
 async function rebootAndReload(fileToReload = 'presets.json') {
@@ -1003,6 +983,9 @@ async function rebootAndReload(fileToReload = 'presets.json') {
     }
     if (!connectedPort) {
       console.warn('[rebootAndReload] No connected port, cannot reboot');
+      
+      // Clear rename flag when no port available
+      window._renameInProgress = false;
       rebootInProgress = false;
       return;
     }
@@ -1145,17 +1128,51 @@ async function rebootAndReload(fileToReload = 'presets.json') {
         if (activeDevice && activeDevice.isConnected) {
           found = true;
           console.log('[rebootAndReload] Device reconnected after reboot, polling for firmware ready...');
+          
+          // Clear ALL blocking flags immediately when device reconnects successfully so file loading can proceed
+          window._renameInProgress = false;
+          window._deviceLoadingOverride = false;
+          console.log('[rebootAndReload] Cleared all blocking flags for file loading');
+          
           try {
             // Wait for firmware ready before any file reads
             if (activeDevice.port) {
+              console.log('[rebootAndReload] Attempting to wait for firmware ready...');
               await waitForFirmwareReady(activeDevice.port, 40, 300);
               console.log('[rebootAndReload] Firmware ready after reboot, proceeding with reload');
             } else {
               throw new Error('No port on activeDevice after reconnect');
             }
+            
+            console.log('[rebootAndReload] Starting forceReloadDeviceFiles...');
             if (window.multiDeviceManager && typeof window.multiDeviceManager.forceReloadDeviceFiles === 'function') {
+              console.log('[rebootAndReload] About to call forceReloadDeviceFiles with device:', activeDevice.id);
               await window.multiDeviceManager.forceReloadDeviceFiles(activeDevice);
-              showToast('Device reconnected and UI fully refreshed ✅', 'success');
+              console.log('[rebootAndReload] forceReloadDeviceFiles completed successfully');
+              
+              // Force refresh device name after boot.py changes
+              console.log('[rebootAndReload] Forcing device name refresh after boot.py update...');
+              if (typeof window.multiDeviceManager.requestDeviceNameQuick === 'function' && activeDevice.port) {
+                try {
+                  const freshDeviceName = await window.multiDeviceManager.requestDeviceNameQuick(activeDevice.port);
+                  if (freshDeviceName && freshDeviceName !== 'Unknown' && freshDeviceName.trim()) {
+                    console.log(`[rebootAndReload] Got fresh device name: ${freshDeviceName}`);
+                    activeDevice.displayName = freshDeviceName.trim();
+                    // Update UI elements
+                    if (window.updateFooterDeviceName) window.updateFooterDeviceName();
+                    if (window.multiDeviceManager.emit) window.multiDeviceManager.emit('deviceNameUpdated', activeDevice);
+                  }
+                } catch (err) {
+                  console.warn('[rebootAndReload] Could not refresh device name:', err.message);
+                }
+              }
+              
+              // Update header status after successful reload
+              if (typeof window.updateHeaderStatus === 'function') {
+                window.updateHeaderStatus(activeDevice);
+              }
+              
+              showToast('Device reconnected and UI fully refreshed', 'success');
             } else if (typeof activeDevice.readFile === 'function') {
               // fallback: manual reload
               const configText = await activeDevice.readFile('config.json');
@@ -1166,7 +1183,13 @@ async function rebootAndReload(fileToReload = 'presets.json') {
               populatePresetDropdown(presetsObj, false);
               if (typeof restoreLiveColors === 'function') restoreLiveColors('.released-set .fret-button');
               if (typeof previewAllLeds === 'function') previewAllLeds();
-              showToast('Device reconnected and UI fully refreshed ✅', 'success');
+              
+              // Update header status after manual reload
+              if (typeof window.updateHeaderStatus === 'function') {
+                window.updateHeaderStatus(activeDevice);
+              }
+              
+              showToast('Device reconnected and UI fully refreshed', 'success');
             } else {
               console.warn('[rebootAndReload] activeDevice.readFile is not a function');
             }
@@ -1174,6 +1197,7 @@ async function rebootAndReload(fileToReload = 'presets.json') {
             console.warn('[rebootAndReload] Could not fully reload config/presets after reconnect:', err);
             showToast('Device reconnected but failed to fully reload config/presets', 'error');
           }
+          
           rebootInProgress = false;
           return;
         }
@@ -1187,6 +1211,9 @@ async function rebootAndReload(fileToReload = 'presets.json') {
           console.warn('[rebootAndReload] Device did not reconnect after reboot');
           showToast('Device did not reconnect after reboot', 'error');
           customAlert('Device did not reconnect after reboot. Please unplug and replug the device.');
+          
+          // Clear rename flag when reboot fails
+          window._renameInProgress = false;
           rebootInProgress = false;
         }
       }
@@ -1195,6 +1222,9 @@ async function rebootAndReload(fileToReload = 'presets.json') {
   } catch (err) {
     console.error('[rebootAndReload] Error sending REBOOT or reloading UI:', err);
     showToast('Error during reboot and reload', 'error');
+    
+    // Clear rename flag when reboot encounters error
+    window._renameInProgress = false;
     rebootInProgress = false;
   }
 }
@@ -3894,6 +3924,23 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     }
     
     const fullName = `BumbleGum Guitars - ${newName}`;
+    
+    // Set global flag to prevent status overrides during rename
+    window._renameInProgress = true;
+    
+    // Set both status and button to "Please wait..." during rename operation - use direct DOM manipulation
+    const statusText = document.getElementById('status-text');
+    if (statusText) {
+      statusText.textContent = 'Please wait...';
+      statusText.style.color = '#f39c12'; // Orange
+    }
+    
+    const selectorBtn = document.getElementById('deviceSelectorButton');
+    if (selectorBtn) {
+      selectorBtn.textContent = 'Please wait...';
+      selectorBtn.style.background = '#f39c12'; // Orange
+      selectorBtn.style.color = '#fff';
+    }
     showToast(`Updating device name to "${newName}"...`, 'info');
 
     // Use pauseScanningDuringOperation to prevent conflicts
@@ -3929,12 +3976,27 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         console.log(`[updateDeviceName] Reading current boot.py...`);
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
         await new Promise(resolve => setTimeout(resolve, 800)); // Longer wait for buffer to clear
-        let bootPy = await serialFileIO.readFile(activeDevice.port, 'boot.py', 10000); // 10 second timeout for read
+        // Use a much longer timeout for boot.py since it's a large file (~13KB)
+        let bootPy = await serialFileIO.readFile(activeDevice.port, 'boot.py', 45000); // 45 second timeout for read
+        
+        // DEBUG: Log the length and first/last parts of the file to verify complete read
+        console.log(`[updateDeviceName] Read boot.py - Length: ${bootPy.length} characters`);
+        console.log(`[updateDeviceName] First 200 chars:`, bootPy.substring(0, 200));
+        console.log(`[updateDeviceName] Last 200 chars:`, bootPy.substring(bootPy.length - 200));
+        
+        // Verify we have the complete file by checking for key markers
+        if (!bootPy.includes('__version__') || !bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')) {
+          console.warn(`[updateDeviceName] WARNING: boot.py appears incomplete!`);
+          console.warn(`[updateDeviceName] Contains version: ${bootPy.includes('__version__')}`);
+          console.warn(`[updateDeviceName] Contains final print: ${bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')}`);
+          throw new Error('boot.py file appears to be incomplete - aborting rename to prevent corruption');
+        }
       
         // 3. Update the device name in boot.py content
         console.log(`[updateDeviceName] Updating device name in boot.py content...`);
-        bootPy = bootPy.replace(/product\s*=\s*".*?"/, `product="${fullName}"`);
-        bootPy = bootPy.replace(/usb_hid\.set_interface_name\(\s*".*?"\s*\)/, `usb_hid.set_interface_name("${fullName}")`);
+        // Handle multiline supervisor.set_usb_identification() calls
+        bootPy = bootPy.replace(/(product\s*=\s*)"[^"]*"/, `$1"${fullName}"`);
+        bootPy = bootPy.replace(/(usb_hid\.set_interface_name\(\s*)"[^"]*"(\s*\))/, `$1"${fullName}"$2`);
         
         // Verify the replacements were successful
         if (!bootPy.includes(`product="${fullName}"`)) {
@@ -3942,6 +4004,13 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         }
         if (!bootPy.includes(`usb_hid.set_interface_name("${fullName}")`)) {
           throw new Error('Failed to update USB interface name in boot.py');
+        }
+        
+        // DEBUG: Verify the file is still complete after modifications
+        console.log(`[updateDeviceName] After modification - Length: ${bootPy.length} characters`);
+        if (!bootPy.includes('__version__') || !bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')) {
+          console.error(`[updateDeviceName] ERROR: boot.py became corrupted during modification!`);
+          throw new Error('boot.py file became corrupted during name replacement - aborting');
         }
         
         console.log(`[updateDeviceName] boot.py content updated successfully`);
@@ -3952,17 +4021,17 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         console.log(`[updateDeviceName] Starting boot.py write operation...`);
         
         try {
-          // Use longer timeout for boot.py write since it's a critical system file
-          await serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 5000); // 5 second timeout
+          // Use longer timeout for boot.py write since it's a critical system file and large
+          console.log(`[updateDeviceName] Starting boot.py write operation...`);
+          await serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 30000); // 30 second timeout
           console.log(`[updateDeviceName] boot.py write completed successfully`);
         } catch (writeError) {
           console.error(`[updateDeviceName] boot.py write failed:`, writeError);
           showToast(`Failed to write boot.py: ${writeError.message}`, 'error');
-          throw writeError; // Re-throw to be caught by outer try-catch
+          throw writeError;
         }      
         
-        // Note: CircuitPython automatically reboots when boot.py is written
-        console.log("✅ boot.py write completed! (CircuitPython will auto-reboot)");
+        console.log("✅ boot.py write completed! Device rename successful.");
         showToast(`Device renamed to "${newName}" successfully!`, 'success');
         
         // Update stored device info with new name before reboot for auto-reconnection
@@ -3970,6 +4039,9 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           multiDeviceManager.lastActiveDeviceInfo.deviceName = fullName;
           console.log('📝 Updated stored device info with new name for auto-reconnection:', fullName);
         }
+        
+        // Clear the rename flag before reboot
+        window._renameInProgress = false;
         
         // CircuitPython will automatically reboot when boot.py is written
         // Use the global rebootAndReload function for proper reconnection after a longer delay
@@ -3980,6 +4052,17 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       } catch (error) {
         console.error('Error updating device name:', error);
         showToast(`Failed to rename device: ${error.message}`, 'error');
+        
+        // Clear the rename flag on error
+        window._renameInProgress = false;
+        
+        // Restore status and button after error
+        if (typeof window.updateHeaderStatus === 'function') {
+          window.updateHeaderStatus(activeDevice);
+        }
+        if (typeof window.updateActiveButtonText === 'function') {
+          window.updateActiveButtonText(activeDevice);
+        }
         
         // Restart device polling if it was stopped
         if (window.multiDeviceManager && typeof window.multiDeviceManager.resumeScanning === 'function') {
