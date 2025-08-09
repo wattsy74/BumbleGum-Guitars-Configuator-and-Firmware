@@ -1,0 +1,1691 @@
+ [FirmwareUpdater] Sending MKDIR:updates command
+ [FirmwareUpdater] MKDIR command sent successfully
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ [FirmwareUpdater] MKDIR response data: Buffer(19)
+ [FirmwareUpdater] MKDIR response buffer: ACK: MKDIR:updates
+
+ [FirmwareUpdater] MKDIR response data: Buffer(22)
+ [FirmwareUpdater] MKDIR response buffer: ACK: MKDIR:updates
+MKDIR:SUCCESS:updates
+
+ [FirmwareUpdater] MKDIR success detected
+ [FirmwareUpdater] Writing update file: /updates/boot.py
+ [serialFileIO] writeFile starting for updates/boot.py
+ [serialFileIO] File size: 30197 bytes (30 KB), timeout: 330000ms
+ [serialFileIO] Sending WRITEFILE command for updates/boot.py
+ [serialFileIO] writeFile received data for updates/boot.py: "WRITEFILE:READY:boot.py\n"
+ [serialFileIO] Received unexpected response during updates/boot.py write: "WRITEFILE:READY:boot.py\n"
+ [serialFileIO] writeFile received data for updates/boot.py: "STREAM:READY:boot.py\n"
+ [serialFileIO] Received unexpected response during updates/boot.py write: "STREAM:READY:boot.py\n"
+ [serialFileIO] Sending content for updates/boot.py (30197 bytes)
+ [serialFileIO] Sending 663 lines for updates/boot.py
+ [serialFileIO] Sent 10/663 lines for updates/boot.py
+ [serialFileIO] Sent 20/663 lines for updates/boot.py
+ [serialFileIO] Sent 30/663 lines for updates/boot.py
+ [serialFileIO] Sent 40/663 lines for updates/boot.py
+ [serialFileIO] Sent 50/663 lines for updates/boot.py
+ [serialFileIO] Sent 60/663 lines for updates/boot.py
+ [serialFileIO] Sent 70/663 lines for updates/boot.py
+ [serialFileIO] Sent 80/663 lines for updates/boot.py
+ [serialFileIO] Sent 90/663 lines for updates/boot.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 100/663 lines for updates/boot.py
+ [serialFileIO] Sent 110/663 lines for updates/boot.py
+ [serialFileIO] Sent 120/663 lines for updates/boot.py
+ [serialFileIO] Sent 130/663 lines for updates/boot.py
+ [serialFileIO] Sent 140/663 lines for updates/boot.py
+ [serialFileIO] Sent 150/663 lines for updates/boot.py
+ [serialFileIO] Sent 160/663 lines for updates/boot.py
+ [serialFileIO] Sent 170/663 lines for updates/boot.py
+ [serialFileIO] Sent 180/663 lines for updates/boot.py
+ [serialFileIO] Sent 190/663 lines for updates/boot.py
+ [serialFileIO] Sent 200/663 lines for updates/boot.py
+ [serialFileIO] Sent 210/663 lines for updates/boot.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 220/663 lines for updates/boot.py
+ [serialFileIO] Sent 230/663 lines for updates/boot.py
+ [serialFileIO] Sent 240/663 lines for updates/boot.py
+ [serialFileIO] Sent 250/663 lines for updates/boot.py
+ [serialFileIO] Sent 260/663 lines for updates/boot.py
+ [serialFileIO] Sent 270/663 lines for updates/boot.py
+ [serialFileIO] Sent 280/663 lines for updates/boot.py
+ [serialFileIO] Sent 290/663 lines for updates/boot.py
+ [serialFileIO] Sent 300/663 lines for updates/boot.py
+ [serialFileIO] Sent 310/663 lines for updates/boot.py
+ [serialFileIO] Sent 320/663 lines for updates/boot.py
+ [serialFileIO] Sent 330/663 lines for updates/boot.py
+ [serialFileIO] Sent 340/663 lines for updates/boot.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 350/663 lines for updates/boot.py
+ [serialFileIO] Sent 360/663 lines for updates/boot.py
+ [serialFileIO] Sent 370/663 lines for updates/boot.py
+ [serialFileIO] Sent 380/663 lines for updates/boot.py
+ [serialFileIO] Sent 390/663 lines for updates/boot.py
+ [serialFileIO] Sent 400/663 lines for updates/boot.py
+ [serialFileIO] Sent 410/663 lines for updates/boot.py
+ [serialFileIO] Sent 420/663 lines for updates/boot.py
+ [serialFileIO] Sent 430/663 lines for updates/boot.py
+ [serialFileIO] Sent 440/663 lines for updates/boot.py
+ [serialFileIO] Sent 450/663 lines for updates/boot.py
+ [serialFileIO] Sent 460/663 lines for updates/boot.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 470/663 lines for updates/boot.py
+ [serialFileIO] Sent 480/663 lines for updates/boot.py
+ [serialFileIO] Sent 490/663 lines for updates/boot.py
+ [serialFileIO] Sent 500/663 lines for updates/boot.py
+ [serialFileIO] Sent 510/663 lines for updates/boot.py
+ [serialFileIO] Sent 520/663 lines for updates/boot.py
+ [serialFileIO] Sent 530/663 lines for updates/boot.py
+ [serialFileIO] Sent 540/663 lines for updates/boot.py
+ [serialFileIO] Sent 550/663 lines for updates/boot.py
+ [serialFileIO] Sent 560/663 lines for updates/boot.py
+ [serialFileIO] Sent 570/663 lines for updates/boot.py
+ [serialFileIO] Sent 580/663 lines for updates/boot.py
+ [serialFileIO] Sent 590/663 lines for updates/boot.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 600/663 lines for updates/boot.py
+ [serialFileIO] Sent 610/663 lines for updates/boot.py
+ [serialFileIO] Sent 620/663 lines for updates/boot.py
+ [serialFileIO] Sent 630/663 lines for updates/boot.py
+ [serialFileIO] Sent 640/663 lines for updates/boot.py
+ [serialFileIO] Sent 650/663 lines for updates/boot.py
+ [serialFileIO] Sent 660/663 lines for updates/boot.py
+ [serialFileIO] writeFile commands sent for updates/boot.py
+29 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/boot.py: "File /updates/boot.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/boot.py
+ [FirmwareUpdater] Writing update file: /updates/code.py
+ [serialFileIO] writeFile starting for updates/code.py
+ [serialFileIO] File size: 12955 bytes (13 KB), timeout: 194000ms
+ [serialFileIO] Sending WRITEFILE command for updates/code.py
+ [serialFileIO] writeFile received data for updates/code.py: "WRITEFILE:READY:code.py\n"
+ [serialFileIO] Received unexpected response during updates/code.py write: "WRITEFILE:READY:code.py\n"
+ [serialFileIO] writeFile received data for updates/code.py: "STREAM:READY:code.py\n"
+ [serialFileIO] Received unexpected response during updates/code.py write: "STREAM:READY:code.py\n"
+ [serialFileIO] Sending content for updates/code.py (12955 bytes)
+ [serialFileIO] Sending 365 lines for updates/code.py
+ [serialFileIO] Sent 10/365 lines for updates/code.py
+ [serialFileIO] Sent 20/365 lines for updates/code.py
+ [serialFileIO] Sent 30/365 lines for updates/code.py
+ [serialFileIO] Sent 40/365 lines for updates/code.py
+ [serialFileIO] Sent 50/365 lines for updates/code.py
+ [serialFileIO] Sent 60/365 lines for updates/code.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 70/365 lines for updates/code.py
+ [serialFileIO] Sent 80/365 lines for updates/code.py
+ [serialFileIO] Sent 90/365 lines for updates/code.py
+ [serialFileIO] Sent 100/365 lines for updates/code.py
+ [serialFileIO] Sent 110/365 lines for updates/code.py
+ [serialFileIO] Sent 120/365 lines for updates/code.py
+ [serialFileIO] Sent 130/365 lines for updates/code.py
+ [serialFileIO] Sent 140/365 lines for updates/code.py
+ [serialFileIO] Sent 150/365 lines for updates/code.py
+ [serialFileIO] Sent 160/365 lines for updates/code.py
+ [serialFileIO] Sent 170/365 lines for updates/code.py
+ [serialFileIO] Sent 180/365 lines for updates/code.py
+ [serialFileIO] Sent 190/365 lines for updates/code.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 200/365 lines for updates/code.py
+ [serialFileIO] Sent 210/365 lines for updates/code.py
+ [serialFileIO] Sent 220/365 lines for updates/code.py
+ [serialFileIO] Sent 230/365 lines for updates/code.py
+ [serialFileIO] Sent 240/365 lines for updates/code.py
+ [serialFileIO] Sent 250/365 lines for updates/code.py
+ [serialFileIO] Sent 260/365 lines for updates/code.py
+ [serialFileIO] Sent 270/365 lines for updates/code.py
+ [serialFileIO] Sent 280/365 lines for updates/code.py
+ [serialFileIO] Sent 290/365 lines for updates/code.py
+ [serialFileIO] Sent 300/365 lines for updates/code.py
+ [serialFileIO] Sent 310/365 lines for updates/code.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 320/365 lines for updates/code.py
+ [serialFileIO] Sent 330/365 lines for updates/code.py
+ [serialFileIO] Sent 340/365 lines for updates/code.py
+ [serialFileIO] Sent 350/365 lines for updates/code.py
+ [serialFileIO] Sent 360/365 lines for updates/code.py
+ [serialFileIO] writeFile commands sent for updates/code.py
+11 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/code.py: "File /updates/code.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/code.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [FirmwareUpdater] Writing update file: /updates/serial_handler.py
+ [serialFileIO] writeFile starting for updates/serial_handler.py
+ [serialFileIO] File size: 53972 bytes (53 KB), timeout: 514000ms
+ [serialFileIO] Sending WRITEFILE command for updates/serial_handler.py
+ [serialFileIO] writeFile received data for updates/serial_handler.py: "WRITEFILE:READY:serial_handler.py\n"
+ [serialFileIO] Received unexpected response during updates/serial_handler.py write: "WRITEFILE:READY:serial_handler.py\n"
+ [serialFileIO] writeFile received data for updates/serial_handler.py: "STREAM:READY:serial_handler.py\n"
+ [serialFileIO] Received unexpected response during updates/serial_handler.py write: "STREAM:READY:serial_handler.py\n"
+ [serialFileIO] Sending content for updates/serial_handler.py (53972 bytes)
+ [serialFileIO] Using chunk-based transmission for large file updates/serial_handler.py (53KB)
+ [serialFileIO] Sending 53 chunks of ~1024 bytes each for updates/serial_handler.py
+2 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 10/53 for updates/serial_handler.py
+2 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 20/53 for updates/serial_handler.py
+2 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 30/53 for updates/serial_handler.py
+2 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 40/53 for updates/serial_handler.py
+2 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 50/53 for updates/serial_handler.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent chunk 53/53 for updates/serial_handler.py
+ [serialFileIO] writeFile commands sent for updates/serial_handler.py
+49 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/serial_handler.py: "File /updates/serial_handler.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/serial_handler.py
+ [FirmwareUpdater] Writing update file: /updates/utils.py
+ [serialFileIO] writeFile starting for updates/utils.py
+ [serialFileIO] File size: 769 bytes (1 KB), timeout: 38000ms
+ [serialFileIO] Sending WRITEFILE command for updates/utils.py
+ [serialFileIO] writeFile received data for updates/utils.py: "WRITEFILE:READY:utils.py\n"
+ [serialFileIO] Received unexpected response during updates/utils.py write: "WRITEFILE:READY:utils.py\n"
+ [serialFileIO] writeFile received data for updates/utils.py: "STREAM:READY:utils.py\n"
+ [serialFileIO] Received unexpected response during updates/utils.py write: "STREAM:READY:utils.py\n"
+ [serialFileIO] Sending content for updates/utils.py (769 bytes)
+ [serialFileIO] Sending 25 lines for updates/utils.py
+ [serialFileIO] writeFile commands sent for updates/utils.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/utils.py: "File /updates/utils.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/utils.py
+ [FirmwareUpdater] Writing update file: /updates/hardware.py
+ [serialFileIO] writeFile starting for updates/hardware.py
+ [serialFileIO] File size: 1326 bytes (2 KB), timeout: 46000ms
+ [serialFileIO] Sending WRITEFILE command for updates/hardware.py
+ [serialFileIO] writeFile received data for updates/hardware.py: "WRITEFILE:READY:hardware.py\n"
+ [serialFileIO] Received unexpected response during updates/hardware.py write: "WRITEFILE:READY:hardware.py\n"
+ [serialFileIO] writeFile received data for updates/hardware.py: "STREAM:READY:hardware.py\n"
+ [serialFileIO] Received unexpected response during updates/hardware.py write: "STREAM:READY:hardware.py\n"
+ [serialFileIO] Sending content for updates/hardware.py (1326 bytes)
+ [serialFileIO] Sending 43 lines for updates/hardware.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile commands sent for updates/hardware.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/hardware.py: "File /updates/hardware.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/hardware.py
+ [FirmwareUpdater] Writing update file: /updates/gamepad.py
+ [serialFileIO] writeFile starting for updates/gamepad.py
+ [serialFileIO] File size: 1110 bytes (2 KB), timeout: 46000ms
+ [serialFileIO] Sending WRITEFILE command for updates/gamepad.py
+ [serialFileIO] writeFile received data for updates/gamepad.py: "WRITEFILE:READY:gamepad.py\n"
+ [serialFileIO] Received unexpected response during updates/gamepad.py write: "WRITEFILE:READY:gamepad.py\n"
+ [serialFileIO] writeFile received data for updates/gamepad.py: "STREAM:READY:gamepad.py\n"
+ [serialFileIO] Received unexpected response during updates/gamepad.py write: "STREAM:READY:gamepad.py\n"
+ [serialFileIO] Sending content for updates/gamepad.py (1110 bytes)
+ [serialFileIO] Sending 44 lines for updates/gamepad.py
+ [serialFileIO] writeFile commands sent for updates/gamepad.py
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/gamepad.py: "File /updates/gamepad.py written (high-speed streaming)\n"
+ [serialFileIO] writeFile SUCCESS for updates/gamepad.py
+ [FirmwareUpdater] Writing update file: /updates/config.json
+ [serialFileIO] writeFile starting for updates/config.json
+ [serialFileIO] File size: 1614 bytes (2 KB), timeout: 46000ms
+ [serialFileIO] Sending WRITEFILE command for updates/config.json
+ [serialFileIO] writeFile received data for updates/config.json: "WRITEFILE:READY:config.json\n"
+ [serialFileIO] Received unexpected response during updates/config.json write: "WRITEFILE:READY:config.json\n"
+ [serialFileIO] Sending content for updates/config.json (1614 bytes)
+ [serialFileIO] Sending 58 lines for updates/config.json
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 10/58 lines for updates/config.json
+ [serialFileIO] Sent 20/58 lines for updates/config.json
+ [serialFileIO] Sent 30/58 lines for updates/config.json
+ [serialFileIO] Sent 40/58 lines for updates/config.json
+ [serialFileIO] Sent 50/58 lines for updates/config.json
+ [serialFileIO] writeFile commands sent for updates/config.json
+3 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/config.json: "File /updates/config.json written (atomic)\n"
+ [serialFileIO] writeFile SUCCESS for updates/config.json
+ [FirmwareUpdater] Writing update file: /updates/presets.json
+ [serialFileIO] writeFile starting for updates/presets.json
+ [serialFileIO] File size: 11394 bytes (12 KB), timeout: 186000ms
+ [serialFileIO] Sending WRITEFILE command for updates/presets.json
+ [serialFileIO] writeFile received data for updates/presets.json: "WRITEFILE:READY:presets.json\n"
+ [serialFileIO] Received unexpected response during updates/presets.json write: "WRITEFILE:READY:presets.json\n"
+ [serialFileIO] Sending content for updates/presets.json (11394 bytes)
+ [serialFileIO] Sending 170 lines for updates/presets.json
+ [serialFileIO] Sent 10/170 lines for updates/presets.json
+ [serialFileIO] Sent 20/170 lines for updates/presets.json
+ [serialFileIO] Sent 30/170 lines for updates/presets.json
+ [serialFileIO] Sent 40/170 lines for updates/presets.json
+ [serialFileIO] Sent 50/170 lines for updates/presets.json
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] Sent 60/170 lines for updates/presets.json
+ [serialFileIO] Sent 70/170 lines for updates/presets.json
+ [serialFileIO] Sent 80/170 lines for updates/presets.json
+ [serialFileIO] Sent 90/170 lines for updates/presets.json
+ [serialFileIO] Sent 100/170 lines for updates/presets.json
+ [serialFileIO] Sent 110/170 lines for updates/presets.json
+ [serialFileIO] Sent 120/170 lines for updates/presets.json
+ [serialFileIO] Sent 130/170 lines for updates/presets.json
+ [serialFileIO] Sent 140/170 lines for updates/presets.json
+ [serialFileIO] Sent 150/170 lines for updates/presets.json
+ [serialFileIO] Sent 160/170 lines for updates/presets.json
+ [serialFileIO] Sent 170/170 lines for updates/presets.json
+ 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile commands sent for updates/presets.json
+23 🛑 BOOTSEL detection skipped - bootselPrompted: false isFlashingFirmware: true
+ [serialFileIO] writeFile received data for updates/presets.json: "File /updates/presets.json written (atomic)\n"
+ [serialFileIO] writeFile SUCCESS for updates/presets.json
+ [FirmwareUpdater] All update files written successfully
+ [FirmwareUpdater] Triggering update reboot...
+ [app.js] isFlashingFirmware set to: false
+ [FirmwareUpdater] BOOTSEL detection restored after firmware update
+ ✅ [AutomaticUpdater] Firmware update successful, clearing version cache for next detection...
+ 🧹 Clearing version cache for fresh detection
+ ✅ Cleared activeDevice version cache
+ ✅ Reset UI version display
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [MultiDeviceManager] Active device unchanged during scan: COM8
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2329 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2356 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:856 [MultiDeviceManager] Updated connected device during scan: COM8 TestBox
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:945 [MultiDeviceManager] Active device unchanged during scan: COM8
