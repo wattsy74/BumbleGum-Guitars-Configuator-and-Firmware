@@ -1,4 +1,9 @@
 {
+  "_metadata": {
+    "version": "3.2.0",
+    "description": "BumbleGum Guitar Controller User Presets",
+    "lastUpdated": "2025-08-04"
+  },
   "User 1": {
     "green-fret-pressed": "#FFFFFF",
     "red-fret-pressed": "#FFFFFF",

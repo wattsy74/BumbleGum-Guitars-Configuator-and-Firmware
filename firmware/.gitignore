@@ -1,0 +1,16 @@
+# BGG Firmware Updates Repository
+# Only track firmware files and documentation
+
+# Ignore development files
+*.pyc
+__pycache__/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+*.bak
+*.swp
+
+# Keep only essential firmware files

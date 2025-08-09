@@ -293,15 +293,15 @@
     </div>
 </div>
   <!-- Diagnostics Modal -->
-  <div id="diagnostics-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,30,30,0.95); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:#222; color:#fff; width:100vw; height:100vh; position:relative; box-shadow:0 2px 16px #0003; text-align:left; border-radius:0; padding:0; overflow:auto;">
+  <div id="diagnostics-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(30,30,30,0.95); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#222; color:#fff; width:1000px; height:600px; position:relative; box-shadow:0 2px 16px #0003; text-align:left; border-radius:0; padding:0; overflow:auto;">
       <!-- Top header bar similar to main window -->
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#1a1a1a; border-bottom:1px solid #333;">
         <span style="font-size:24px; color:#ffcc00; font-family:'Segoe UI', sans-serif; white-space:nowrap;">Diagnostics</span>
         <button id="diag-close-btn" style="background:#444; color:#fff; border:none; border-radius:4px; padding:8px 10px; font-size:1.2em; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px #0008; pointer-events:auto; line-height:1; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">×</button>
       </div>
       <!-- Diagnostics sections scaffold -->
-      <div id="diagnostics-content" style="padding:16px 48px; max-width:1800px; margin:0 auto;">
+      <div id="diagnostics-content" style="padding:16px 24px; max-width:950px; margin:0 auto;">
         <!-- Compact Polling Mode Selector -->
         <div style="text-align:center; margin-bottom:12px; padding:6px; background:#2a2a2a; border-radius:6px;">
           <div style="display:flex; justify-content:center; gap:20px; align-items:center;">
@@ -333,38 +333,38 @@
         <section style="margin-bottom:16px; display:flex; flex-direction:row; justify-content:center; align-items:stretch; gap:20px; flex-wrap:nowrap;">
           <!-- Input Status Box -->
           <div style="flex:1; display:flex; flex-direction:column;">
-            <div id="diag-input-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:14px 20px; min-width:480px; max-width:480px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-              <h3 style="margin:0 0 6px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Input Status</h3>
+            <div id="diag-input-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:12px 20px; min-width:480px; max-width:480px; height:200px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 style="margin:0 0 4px 0; font-size:1.0em; font-weight:bold; color:#ffe066;">Input Status</h3>
               <!-- Input boxes row 1 -->
               <div id="diag-input-boxes-row1" style="display:flex; justify-content:center; gap:12px; margin-bottom:4px;"></div>
               <!-- Input boxes row 2 -->
               <div id="diag-input-boxes-row2" style="display:flex; justify-content:center; gap:12px; margin-bottom:4px;"></div>
-              <div style="color:#bbb; font-size:12px; margin-top:auto;">Shows live input state for all buttons.</div>
+              <div style="color:#bbb; font-size:11px; margin-top:auto;">Shows live input state for all buttons.</div>
             </div>
           </div>
           
           <!-- Whammy Box -->
           <div style="flex:1; display:flex; flex-direction:column;">
-            <div id="diag-whammy-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:14px 16px; max-width:220px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-              <h3 style="margin:0 0 6px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Whammy</h3>
-              <div id="diag-whammy-live-val" style="font-weight:bold; margin-bottom:6px; font-size:1.3em; color:#ffe066;">Live: -</div>
+            <div id="diag-whammy-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:12px 16px; max-width:220px; height:200px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 style="margin:0 0 4px 0; font-size:1.0em; font-weight:bold; color:#ffe066;">Whammy</h3>
+              <div id="diag-whammy-live-val" style="font-weight:bold; margin-bottom:6px; font-size:1.2em; color:#ffe066;">Live: -</div>
               <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:6px; width:100%;">
                 <div style="color:#bbb; text-align:center;">Min: <span id="diag-whammy-min" style="color:#ffe066; font-weight:bold;">-</span></div>
                 <div style="color:#bbb; text-align:center;">Max: <span id="diag-whammy-max" style="color:#ffe066; font-weight:bold;">-</span></div>
               </div>
-              <div style="color:#bbb; font-size:12px; margin-top:auto;">Move the whammy bar to see live values.</div>
+              <div style="color:#bbb; font-size:11px; margin-top:auto;">Move the whammy bar to see live values.</div>
             </div>
           </div>
           
           <!-- Hat Status Box - Expanded to fill LED test space -->
           <div style="display:flex; flex-direction:column; flex:1;">
-            <div id="diag-hat-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:18px; height:260px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-              <h3 id="diag-hat-title" style="margin:0 0 10px 0; font-size:1.1em; font-weight:bold; color:#ffe066;">Joystick Status</h3>
-              <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; width:100%;">
+            <div id="diag-hat-status" class="diagnostic-box" style="font-size:1.0em; background:#222; border-radius:12px; padding:16px; height:200px; text-align:center; border:2px solid #ffe066; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+              <h3 id="diag-hat-title" style="margin:0 0 8px 0; font-size:1.0em; font-weight:bold; color:#ffe066;">Joystick Status</h3>
+              <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px; width:100%;">
                 <div style="color:#bbb; text-align:center;">X: <span id="diag-hat-x" style="color:#ffe066; font-weight:bold;">-</span></div>
                 <div style="color:#bbb; text-align:center;">Y: <span id="diag-hat-y" style="color:#ffe066; font-weight:bold;">-</span></div>
               </div>
-              <div style="color:#bbb; font-size:12px; margin-top:auto;">Joystick X/Y axis values</div>
+              <div style="color:#bbb; font-size:11px; margin-top:auto;">Joystick X/Y axis values</div>
             </div>
           </div>
         </section>
@@ -376,8 +376,18 @@
             <div style="color:#ccc; font-size:0.9em; line-height:1.3;">
               <div>App Version: Loading...</div>
               <div>Presets Version: <span id="diag-presets-version">Loading...</span></div>
-              <div>Device Firmware: <span id="diag-device-firmware-version">-</span></div>
+              <div>Device Firmware: <span id="diag-device-firmware-version">-</span> 
+                <button id="refresh-device-version" style="background-color:#444;color:#eee;border:none;padding:2px 6px;margin-left:8px;border-radius:3px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.75em;transition:background-color 0.2s;" title="Refresh device version detection">
+                  🔄
+                </button>
+              </div>
               <div>Embedded Firmware: <span id="diag-embedded-firmware-version">-</span></div>
+            </div>
+            <div style="margin-top:12px;">
+              <button id="check-for-updates" style="background-color:#333;color:#eee;border:none;padding:6px 12px;margin:2px 0;border-radius:4px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.85em;transition:background-color 0.2s;">
+                🔍 Check for Updates
+              </button>
+              <div id="update-status" style="margin-top:8px;font-size:0.85em;color:#ccc;"></div>
             </div>
           </div>
           
@@ -419,7 +429,9 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="firmwareUpdater.js?v=20250803-2"></script>
+  <script src="automaticFirmwareUpdater.js?v=20250803-2"></script>
+  <script src="app.js?v=20250803-2"></script>
 </body>
 
 </html>

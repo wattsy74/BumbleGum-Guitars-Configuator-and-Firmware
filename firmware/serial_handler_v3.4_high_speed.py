@@ -1,4 +1,4 @@
-# serial_handler.py
+# serial_handler.py - High-Speed Streaming Version
 __version__ = "3.4"
 
 def get_version():
@@ -6,47 +6,8 @@ def get_version():
 # Serial command handler for BGG Firmware
 import json
 import time
-import microcontroller                 # 📝 Handle WRITEFILE commands with optimized streaming mode for faster writes
-                elif mode is None and line.startswith("WRITEFILE:"):
-                    filename = "/" + line.split(":", 1)[1]
-                    file_lines = []
-                    
-                    # Expanded detection for streaming mode - now optimized for speed
-                    fname_lower = filename.lower()
-                    estimated_large_file = (
-                        "serial_handler.py" in fname_lower or
-                        "code.py" in fname_lower or
-                        "gamepad.py" in fname_lower or
-                        "hardware.py" in fname_lower or
-                        "utils.py" in fname_lower or
-                        "demo_routine.py" in fname_lower or
-                        "demo_state.py" in fname_lower or
-                        "pin_detect.py" in fname_lower or
-                        "boot.py" in fname_lower or
-                        # Also use streaming for any .py file over ~1KB (estimated)
-                        (fname_lower.endswith(".py") and len(fname_lower) > 8)
-                    )
-                    
-                    if estimated_large_file:
-                        mode = "write_stream"
-                        print(f"📝 Starting HIGH-SPEED streaming write to {filename}")
-                        # Open file handle immediately for high-speed streaming
-                        try:
-                            ensure_parent_dir_exists(filename)
-                            stream_file = open(filename, "w")
-                            file_lines = [stream_file]  # Store file handle in first position
-                            serial.write(f"DEBUG: HIGH-SPEED streaming mode activated for {filename}\n".encode("utf-8"))
-                        except Exception as stream_error:
-                            serial.write(f"ERROR: Failed to open stream for {filename}: {stream_error}\n".encode("utf-8"))
-                            mode = "write"  # Fallback to regular mode
-                            file_lines = []
-                    else:
-                        mode = "write"
-                        print(f"📝 Starting regular write to {filename}")
-                    
-                    # DEBUG: Send immediate acknowledgment
-                    serial.write(f"DEBUG: WRITEFILE command received for {filename}\n".encode("utf-8"))
-                    print(f"🔍 DEBUG: WRITEFILE command processed, mode set to {mode}")
+import microcontroller 
+import os
 from utils import hex_to_rgb, load_config
 from hardware import setup_leds, setup_buttons, setup_whammy, resolve_pin
 
@@ -209,7 +170,7 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     else:
                         serial.write(b"WHAMMY:-1\n")
 
-                # �️ Handle READJOYSTICK command
+                # 🕹️ Handle READJOYSTICK command
                 elif mode is None and line == "READJOYSTICK":
                     if joystick_x and joystick_y:
                         x_val = joystick_x.value
@@ -218,15 +179,47 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     else:
                         serial.write(b"JOYSTICK:X:-1:Y:-1\n")
 
-                # �📝 Handle WRITEFILE commands
+                # 📝 Handle WRITEFILE commands with HIGH-SPEED streaming mode
                 elif mode is None and line.startswith("WRITEFILE:"):
                     filename = "/" + line.split(":", 1)[1]
                     file_lines = []
-                    mode = "write"
-                    print(f"📝 Starting write to {filename}")
+                    
+                    # Optimized detection - use high-speed streaming for most Python files
+                    fname_lower = filename.lower()
+                    use_high_speed_streaming = (
+                        "serial_handler.py" in fname_lower or
+                        "code.py" in fname_lower or
+                        "gamepad.py" in fname_lower or
+                        "hardware.py" in fname_lower or
+                        "utils.py" in fname_lower or
+                        "demo_routine.py" in fname_lower or
+                        "demo_state.py" in fname_lower or
+                        "pin_detect.py" in fname_lower or
+                        "boot.py" in fname_lower or
+                        # Any .py file likely to be >2KB gets streaming
+                        (fname_lower.endswith(".py") and len(fname_lower) > 8)
+                    )
+                    
+                    if use_high_speed_streaming:
+                        mode = "write_stream"
+                        print(f"📝 Starting HIGH-SPEED streaming write to {filename}")
+                        # Open file handle immediately for high-speed streaming
+                        try:
+                            ensure_parent_dir_exists(filename)
+                            stream_file = open(filename, "w")
+                            file_lines = [stream_file]  # Store file handle in first position
+                            serial.write(f"DEBUG: HIGH-SPEED streaming activated for {filename}\n".encode("utf-8"))
+                        except Exception as stream_error:
+                            serial.write(f"ERROR: Failed to open stream for {filename}: {stream_error}\n".encode("utf-8"))
+                            mode = "write"  # Fallback to regular mode
+                            file_lines = []
+                    else:
+                        mode = "write"
+                        print(f"📝 Starting regular write to {filename}")
+                    
                     # DEBUG: Send immediate acknowledgment
                     serial.write(f"DEBUG: WRITEFILE command received for {filename}\n".encode("utf-8"))
-                    print(f"🔍 DEBUG: WRITEFILE command processed, mode set to write")
+                    print(f"🔍 DEBUG: WRITEFILE command processed, mode set to {mode}")
 
                 # 🔄 Handle user preset import
                 elif mode is None and line == "IMPORTUSER":
@@ -397,15 +390,16 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     except Exception as e:
                         serial.write(f"ERROR: Invalid TILTWAVE_ENABLE command: {e}\n".encode("utf-8"))
 
-                # ✏️ Streaming write mode logic - high-speed direct disk writes
+                # ✏️ HIGH-SPEED streaming write mode - optimized for maximum throughput
                 elif mode == "write_stream":
                     if line == "END":
                         try:
-                            # Close the stream file
+                            # Flush and close the stream file
                             if file_lines and hasattr(file_lines[0], 'close'):
+                                file_lines[0].flush()  # Final flush
                                 file_lines[0].close()
-                                serial.write(f"✅ File {filename} written (streaming mode)\n".encode("utf-8"))
-                                print(f"✅ Streaming write completed for {filename}")
+                                serial.write(f"✅ File {filename} written (high-speed streaming)\n".encode("utf-8"))
+                                print(f"✅ High-speed streaming write completed for {filename}")
                             else:
                                 serial.write(f"ERROR: No valid stream handle for {filename}\n".encode("utf-8"))
                         except Exception as e:
@@ -417,23 +411,26 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                             import gc
                             gc.collect()
                     else:
-                        # High-speed write: write immediately, minimal overhead
+                        # HIGH-SPEED write: minimal overhead, batched operations
                         try:
                             if file_lines and hasattr(file_lines[0], 'write'):
                                 # Fast write with newline
                                 file_lines[0].write(line + "\n")
                                 
-                                # Reduced flushing frequency for speed - only every 64 lines (~3KB)
-                                if not hasattr(file_lines[0], '_line_count'):
-                                    file_lines[0]._line_count = 0
-                                file_lines[0]._line_count += 1
+                                # Track lines using file_lines list length (starting from index 1)
+                                if len(file_lines) == 1:  # First line after file handle
+                                    file_lines.append(1)  # Line counter at index 1
+                                else:
+                                    file_lines[1] += 1  # Increment line counter
                                 
-                                # Batch flush every 64 lines for speed optimization
-                                if file_lines[0]._line_count % 64 == 0:
+                                line_count = file_lines[1]
+                                
+                                # Optimized flush frequency - every 128 lines (~6KB) for speed
+                                if line_count % 128 == 0:
                                     file_lines[0].flush()
                                 
-                                # Very infrequent GC - only every 20KB to maximize speed
-                                if file_lines[0]._line_count % 400 == 0:  # ~20KB
+                                # Very infrequent GC - only every 40KB to maximize speed
+                                if line_count % 800 == 0:  # ~40KB
                                     import gc
                                     gc.collect()
                             else:
@@ -450,186 +447,80 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                 elif mode == "write":
                     if line == "END":
                         try:
-                            # Ultra-aggressive pre-write memory cleanup
+                            # Aggressive pre-write memory cleanup
                             import gc
                             line_count = len(file_lines)
-                            if line_count > 40:  # Much earlier threshold
+                            if line_count > 20:  # Earlier threshold
                                 gc.collect()
-                                print(f"🧠 Ultra pre-write cleanup for {filename}: {line_count} lines")
-                                
-                                # Multiple cleanup passes for very large files
-                                if line_count > 80:
-                                    gc.collect()
-                                    print(f"🧠 Double pre-write cleanup for {filename}: {line_count} lines")
-                                    
-                                    if line_count > 120:
-                                        gc.collect()
-                                        print(f"🧠 Triple pre-write cleanup for {filename}: {line_count} lines")
+                                print(f"🧠 Pre-write cleanup for {filename}: {line_count} lines")
                             
-                            # Memory-efficient file writing - avoid creating large raw strings
+                            # Memory-efficient file writing
                             if filename.endswith(".json"):
-                                # For JSON files, parse without creating a large intermediate string
-                                try:
-                                    # For large JSON files, write directly without full memory allocation
-                                    line_count = len(file_lines)
-                                    if line_count > 100:  # Large JSON files - avoid memory allocation failures
-                                        print(f"🧠 Memory-safe large JSON processing for {filename}: {line_count} lines")
-                                        
-                                        # Aggressive memory cleanup before processing
-                                        import gc
-                                        gc.collect()
-                                        gc.collect()
-                                        gc.collect()
-                                        
-                                        # For large JSON files, try to parse in smaller chunks
-                                        # First, try to identify the JSON structure without full parsing
-                                        is_valid_structure = True
-                                        
-                                        # Validate structure by checking first and last few lines
-                                        if len(file_lines) > 3:
-                                            first_line = file_lines[0].strip()
-                                            last_line = file_lines[-1].strip()
-                                            
-                                            # Basic JSON structure validation
-                                            if not (first_line.startswith('{') and last_line.endswith('}')):
-                                                is_valid_structure = False
-                                        
-                                        if is_valid_structure:
-                                            # Write the JSON content directly without full parsing for large files
-                                            ensure_parent_dir_exists(filename)
-                                            with open(filename, "w") as f:
-                                                for i, line in enumerate(file_lines):
-                                                    f.write(line)
-                                                    if i < len(file_lines) - 1:
-                                                        f.write("\n")
-                                                    
-                                                    # Cleanup every 20 lines
-                                                    if (i + 1) % 20 == 0:
-                                                        gc.collect()
-                                                f.write("\n")  # Ensure file ends with newline
-                                            
-                                            serial.write(f"✅ File {filename} written (large JSON, direct write)\n".encode("utf-8"))
-                                            print("✅ Large JSON file written successfully (direct write)")
-                                        else:
-                                            serial.write(f"ERROR: Invalid JSON structure in {filename}\n".encode("utf-8"))
-                                            print("❌ Invalid JSON structure detected")
+                                # Small JSON files - use full parsing and validation
+                                raw = "\n".join(file_lines)
+                                parsed = json.loads(raw)
+                                
+                                # Validation for user_presets.json
+                                if filename == "/user_presets.json":
+                                    if (
+                                        isinstance(parsed, dict) and
+                                        all(
+                                            isinstance(v, dict) and (
+                                                (isinstance(k, str) and (k.lower().startswith("user ") or "preset" in k.lower()))
+                                            )
+                                            for k, v in parsed.items()
+                                        )
+                                    ):
+                                        ensure_parent_dir_exists(filename)
+                                        with open(filename, "w") as f:
+                                            f.write(json.dumps(parsed, indent=2) + "\n")
+                                        serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                        print("✅ File written successfully (user_presets.json, validated)")
+                                        user_presets = parsed
+                                        preset_colors = user_presets.get("NewUserPreset1", {})
                                     else:
-                                        # Small JSON files - use full parsing and validation
-                                        raw = "\n".join(file_lines)
-                                        parsed = json.loads(raw)
-                                        
-                                        # Validation for user_presets.json
-                                        if filename == "/user_presets.json":
-                                            # Only allow if it's a dict of objects with keys that look like user preset names
-                                            if (
-                                                isinstance(parsed, dict) and
-                                                all(
-                                                    isinstance(v, dict) and (
-                                                        (isinstance(k, str) and (k.lower().startswith("user ") or "preset" in k.lower()))
-                                                    )
-                                                    for k, v in parsed.items()
-                                                )
-                                            ):
-                                                ensure_parent_dir_exists(filename)
-                                                with open(filename, "w") as f:
-                                                    f.write(json.dumps(parsed, indent=2) + "\n")
-                                                serial.write(f"✅ File {filename} written\n".encode("utf-8"))
-                                                print("✅ File written successfully (user_presets.json, validated)")
-                                                user_presets = parsed
-                                                preset_colors = user_presets.get("NewUserPreset1", {})
-                                            else:
-                                                serial.write(f"ERROR: Invalid user_presets.json structure, write rejected\n".encode("utf-8"))
-                                                print("❌ Invalid user_presets.json structure, write rejected")
-                                        elif filename == "/config.json":
-                                            ensure_parent_dir_exists(filename)
-                                            with open(filename, "w") as f:
-                                                f.write(json.dumps(parsed, indent=2) + "\n")
-                                            serial.write(f"✅ File {filename} written\n".encode("utf-8"))
-                                            print("✅ File written successfully")
-                                            if leds:
-                                                leds.deinit()
-                                            for p in buttons.values():
-                                                try:
-                                                    p["obj"].deinit()
-                                                except:
-                                                    pass
-                                            if whammy:
-                                                try:
-                                                    whammy.deinit()
-                                                except:
-                                                    pass
-                                            import microcontroller
-                                            microcontroller.reset()
-                                        else:
-                                            # Write re-serialized JSON for other small JSON files
-                                            ensure_parent_dir_exists(filename)
-                                            with open(filename, "w") as f:
-                                                f.write(json.dumps(parsed, indent=2) + "\n")
-                                            serial.write(f"✅ File {filename} written\n".encode("utf-8"))
-                                            print("✅ File written successfully")
-                                    
-                                except json.JSONDecodeError as json_error:
-                                    serial.write(f"ERROR: Invalid JSON in {filename}: {json_error}\n".encode("utf-8"))
-                                    print(f"❌ JSON parse error: {json_error}")
-                                except Exception as e:
-                                    serial.write(f"ERROR: Failed to write JSON {filename}: {e}\n".encode("utf-8"))
-                                    print(f"❌ JSON write error: {e}")
-                            else:
-                                # Memory-efficient writing for non-JSON files - NEVER create a large raw string
-                                line_count = len(file_lines)
-                                if line_count > 50:  # Threshold for line-by-line writing (much lower than 500 bytes)
-                                    print(f"🧠 Writing large file {filename} line-by-line: {line_count} lines")
-                                    # Maximum pre-write cleanup
-                                    import gc
-                                    gc.collect()
-                                    gc.collect()
-                                    gc.collect()  # Triple cleanup
-                                    
-                                    # Write line by line to avoid memory allocation failures
+                                        serial.write(f"ERROR: Invalid user_presets.json structure, write rejected\n".encode("utf-8"))
+                                        print("❌ Invalid user_presets.json structure, write rejected")
+                                elif filename == "/config.json":
                                     ensure_parent_dir_exists(filename)
                                     with open(filename, "w") as f:
-                                        for i, line in enumerate(file_lines):
-                                            f.write(line)
-                                            if i < len(file_lines) - 1:  # Add newline except for last line
-                                                f.write("\n")
-                                            
-                                            # Aggressive cleanup every 10 lines for large files
-                                            if (i + 1) % 10 == 0:
-                                                gc.collect()
-                                                import time
-                                                time.sleep(0.005)  # 5ms yield every 10 lines
-                                                
-                                            # Extra cleanup every 25 lines
-                                            if (i + 1) % 25 == 0:
-                                                gc.collect()
-                                                gc.collect()  # Double cleanup every 25 lines
-                                                time.sleep(0.010)  # 10ms extra yield every 25 lines
-                                                print(f"🧠 Memory cleanup at line {i + 1}/{line_count}")
-                                                
-                                            # Emergency cleanup every 50 lines
-                                            if (i + 1) % 50 == 0:
-                                                gc.collect()
-                                                gc.collect()
-                                                gc.collect()  # Triple cleanup every 50 lines
-                                                time.sleep(0.015)  # 15ms emergency yield every 50 lines
-                                                print(f"🚨 EMERGENCY cleanup at line {i + 1}/{line_count}")
-                                        f.write("\n")  # Ensure file ends with newline
-                                    print(f"✅ File {filename} written successfully line-by-line ({line_count} lines)")
+                                        f.write(json.dumps(parsed, indent=2) + "\n")
+                                    serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                    print("✅ File written successfully")
+                                    if leds:
+                                        leds.deinit()
+                                    for p in buttons.values():
+                                        try:
+                                            p["obj"].deinit()
+                                        except:
+                                            pass
+                                    if whammy:
+                                        try:
+                                            whammy.deinit()
+                                        except:
+                                            pass
+                                    import microcontroller
+                                    microcontroller.reset()
                                 else:
-                                    # Small files - write line by line but faster
-                                    import gc
-                                    gc.collect()
-                                    gc.collect()  # Double cleanup even for small files
+                                    # Write re-serialized JSON for other small JSON files with proper formatting
                                     ensure_parent_dir_exists(filename)
                                     with open(filename, "w") as f:
-                                        for i, line in enumerate(file_lines):
-                                            f.write(line)
-                                            if i < len(file_lines) - 1:
-                                                f.write("\n")
-                                        f.write("\n")  # Ensure file ends with newline
-                                    print(f"✅ Small file {filename} written successfully ({line_count} lines)")
+                                        f.write(json.dumps(parsed, indent=2) + "\n")
+                                    serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                                    print("✅ File written successfully")
                                     
-                                serial.write(f"✅ File {filename} written\n".encode("utf-8"))
+                            else:
+                                # Small non-JSON files - write efficiently
+                                ensure_parent_dir_exists(filename)
+                                with open(filename, "w") as f:
+                                    for i, line in enumerate(file_lines):
+                                        f.write(line)
+                                        if i < len(file_lines) - 1:
+                                            f.write("\n")
+                                    f.write("\n")  # Ensure file ends with newline
+                                print(f"✅ File {filename} written successfully ({line_count} lines)")
+                                    
+                            serial.write(f"✅ File {filename} written\n".encode("utf-8"))
 
                         except Exception as e:
                             serial.write(f"ERROR: Failed to write {filename}: {e}\n".encode("utf-8"))
@@ -644,54 +535,12 @@ def handle_serial(serial, config, raw_config, leds, buttons, whammy, current_sta
                     else:
                         try:
                             file_lines.append(line)
-                            # Ultra-aggressive memory protection: Much more frequent cleanup for very large files
+                            # Light memory protection for small files
                             line_count = len(file_lines)
-                            
-                            # Start cleanup MUCH earlier for large files
-                            if line_count > 10:  # Start at just 10 lines (≈500 bytes)
+                            if line_count > 30 and line_count % 20 == 0:  # Cleanup every 20 lines after 30
                                 import gc
                                 gc.collect()
-                                print(f"🧠 ULTRA-early memory cleanup: {line_count} lines for {filename}")
-                                
-                                # Very aggressive cleanup for small-medium files
-                                if line_count > 20:  # ≈1KB threshold
-                                    gc.collect()
-                                    gc.collect()  # Double cleanup
-                                    print(f"🧠 ULTRA aggressive cleanup: {line_count} lines for {filename}")
-                                    
-                                    # Emergency cleanup for medium files  
-                                    if line_count > 30:  # ≈1.5KB emergency threshold
-                                        gc.collect()
-                                        gc.collect()
-                                        gc.collect()  # Triple cleanup
-                                        print(f"🚨 ULTRA emergency cleanup: {line_count} lines for {filename}")
-                                        
-                                        # Critical cleanup for medium-large files
-                                        if line_count > 40:  # ≈2KB critical threshold
-                                            gc.collect()
-                                            gc.collect()
-                                            gc.collect()
-                                            gc.collect()  # Quadruple cleanup
-                                            print(f"🆘 ULTRA critical memory cleanup: {line_count} lines for {filename}")
-                                            
-                                            # Ultimate cleanup for large files
-                                            if line_count > 50:  # ≈2.5KB ultimate threshold
-                                                gc.collect()
-                                                gc.collect()
-                                                gc.collect()
-                                                gc.collect()
-                                                gc.collect()  # Quintuple cleanup
-                                                print(f"💀 ULTRA ultimate memory cleanup: {line_count} lines for {filename}")
-                                                
-                                                # Final desperate cleanup for very large files
-                                                if line_count > 60:  # ≈3KB final threshold
-                                                    gc.collect()
-                                                    gc.collect()
-                                                    gc.collect()
-                                                    gc.collect()
-                                                    gc.collect()
-                                                    gc.collect()  # Sextuple cleanup
-                                                    print(f"☠️ ULTRA final desperate cleanup: {line_count} lines for {filename}")
+                                print(f"🧠 Memory cleanup: {line_count} lines for {filename}")
                         except Exception as append_error:
                             print(f"❌ Error appending line to file_lines: {append_error}")
                             serial.write(f"ERROR: Memory error during file processing: {append_error}\n".encode("utf-8"))

@@ -21,7 +21,7 @@ class AutomaticFirmwareUpdater {
         
         // Bind methods
         this.checkForUpdates = this.checkForUpdates.bind(this);
-        // Note: downloadAndApplyUpdate method not yet implemented
+        this.downloadAndApplyUpdate = this.downloadAndApplyUpdate.bind(this);
     }
 
     /**
@@ -32,6 +32,30 @@ class AutomaticFirmwareUpdater {
         this.multiDeviceManager = multiDeviceManager || window.multiDeviceManager;
         
         console.log("🔄 Initializing automatic firmware update system...");
+        
+        // Set up device connection event listener for automatic version detection with retry
+        if (this.multiDeviceManager && typeof this.multiDeviceManager.on === 'function') {
+            this.multiDeviceManager.on('deviceConnected', async (device) => {
+                console.log("🔌 Device connected event received, waiting for setupDeviceInformation to complete...");
+                
+                // Wait briefly to let setupDeviceInformation complete its version detection
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Check if setupDeviceInformation already got the version
+                const deviceVersion = this.getDeviceFirmwareFromMainApp();
+                if (deviceVersion) {
+                    console.log("✅ setupDeviceInformation already detected version:", deviceVersion);
+                    this.currentVersion = { firmware_version: deviceVersion };
+                    return; // Don't retry if we already have the version
+                }
+                
+                console.log("⚠️ setupDeviceInformation didn't detect version, starting retry logic...");
+                // Attempt version detection with retry logic only if no version was found
+                await this.retryVersionDetectionAfterConnection(device);
+            });
+            
+            console.log("✅ Device connection event listener registered for automatic version detection");
+        }
         
         // Get current device version
         try {
@@ -48,7 +72,8 @@ class AutomaticFirmwareUpdater {
         // Force check on first run (if never checked before) or if 24 hours have passed
         if (!this.lastCheckTime || this.lastCheckTime === '0' || timeSinceLastCheck >= this.updateCheckInterval) {
             console.log("⏰ Running automatic update check...");
-            setTimeout(() => this.checkForUpdates(), 5000); // Increased delay to ensure device version is detected
+            // Increased delay significantly to ensure device version is fully detected and to avoid conflicts
+            setTimeout(() => this.checkForUpdates(false), 10000); // 10 second delay, don't show notifications automatically
         } else {
             const nextCheck = new Date(parseInt(this.lastCheckTime) + this.updateCheckInterval);
             console.log(`⏳ Next update check scheduled for: ${nextCheck.toLocaleString()}`);
@@ -72,8 +97,33 @@ class AutomaticFirmwareUpdater {
             
             if (deviceFirmwareElement && deviceFirmwareElement.textContent && deviceFirmwareElement.textContent !== '-') {
                 const uiVersion = deviceFirmwareElement.textContent.trim();
-                console.log('✅ [AutomaticUpdater] Found device firmware version from UI:', uiVersion);
-                return uiVersion;
+                
+                // CRITICAL: Ignore temporary status messages that are not actual versions
+                // BUT allow version-like patterns even if they might be temporary
+                const temporaryStatusMessages = [
+                    'Refreshing...',
+                    'Requesting...',
+                    'Loading...',
+                    'Detecting...',
+                    'Unknown',
+                    'Error',
+                    'No device connected',
+                    'Connecting...',
+                    'Timeout',
+                    '-'
+                ];
+                
+                // If it looks like a version number (contains digits and dots), use it even if it might be temporary
+                const looksLikeVersion = /^v?[\d]+\.[\d]+/.test(uiVersion);
+                
+                if (temporaryStatusMessages.includes(uiVersion)) {
+                    console.log(`⚠️ [AutomaticUpdater] Ignoring temporary status message: "${uiVersion}"`);
+                } else if (looksLikeVersion) {
+                    console.log('✅ [AutomaticUpdater] Found valid device firmware version from UI:', uiVersion);
+                    return uiVersion;
+                } else {
+                    console.log(`⚠️ [AutomaticUpdater] UI version doesn't look like a valid version: "${uiVersion}"`);
+                }
             }
             
             // SECOND: Check multiDeviceManager for stored version
@@ -86,12 +136,31 @@ class AutomaticFirmwareUpdater {
                 console.log("🔍 [AutomaticUpdater] activeDevice.firmwareVersion:", activeDevice?.firmwareVersion);
                 
                 if (activeDevice && activeDevice.firmwareVersion) {
-                    console.log('✅ [AutomaticUpdater] Found device firmware version from main app:', activeDevice.firmwareVersion);
-                    return activeDevice.firmwareVersion;
+                    // Also check for temporary status messages in cached device version
+                    const cachedVersion = activeDevice.firmwareVersion.trim();
+                    const temporaryStatusMessages = [
+                        'Refreshing...',
+                        'Requesting...',
+                        'Loading...',
+                        'Detecting...',
+                        'Unknown',
+                        'Error',
+                        'No device connected',
+                        'Connecting...',
+                        'Timeout',
+                        '-'
+                    ];
+                    
+                    if (temporaryStatusMessages.includes(cachedVersion)) {
+                        console.log(`⚠️ [AutomaticUpdater] Ignoring temporary cached status: "${cachedVersion}"`);
+                    } else {
+                        console.log('✅ [AutomaticUpdater] Found valid device firmware version from main app cache:', cachedVersion);
+                        return cachedVersion;
+                    }
                 }
             }
             
-            console.log('❌ [AutomaticUpdater] No device firmware version found in main app');
+            console.log('❌ [AutomaticUpdater] No valid device firmware version found in main app');
             return null;
         } catch (error) {
             console.log('⚠️ [AutomaticUpdater] Error getting device firmware from main app:', error);
@@ -103,6 +172,40 @@ class AutomaticFirmwareUpdater {
      * Get current firmware version from device - NO FALLBACKS
      */
     async getCurrentVersion() {
+        // Check if setupDeviceInformation is currently running to avoid conflicts
+        if (window.setupDeviceInformationInProgress) {
+            console.log('⏳ [AutomaticUpdater] setupDeviceInformation is in progress, waiting for it to complete...');
+            
+            // Wait for setupDeviceInformation to complete, then get version from UI
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (!window.setupDeviceInformationInProgress) {
+                        clearInterval(checkInterval);
+                        
+                        // Now try to get version from main app's UI
+                        const deviceVersion = this.getDeviceFirmwareFromMainApp();
+                        if (deviceVersion) {
+                            console.log('✅ [AutomaticUpdater] Got version from main app after waiting:', deviceVersion);
+                            this.currentVersion = { firmware_version: deviceVersion };
+                            resolve(this.currentVersion);
+                        } else {
+                            console.log('❌ [AutomaticUpdater] No version available after waiting for setupDeviceInformation');
+                            this.currentVersion = null;
+                            resolve(null);
+                        }
+                    }
+                }, 100); // Check every 100ms
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.warn('⚠️ [AutomaticUpdater] Timeout waiting for setupDeviceInformation to complete');
+                    this.currentVersion = null;
+                    resolve(null);
+                }, 10000);
+            });
+        }
+        
         // Use multiDeviceManager to pause scanning during version detection
         const multiDeviceManager = window.multiDeviceManager;
         if (!multiDeviceManager) {
@@ -121,7 +224,22 @@ class AutomaticFirmwareUpdater {
 
         return await multiDeviceManager.pauseScanningDuringOperation(async () => {
             return new Promise((resolve, reject) => {
+                // Helper function to clean up and resolve
+                const cleanupAndResolve = (value) => {
+                    this._versionDetectionInProgress = false;
+                    resolve(value);
+                };
+                
+                // Helper function to clean up and reject
+                const cleanupAndReject = (error) => {
+                    this._versionDetectionInProgress = false;
+                    reject(error);
+                };
+                
                 try {
+                    // Set flag to prevent conflicts with main app's version detection
+                    this._versionDetectionInProgress = true;
+                    
                     const activeDevice = multiDeviceManager.getActiveDevice?.();
                     if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
                         console.log('⚠️ [AutomaticUpdater] No active device, trying UI version');
@@ -130,13 +248,13 @@ class AutomaticFirmwareUpdater {
                         if (deviceVersionFallback) {
                             console.log('✅ [AutomaticUpdater] No active device, but found version from main app:', deviceVersionFallback);
                             this.currentVersion = { firmware_version: deviceVersionFallback };
-                            resolve(this.currentVersion);
+                            cleanupAndResolve(this.currentVersion);
                             return;
                         }
                         
                         console.log('❌ [AutomaticUpdater] No active device and no UI version available');
                         this.currentVersion = null;
-                        resolve(null);
+                        cleanupAndResolve(null);
                         return;
                     }
 
@@ -153,13 +271,13 @@ class AutomaticFirmwareUpdater {
                     if (timeoutDeviceVersion) {
                         console.log('✅ [AutomaticUpdater] Timeout, but found version from main app:', timeoutDeviceVersion);
                         this.currentVersion = { firmware_version: timeoutDeviceVersion };
-                        resolve(this.currentVersion);
+                        cleanupAndResolve(this.currentVersion);
                         return;
                     }
                     
                     console.log('❌ [AutomaticUpdater] Timeout and no UI version available');
                     this.currentVersion = null;
-                    resolve(null);
+                    cleanupAndResolve(null);
                 }, 10000);
                 
                 const handleResponse = (data) => {
@@ -187,7 +305,7 @@ class AutomaticFirmwareUpdater {
                             if (version) {
                                 this.currentVersion = { firmware_version: version };
                                 console.log(`[AutomaticUpdater] 📱 Current device version detected: v${version}`);
-                                resolve(this.currentVersion);
+                                cleanupAndResolve(this.currentVersion);
                                 return;
                             } else {
                                 console.log('[AutomaticUpdater] ⚠️ Could not extract version from READVERSION response, trying main app fallback');
@@ -196,13 +314,13 @@ class AutomaticFirmwareUpdater {
                                 if (extractDeviceVersion) {
                                     console.log('[AutomaticUpdater] ✅ Using version from main app as fallback:', extractDeviceVersion);
                                     this.currentVersion = { firmware_version: extractDeviceVersion };
-                                    resolve(this.currentVersion);
+                                    cleanupAndResolve(this.currentVersion);
                                     return;
                                 }
                                 
                                 console.log('[AutomaticUpdater] ❌ No version could be determined');
                                 this.currentVersion = null;
-                                resolve(null);
+                                cleanupAndResolve(null);
                             }
                         }
                     } catch (error) {
@@ -214,13 +332,13 @@ class AutomaticFirmwareUpdater {
                         if (errorDeviceVersion) {
                             console.log('✅ [AutomaticUpdater] Communication error, but found version from main app:', errorDeviceVersion);
                             this.currentVersion = { firmware_version: errorDeviceVersion };
-                            resolve(this.currentVersion);
+                            cleanupAndResolve(this.currentVersion);
                             return;
                         }
                         
                         console.log('❌ [AutomaticUpdater] Error reading device version and no UI version available:', error.message);
                         this.currentVersion = null;
-                        resolve(null);
+                        cleanupAndResolve(null);
                     }
                 };
                 
@@ -236,13 +354,13 @@ class AutomaticFirmwareUpdater {
                 if (finalDeviceVersion) {
                     console.log('✅ [AutomaticUpdater] Error in getCurrentVersion, but found version from main app:', finalDeviceVersion);
                     this.currentVersion = { firmware_version: finalDeviceVersion };
-                    resolve(this.currentVersion);
+                    cleanupAndResolve(this.currentVersion);
                     return;
                 }
                 
                 console.log('❌ [AutomaticUpdater] Error in getCurrentVersion and no UI version available:', error.message);
                 this.currentVersion = null;
-                resolve(null);
+                cleanupAndResolve(null);
             }
         });
         });
@@ -339,8 +457,50 @@ class AutomaticFirmwareUpdater {
     }
 
     /**
-     * Manual refresh of device version
+     * Clear all cached version information to force fresh detection
      */
+    clearVersionCache() {
+        console.log("🧹 Clearing version cache for fresh detection");
+        
+        // Clear our own cache
+        this.currentVersion = null;
+        
+        // Clear cached version from active device
+        const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+        if (activeDevice) {
+            activeDevice.firmwareVersion = null;
+            // Only clear firmware_version from config, not entire config
+            if (activeDevice.config && activeDevice.config.firmware_version) {
+                activeDevice.config.firmware_version = null;
+            }
+            console.log("✅ Cleared activeDevice version cache");
+        }
+        
+        // Clear UI version display
+        const deviceFirmwareElement = document.getElementById('diag-device-firmware-version');
+        if (deviceFirmwareElement) {
+            deviceFirmwareElement.textContent = 'Unknown';
+            console.log("✅ Reset UI version display");
+        }
+    }
+
+    /**
+     * Refresh device information in the diagnostics UI
+     */
+    refreshDeviceInformationUI() {
+        console.log("🔄 Refreshing device information UI");
+        
+        // Call the main setupDeviceInformation function if available
+        if (typeof setupDeviceInformation === 'function') {
+            setupDeviceInformation();
+            console.log("✅ Called global setupDeviceInformation()");
+        } else if (window.setupDeviceInformation) {
+            window.setupDeviceInformation();
+            console.log("✅ Called window.setupDeviceInformation()");
+        } else {
+            console.warn("⚠️ setupDeviceInformation function not found");
+        }
+    }
     async refreshDeviceVersion() {
         console.log("🔄 Manual device version refresh requested");
         
@@ -370,20 +530,75 @@ class AutomaticFirmwareUpdater {
         document.body.appendChild(refreshModal);
         
         try {
-            // Force fresh version detection
+            // Clear ALL cached versions to force fresh detection
             this.currentVersion = null;
+            
+            // Clear cached version from active device
+            const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+            if (activeDevice) {
+                // Store the old version temporarily before clearing it
+                const oldFirmwareVersion = activeDevice.firmwareVersion;
+                activeDevice.firmwareVersion = null;
+                // Only clear firmware_version from config, not entire config
+                if (activeDevice.config && activeDevice.config.firmware_version) {
+                    activeDevice.config.firmware_version = null;
+                }
+                console.log("🔄 Cleared cached versions, old version was:", oldFirmwareVersion);
+            }
+            
+            // DON'T set UI to "Refreshing..." to avoid fallback confusion
+            // Just keep the current display and only update when we have a real version
+            const deviceFirmwareElement = document.getElementById('diag-device-firmware-version');
+            console.log("🔄 Current UI element text before refresh:", deviceFirmwareElement?.textContent);
+            
+            // Force fresh version detection
+            console.log("🔍 Starting fresh version detection...");
             const version = await this.getCurrentVersion();
+            console.log("🔍 Version detection result:", version);
             
             if (version && version.firmware_version) {
+                console.log("✅ Version detected successfully:", version.firmware_version);
+                
                 // Format version number to avoid double "v" prefix
                 const versionDisplay = version.firmware_version.startsWith('v') ? version.firmware_version : `v${version.firmware_version}`;
                 
-                // Success - show version but DON'T trigger update check
+                // IMMEDIATE UI UPDATE: Update the device firmware element directly before calling setupDeviceInformation
+                if (deviceFirmwareElement) {
+                    deviceFirmwareElement.textContent = versionDisplay;
+                    console.log("✅ Immediately updated UI element to:", versionDisplay);
+                    
+                    // Reset any error styling
+                    deviceFirmwareElement.style.color = '';
+                    deviceFirmwareElement.style.fontWeight = '';
+                }
+                
+                // Cache the version in the active device to prevent setupDeviceInformation from overriding
+                const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+                if (activeDevice) {
+                    activeDevice.firmwareVersion = version.firmware_version;
+                    if (activeDevice.config) {
+                        activeDevice.config.firmware_version = version.firmware_version;
+                    }
+                    console.log("✅ Cached version in active device:", version.firmware_version);
+                }
+                
+                // Now refresh the rest of the UI diagnostics information (but firmware version is already set)
+                console.log("🔄 Refreshing UI diagnostics...");
+                if (typeof setupDeviceInformation === 'function') {
+                    setupDeviceInformation();
+                    console.log("✅ Called setupDeviceInformation()");
+                } else if (window.setupDeviceInformation) {
+                    window.setupDeviceInformation();
+                    console.log("✅ Called window.setupDeviceInformation()");
+                } else {
+                    console.warn("⚠️ setupDeviceInformation function not found");
+                }
+                
                 refreshModal.innerHTML = `
                     <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
-                        <h3 style="margin-top: 0; color: #4CAF50;">✅ Version Detected!</h3>
+                        <h3 style="margin-top: 0; color: #4CAF50;">✅ Version Refreshed!</h3>
                         <p style="margin: 15px 0;"><strong>Current Firmware:</strong> ${versionDisplay}</p>
-                        <p style="margin: 15px 0;">Version detection successful.</p>
+                        <p style="margin: 15px 0;">Device version successfully updated in diagnostics.</p>
                         <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Close</button>
                     </div>
                 `;
@@ -396,7 +611,15 @@ class AutomaticFirmwareUpdater {
                 }, 3000);
                 
             } else {
-                // Still failed
+                console.warn("❌ Version detection failed - no version returned");
+                console.log("🔍 Version object:", version);
+                
+                // Still failed - restore UI to show failure
+                if (deviceFirmwareElement) {
+                    deviceFirmwareElement.textContent = 'Unknown';
+                    console.log("🔄 Reset UI element to 'Unknown'");
+                }
+                
                 refreshModal.innerHTML = `
                     <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
                         <h3 style="margin-top: 0; color: #f44336;">❌ Version Detection Failed</h3>
@@ -408,7 +631,16 @@ class AutomaticFirmwareUpdater {
             }
             
         } catch (error) {
-            // Error during refresh
+            console.error("❌ Error during refresh:", error);
+            console.log("🔍 Error stack:", error.stack);
+            
+            // Error during refresh - restore UI
+            const deviceFirmwareElement = document.getElementById('diag-device-firmware-version');
+            if (deviceFirmwareElement) {
+                deviceFirmwareElement.textContent = 'Error';
+                console.log("🔄 Reset UI element to 'Error'");
+            }
+            
             refreshModal.innerHTML = `
                 <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
                     <h3 style="margin-top: 0; color: #f44336;">❌ Refresh Failed</h3>
@@ -417,6 +649,77 @@ class AutomaticFirmwareUpdater {
                 </div>
             `;
         }
+    }
+
+    /**
+     * Automatically retry version detection after device connection with progressive delays
+     */
+    async retryVersionDetectionAfterConnection(device, maxRetries = 3) {
+        console.log(`🔄 Starting automatic version detection retry for device: ${device.id || 'unknown'}`);
+        
+        const deviceFirmwareElement = document.getElementById('diag-device-firmware-version');
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`🔍 Version detection attempt ${attempt}/${maxRetries}...`);
+                
+                // Update UI to show retry status
+                if (deviceFirmwareElement) {
+                    deviceFirmwareElement.textContent = `Detecting... (${attempt}/${maxRetries})`;
+                }
+                
+                // Try to get the version
+                const version = await this.getCurrentVersion();
+                
+                if (version && version.firmware_version) {
+                    console.log(`✅ Version detection successful on attempt ${attempt}: ${version.firmware_version}`);
+                    
+                    // Update UI with successful version
+                    if (deviceFirmwareElement) {
+                        const versionDisplay = version.firmware_version.startsWith('v') ? 
+                            version.firmware_version : `v${version.firmware_version}`;
+                        deviceFirmwareElement.textContent = versionDisplay;
+                    }
+                    
+                    // Cache the version in the device
+                    if (device) {
+                        device.cachedFirmwareVersion = version.firmware_version;
+                    }
+                    
+                    // Update the rest of the UI
+                    if (typeof setupDeviceInformation === 'function') {
+                        setupDeviceInformation();
+                    } else if (window.setupDeviceInformation) {
+                        window.setupDeviceInformation();
+                    }
+                    
+                    console.log("🎉 Automatic version detection completed successfully");
+                    return; // Success - exit retry loop
+                } else {
+                    console.warn(`⚠️ Version detection attempt ${attempt} returned no version`);
+                }
+                
+            } catch (error) {
+                console.warn(`❌ Version detection attempt ${attempt} failed:`, error.message);
+            }
+            
+            // If not the last attempt, wait before trying again with progressive delay
+            if (attempt < maxRetries) {
+                const delay = attempt * 2000; // 2s, 4s, 6s delays
+                console.log(`⏳ Waiting ${delay}ms before retry attempt ${attempt + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        // All retries failed
+        console.error(`❌ All ${maxRetries} version detection attempts failed after device connection`);
+        
+        // Update UI to show failure
+        if (deviceFirmwareElement) {
+            deviceFirmwareElement.textContent = 'Unknown';
+        }
+        
+        console.log("💡 User can manually refresh version using the refresh button if needed");
     }
 
     /**
@@ -684,14 +987,18 @@ class AutomaticFirmwareUpdater {
     }
 
     /**
-     * Start the update process with progress UI
+     * Download and apply firmware update automatically
      */
-    async startUpdateProcess() {
-        console.log("🚀 Starting firmware update process...");
+    async downloadAndApplyUpdate() {
+        console.log("🚀 Starting automatic firmware download and update...");
         
-        // Show update progress modal
-        const updateModal = document.createElement('div');
-        updateModal.style.cssText = `
+        if (!this.remoteManifest) {
+            throw new Error('No remote manifest available');
+        }
+        
+        // Show progress modal
+        const progressModal = document.createElement('div');
+        progressModal.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -704,38 +1011,116 @@ class AutomaticFirmwareUpdater {
             z-index: 10000;
             font-family: 'Segoe UI', sans-serif;
         `;
-        updateModal.innerHTML = `
-            <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
-                <h3 style="margin-top: 0; color: #4CAF50;">🚀 Firmware Update Process</h3>
-                <p style="margin: 15px 0;">This will open the main firmware updater.</p>
-                <p style="margin: 15px 0; font-size: 14px; color: #ccc;">The automatic update download and installation is not yet implemented in this version.</p>
-                <div style="margin-top: 25px;">
-                    <button id="open-updater" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 0 10px;">Open Firmware Updater</button>
-                    <button id="cancel-update" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 0 10px;">Cancel</button>
+        
+        const updateProgress = (phase, current, total, detail) => {
+            const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+            progressModal.innerHTML = `
+                <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center; min-width: 400px;">
+                    <h3 style="margin-top: 0; color: #4CAF50;">🚀 Updating Firmware to v${this.remoteManifest.firmware_version}</h3>
+                    <div style="margin: 20px 0;">
+                        <div style="background: #444; border-radius: 10px; overflow: hidden; height: 20px; margin: 10px 0;">
+                            <div style="background: #4CAF50; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <p style="margin: 10px 0; font-size: 14px;">${detail}</p>
+                        ${total > 0 ? `<p style="margin: 5px 0; font-size: 12px; color: #aaa;">${current}/${total} (${percentage}%)</p>` : ''}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        };
         
-        document.body.appendChild(updateModal);
+        document.body.appendChild(progressModal);
         
-        // Handle button clicks
-        document.getElementById('open-updater').onclick = () => {
-            updateModal.remove();
-            // Trigger the main firmware updater
-            if (window.firmwareUpdater) {
-                console.log("🔄 Opening main firmware updater interface");
-                // This would trigger the main firmware updater UI
-                // For now, just log that we'd open it
-                const event = new CustomEvent('openFirmwareUpdater');
-                window.dispatchEvent(event);
-            } else {
-                console.log("⚠️ Main firmware updater not available");
+        try {
+            // Step 1: Download all firmware files
+            updateProgress('downloading', 0, 0, 'Downloading firmware files from GitHub...');
+            
+            const firmwareFiles = new Map();
+            const filesToDownload = Object.keys(this.remoteManifest.files);
+            
+            for (let i = 0; i < filesToDownload.length; i++) {
+                const fileName = filesToDownload[i];
+                updateProgress('downloading', i, filesToDownload.length, `Downloading firmware files (${i + 1}/${filesToDownload.length})...`);
+                
+                const fileURL = `https://api.github.com/repos/${this.githubAPI.owner}/${this.githubAPI.repo}/contents/${fileName}?ref=${this.githubAPI.branch}`;
+                
+                const response = await fetch(fileURL);
+                if (!response.ok) {
+                    throw new Error(`Failed to download ${fileName}: ${response.status}`);
+                }
+                
+                const githubResponse = await response.json();
+                const fileContent = atob(githubResponse.content);
+                firmwareFiles.set(fileName, fileContent);
+                
+                console.log(`✅ Downloaded ${fileName} (${fileContent.length} bytes)`);
             }
-        };
-        
-        document.getElementById('cancel-update').onclick = () => {
-            updateModal.remove();
-        };
+            
+            updateProgress('downloading', filesToDownload.length, filesToDownload.length, 'All files downloaded successfully!');
+            
+            // Step 2: Prepare firmware updater
+            updateProgress('preparing', 0, 0, 'Preparing firmware updater...');
+            
+            if (!this.firmwareUpdater) {
+                this.firmwareUpdater = new FirmwareUpdater();
+            }
+            
+            // Clear any existing update package and add our files
+            this.firmwareUpdater.clearUpdatePackage();
+            for (const [fileName, content] of firmwareFiles) {
+                this.firmwareUpdater.addUpdateFile(fileName, content);
+            }
+            
+            // Step 3: Deploy update
+            updateProgress('installing', 0, 0, 'Installing firmware update...');
+            
+            await this.firmwareUpdater.deployUpdate((progress) => {
+                if (progress.phase === 'deploying') {
+                    updateProgress('installing', progress.current || 0, progress.total || 0, progress.detail || 'Installing firmware...');
+                } else if (progress.phase === 'rebooting') {
+                    updateProgress('rebooting', 0, 0, 'Rebooting device to apply update...');
+                }
+            });
+            
+            // Success - Clear version cache immediately after successful update
+            console.log('✅ [AutomaticUpdater] Firmware update successful, clearing version cache for next detection...');
+            this.clearVersionCache();
+            
+            progressModal.innerHTML = `
+                <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                    <h3 style="margin-top: 0; color: #4CAF50;">✅ Update Complete!</h3>
+                    <p style="margin: 15px 0;">Firmware has been successfully updated to v${this.remoteManifest.firmware_version}</p>
+                    <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Device will reboot automatically. Please wait for reconnection.</p>
+                    <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
+                </div>
+            `;
+            
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                if (progressModal.parentNode) {
+                    progressModal.remove();
+                }
+            }, 10000);
+            
+        } catch (error) {
+            console.error("❌ Update failed:", error);
+            
+            progressModal.innerHTML = `
+                <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
+                    <h3 style="margin-top: 0; color: #f44336;">❌ Update Failed</h3>
+                    <p style="margin: 15px 0;">Error: ${error.message}</p>
+                    <p style="margin: 15px 0; font-size: 14px; color: #ccc;">You can try again or use the manual firmware updater.</p>
+                    <button onclick="this.parentNode.parentNode.remove()" style="background: #f44336; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Start the update process - now calls downloadAndApplyUpdate directly
+     */
+    async startUpdateProcess() {
+        console.log("🚀 Starting firmware update process...");
+        await this.downloadAndApplyUpdate();
     }
 
     // Additional methods (notifications, UI, etc.) would go here...

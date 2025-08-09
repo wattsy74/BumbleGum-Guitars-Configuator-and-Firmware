@@ -1,4 +1,9 @@
 # demo_routine.py
+__version__ = "3.2"
+
+def get_version():
+    return __version__
+
 # Contains the LED demo routine for the BGG device
 import time
 from utils import hex_to_rgb
