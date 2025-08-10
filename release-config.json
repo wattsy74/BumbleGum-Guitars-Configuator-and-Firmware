@@ -1,0 +1,50 @@
+{
+  "release": {
+    "repository": "wattsy74/BumbleGum-Guitars-Configuator-and-Firmware",
+    "defaultBranch": "v3.0",
+    "artifactPattern": "BumbleGum-Guitars-Configurator-v{version}-portable.exe",
+    "releaseNoteTemplate": {
+      "title": "## 🚀 BGG Configurator v{version}",
+      "sections": [
+        {
+          "title": "### Features & Improvements",
+          "items": [
+            "Latest firmware updates and device compatibility",
+            "Enhanced LED indicators for serial operations", 
+            "Improved auto-update system",
+            "Bug fixes and performance improvements"
+          ]
+        },
+        {
+          "title": "### Auto-Update System",
+          "items": [
+            "Automatic update checking on startup",
+            "Manual update check via config menu",
+            "Secure download and installation process",
+            "Progress tracking with visual indicators"
+          ]
+        },
+        {
+          "title": "### Installation",
+          "content": "Download the portable executable below - no installation required!\nSimply run the .exe file directly."
+        },
+        {
+          "title": "### Compatibility",
+          "items": [
+            "All BGG Guitar Controller models",
+            "Windows 10/11 (x64)",
+            "No additional dependencies required"
+          ]
+        }
+      ],
+      "footer": "**For technical support, visit our documentation or create an issue on GitHub.**"
+    }
+  },
+  "automation": {
+    "autoCommit": true,
+    "autoTag": true,
+    "autoPush": true,
+    "autoRelease": true,
+    "requireConfirmation": true
+  }
+}

@@ -7,10 +7,13 @@
   "author": "Martyn L. Watts",
   "scripts": {
     "start": "electron-forge start",
-    "dev": "vite",
-    "build": "vite build",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "release:patch": "powershell -ExecutionPolicy Bypass -File release.ps1 -VersionType patch",
+    "release:minor": "powershell -ExecutionPolicy Bypass -File release.ps1 -VersionType minor",
+    "release:major": "powershell -ExecutionPolicy Bypass -File release.ps1 -VersionType major",
+    "release:dry-run": "powershell -ExecutionPolicy Bypass -File release.ps1 -VersionType patch -DryRun",
+    "test:updater": "powershell -ExecutionPolicy Bypass -File test-updater.ps1"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
