@@ -3918,6 +3918,16 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     input.addEventListener('keydown', onKeyDown);
   });
 
+  // Auto-updater check button handler
+  document.getElementById('check-updates-btn')?.addEventListener('click', () => {
+    if (window.autoUpdaterUI) {
+      window.autoUpdaterUI.checkForUpdates();
+    } else {
+      console.warn('[CheckUpdates] AutoUpdaterUI not available');
+      showToastError('Auto-updater not available');
+    }
+  });
+
   async function getDeviceUid() {
     return new Promise(resolve => {
       requestDeviceUid(uid => resolve(uid));

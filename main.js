@@ -1,6 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const sudo = require('sudo-prompt');
+const fs = require('fs');
+const https = require('https');
+const { spawn } = require('child_process');
 
 // Handle portable app startup safely
 try {
@@ -59,6 +62,147 @@ ipcMain.handle('cleanup-registry', async (event, psScript) => {
       resolve({ err, stdout, stderr });
     });
   });
+});
+
+// Auto-updater IPC handlers
+ipcMain.handle('get-current-version', async () => {
+  try {
+    const packageJson = require('./package.json');
+    return packageJson.version;
+  } catch (error) {
+    console.error('Error reading package.json:', error);
+    return '3.9.15'; // Fallback version
+  }
+});
+
+ipcMain.handle('download-update', async (event, { url, fileName, onProgress }) => {
+  return new Promise((resolve) => {
+    try {
+      const updatesDir = path.join(__dirname, 'updates');
+      
+      // Create updates directory if it doesn't exist
+      if (!fs.existsSync(updatesDir)) {
+        fs.mkdirSync(updatesDir, { recursive: true });
+      }
+
+      const filePath = path.join(updatesDir, fileName);
+      const file = fs.createWriteStream(filePath);
+
+      console.log(`[AutoUpdater] Downloading update to: ${filePath}`);
+
+      https.get(url, (response) => {
+        const totalSize = parseInt(response.headers['content-length'], 10);
+        let downloadedSize = 0;
+
+        response.on('data', (chunk) => {
+          downloadedSize += chunk.length;
+          const progress = Math.round((downloadedSize / totalSize) * 100);
+          
+          // Send progress to renderer
+          event.sender.send('download-progress', progress);
+        });
+
+        response.pipe(file);
+
+        file.on('finish', () => {
+          file.close();
+          console.log('[AutoUpdater] Download completed');
+          resolve({ success: true, filePath });
+        });
+
+        file.on('error', (error) => {
+          fs.unlink(filePath, () => {}); // Delete partial file
+          console.error('[AutoUpdater] Download error:', error);
+          resolve({ success: false, error: error.message });
+        });
+      }).on('error', (error) => {
+        console.error('[AutoUpdater] HTTPS request error:', error);
+        resolve({ success: false, error: error.message });
+      });
+    } catch (error) {
+      console.error('[AutoUpdater] Download setup error:', error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+});
+
+ipcMain.handle('install-update', async (event, downloadPath) => {
+  return new Promise((resolve) => {
+    try {
+      console.log(`[AutoUpdater] Installing update from: ${downloadPath}`);
+
+      // Get current executable path
+      const currentExePath = process.execPath;
+      const currentDir = path.dirname(currentExePath);
+      const currentExeName = path.basename(currentExePath);
+      const backupPath = path.join(currentDir, `${currentExeName}.backup`);
+      const tempNewPath = path.join(currentDir, `${currentExeName}.new`);
+
+      // Create a batch script to handle the update process
+      const batchScript = `
+@echo off
+echo Updating BGG Configurator...
+timeout /t 2 /nobreak >nul
+
+REM Wait for main process to exit
+:waitloop
+tasklist /FI "IMAGENAME eq ${currentExeName}" 2>NUL | find /I /N "${currentExeName}">NUL
+if "%ERRORLEVEL%"=="0" (
+  timeout /t 1 /nobreak >nul
+  goto waitloop
+)
+
+REM Backup current executable
+if exist "${currentExePath}" (
+  move "${currentExePath}" "${backupPath}"
+)
+
+REM Move new executable into place
+move "${downloadPath}" "${currentExePath}"
+
+REM Start updated application
+start "" "${currentExePath}"
+
+REM Clean up
+timeout /t 3 /nobreak >nul
+if exist "${backupPath}" (
+  del "${backupPath}"
+)
+del "%~f0"
+`;
+
+      const batchPath = path.join(currentDir, 'update_installer.bat');
+      fs.writeFileSync(batchPath, batchScript);
+
+      console.log('[AutoUpdater] Starting update installer batch script');
+
+      // Execute the batch script and quit the current app
+      spawn('cmd.exe', ['/c', batchPath], {
+        detached: true,
+        stdio: 'ignore'
+      });
+
+      // Give the batch script a moment to start, then quit
+      setTimeout(() => {
+        app.quit();
+      }, 1000);
+
+      resolve({ success: true });
+    } catch (error) {
+      console.error('[AutoUpdater] Install error:', error);
+      resolve({ success: false, error: error.message });
+    }
+  });
+});
+
+ipcMain.handle('open-external-link', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    console.error('[AutoUpdater] Error opening external link:', error);
+    return { success: false, error: error.message };
+  }
 });
 
 app.whenReady().then(createWindow);
