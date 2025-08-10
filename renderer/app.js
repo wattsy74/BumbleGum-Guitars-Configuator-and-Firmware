@@ -771,18 +771,20 @@ window.multiDeviceManager = multiDeviceManager;
 
 // Make serialFileIO available globally for firmware updater
 window.serialFileIO = {
-  writeFile: (port, filename, content, timeoutMs) => {
+  writeFile: async (port, filename, content, timeoutMs) => {
     const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
     if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
       return Promise.reject(new Error('No active device connected'));
     }
+    
     return serialFileIO.writeFile(port, filename, content, timeoutMs);
   },
-  readFile: (filename, timeoutMs) => {
+  readFile: async (filename, timeoutMs) => {
     const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
     if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
       return Promise.reject(new Error('No active device connected'));
     }
+    
     return serialFileIO.readFile(activeDevice.port, filename, timeoutMs);
   }
 };
@@ -3530,7 +3532,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       await multiDeviceManager.pauseScanningDuringOperation(async () => {
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
         
-        const factoryConfig = await serialFileIO.readFile(activeDevice.port, 'factory_config.json', 8000);
+        const factoryConfig = await window.serialFileIO.readFile('factory_config.json', 8000);
         console.log('[Restore] Factory config read:', factoryConfig);
         
         let parsedConfig;
@@ -3545,7 +3547,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         applyConfig(parsedConfig);
         
         // Write the factory config as the new config.json
-        await serialFileIO.writeFile(activeDevice.port, 'config.json', JSON.stringify(parsedConfig), 8000);
+        await window.serialFileIO.writeFile(activeDevice.port, 'config.json', JSON.stringify(parsedConfig), 8000);
         
         console.log('[Restore] Factory config written successfully. Starting reboot and reload...');
         
@@ -3983,7 +3985,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
         await new Promise(resolve => setTimeout(resolve, 800)); // Longer wait for buffer to clear
         // Use a much longer timeout for boot.py since it's a large file (~13KB)
-        let bootPy = await serialFileIO.readFile(activeDevice.port, 'boot.py', 45000); // 45 second timeout for read
+        let bootPy = await window.serialFileIO.readFile('boot.py', 45000); // 45 second timeout for read
         
         // DEBUG: Log the length and first/last parts of the file to verify complete read
         console.log(`[updateDeviceName] Read boot.py - Length: ${bootPy.length} characters`);
@@ -4029,7 +4031,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         try {
           // Use longer timeout for boot.py write since it's a critical system file and large
           console.log(`[updateDeviceName] Starting boot.py write operation...`);
-          await serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 30000); // 30 second timeout
+          await window.serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 30000); // 30 second timeout
           console.log(`[updateDeviceName] boot.py write completed successfully`);
         } catch (writeError) {
           console.error(`[updateDeviceName] boot.py write failed:`, writeError);
