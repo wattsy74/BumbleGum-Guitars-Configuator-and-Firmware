@@ -240,7 +240,7 @@ function Create-GitHubRelease {
     }
     
     if ($DryRun) {
-        Write-Info "DRY RUN: Would create GitHub release v$version with executable: BumbleGum Guitars Configurator.exe (copied from $exePath)"
+        Write-Info "DRY RUN: Would create GitHub release v$version with executable: BumbleGum Guitars Configurator.exe (from $exePath)"
         return $true
     }
     
@@ -258,15 +258,6 @@ function Create-GitHubRelease {
     }
     
     try {
-        # Create a copy with the correct filename for upload
-        $uploadFileName = "BumbleGum Guitars Configurator.exe"
-        $uploadPath = Join-Path (Get-Location) $uploadFileName
-        
-        if (Test-Path $uploadPath) {
-            Remove-Item $uploadPath -Force
-        }
-        Copy-Item $exePath $uploadPath
-        
         # Generate release notes
         $releaseNotes = @"
 # BGG Configurator v$version
@@ -276,17 +267,17 @@ function Create-GitHubRelease {
 - Updated to version $version
 
 ## Installation
-Download the BGG Configurator.exe file below and run it. No installation required - it's a portable executable.
+Download the BumbleGum Guitars Configurator.exe file below and run it. No installation required - it's a portable executable.
 
 ## Auto-Update
 If you have a previous version installed, the app will automatically check for updates and prompt you to upgrade.
 "@
         
-        # Create the release
-        gh release create "v$version" $uploadPath --title "BGG Configurator v$version" --notes $releaseNotes --latest
+        # Create the release first without assets
+        gh release create "v$version" --title "BGG Configurator v$version" --notes $releaseNotes --latest
         
-        # Clean up the temporary file
-        Remove-Item $uploadPath -Force
+        # Then upload the file with the exact name we want
+        gh release upload "v$version" $exePath --clobber
         
         Write-Success "Created GitHub release v$version with executable"
         return $true
