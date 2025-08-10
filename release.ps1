@@ -240,7 +240,7 @@ function Create-GitHubRelease {
     }
     
     if ($DryRun) {
-        Write-Info "DRY RUN: Would create GitHub release v$version with executable: $exePath"
+        Write-Info "DRY RUN: Would create GitHub release v$version with executable: BumbleGum Guitars Configurator.exe (copied from $exePath)"
         return $true
     }
     
@@ -258,6 +258,15 @@ function Create-GitHubRelease {
     }
     
     try {
+        # Create a copy with the correct filename for upload
+        $uploadFileName = "BumbleGum Guitars Configurator.exe"
+        $uploadPath = Join-Path (Get-Location) $uploadFileName
+        
+        if (Test-Path $uploadPath) {
+            Remove-Item $uploadPath -Force
+        }
+        Copy-Item $exePath $uploadPath
+        
         # Generate release notes
         $releaseNotes = @"
 # BGG Configurator v$version
@@ -274,7 +283,10 @@ If you have a previous version installed, the app will automatically check for u
 "@
         
         # Create the release
-        gh release create "v$version" $exePath --title "BGG Configurator v$version" --notes $releaseNotes --latest
+        gh release create "v$version" $uploadPath --title "BGG Configurator v$version" --notes $releaseNotes --latest
+        
+        # Clean up the temporary file
+        Remove-Item $uploadPath -Force
         
         Write-Success "Created GitHub release v$version with executable"
         return $true
@@ -346,31 +358,31 @@ $success = $true
 
 # Update version
 if ($success) {
-    $success = Update-PackageVersion -newVersion $newVersion
+    $success = [bool](Update-PackageVersion -newVersion $newVersion)
 }
 
 # Build application
 if ($success) {
-    $success = Build-Application
+    $success = [bool](Build-Application)
 }
 
 # Commit changes
 if ($success) {
-    $success = Commit-Changes -version $newVersion
+    $success = [bool](Commit-Changes -version $newVersion)
 }
 
 # Push changes
 if ($success) {
-    $success = Push-Changes -version $newVersion
+    $success = [bool](Push-Changes -version $newVersion)
 }
 
 # Create GitHub release
 if ($success) {
-    $success = Create-GitHubRelease -version $newVersion
+    $success = [bool](Create-GitHubRelease -version $newVersion)
 }
 
 # Show summary
-Show-Summary -version $newVersion -success $success
+Show-Summary -version $newVersion -success ([bool]$success)
 
 if ($success) {
     exit 0
