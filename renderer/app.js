@@ -6455,14 +6455,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshButton) {
       console.log("🔧 [App] Setting up refresh-device-version button...");
       // Clear any existing event listeners by cloning the node
-      const newRefreshButton = refreshButton.cloneNode(true);
-      refreshButton.parentNode.replaceChild(newRefreshButton, refreshButton);
-      
-      newRefreshButton.addEventListener('click', async () => {
-        console.log("🔍 [App] REFRESH DEVICE VERSION BUTTON CLICKED!");
+      if (refreshButton.parentNode) {
+        const newRefreshButton = refreshButton.cloneNode(true);
+        refreshButton.parentNode.replaceChild(newRefreshButton, refreshButton);
         
-        console.log("🔍 [App] window.automaticUpdater type:", typeof window.automaticUpdater);
-        console.log("🔍 [App] window.automaticUpdater instance:", window.automaticUpdater);
+        newRefreshButton.addEventListener('click', async () => {
+          console.log("🔍 [App] REFRESH DEVICE VERSION BUTTON CLICKED!");
+          
+          console.log("🔍 [App] window.automaticUpdater type:", typeof window.automaticUpdater);
+          console.log("🔍 [App] window.automaticUpdater instance:", window.automaticUpdater);
         
         if (window.automaticUpdater) {
           try {
@@ -6487,13 +6488,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("❌ [App] AutomaticFirmwareUpdater class not available!");
           }
         }
-      });
-      console.log("✅ [App] Event listener added to refresh-device-version button");
+        });
+        console.log("✅ [App] Event listener added to refresh-device-version button");
+      } else {
+        console.log("❌ [App] refresh-device-version button has no parent node!");
+      }
     } else {
       console.log("❌ [App] refresh-device-version button not found!");
-    }
-    
-    if (typeof FirmwareUpdater !== 'undefined' && typeof AutomaticFirmwareUpdater !== 'undefined' && hasSerial) {
+    }    if (typeof FirmwareUpdater !== 'undefined' && typeof AutomaticFirmwareUpdater !== 'undefined' && hasSerial) {
       console.log("🚀 Initializing firmware update system...");
       
       // Set up window.serial if not already available
@@ -6574,6 +6576,25 @@ document.addEventListener('click', function(event) {
 // ===== IMMEDIATE DEBUGGING: Log app startup =====
 console.log("🚀 [DEBUG] app.js script loaded and executing!");
 console.log("🚀 [DEBUG] Current DOM ready state:", document.readyState);
+
+// Global error handlers for debugging
+window.addEventListener('error', function(event) {
+  console.error('🚨 [GLOBAL ERROR]:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error,
+    stack: event.error?.stack
+  });
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('🚨 [UNHANDLED PROMISE REJECTION]:', {
+    reason: event.reason,
+    promise: event.promise
+  });
+});
 
 // Force button test immediately
 setTimeout(() => {
