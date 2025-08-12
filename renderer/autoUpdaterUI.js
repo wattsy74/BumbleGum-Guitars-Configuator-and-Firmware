@@ -8,6 +8,11 @@ class AutoUpdaterUI {
     this.updateModal = null;
     this.progressModal = null;
     this.currentUpdateInfo = null;
+    
+    // Load suppression state from localStorage
+    this.lastUpdateCheckShown = parseInt(localStorage.getItem('lastUpdateCheckShown')) || 0;
+    console.log('[AutoUpdaterUI] Loaded lastUpdateCheckShown from localStorage:', this.lastUpdateCheckShown);
+    
     this.init();
   }
 
@@ -19,7 +24,30 @@ class AutoUpdaterUI {
     // Set up auto-updater event listeners
     if (window.autoUpdater) {
       window.autoUpdater.on('updateAvailable', (updateInfo) => {
-        this.showUpdateNotification(updateInfo);
+        console.log('[AutoUpdaterUI] updateAvailable event triggered:', updateInfo);
+        console.log('[AutoUpdaterUI] isManualCheck:', updateInfo._manualCheck);
+        console.log('[AutoUpdaterUI] lastUpdateCheckShown:', this.lastUpdateCheckShown);
+        
+        const timeSinceLastShown = Date.now() - this.lastUpdateCheckShown;
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        console.log('[AutoUpdaterUI] Automatic check - time since last shown:', timeSinceLastShown, 'ms');
+        console.log('[AutoUpdaterUI] 24 hours in ms:', twentyFourHours);
+        
+        // If it's a manual check, always show the notification
+        if (updateInfo._manualCheck) {
+          console.log('[AutoUpdaterUI] Manual check - showing update notification immediately');
+          this.showUpdateNotification(updateInfo);
+        } else {
+          // For automatic checks, respect the 24-hour suppression
+          if (timeSinceLastShown < twentyFourHours) {
+            console.log('[AutoUpdaterUI] Update available but dialog shown recently, skipping');
+            return;
+          }
+          
+          console.log('[AutoUpdaterUI] Automatic check - showing update notification');
+          this.showUpdateNotification(updateInfo);
+        }
       });
 
       window.autoUpdater.on('updateNotAvailable', () => {
@@ -45,7 +73,10 @@ class AutoUpdaterUI {
       // Start automatic update check after 5 seconds
       setTimeout(() => {
         console.log('[AutoUpdaterUI] Starting automatic update check...');
-        this.checkForUpdates();
+        if (window.autoUpdater) {
+          // Automatic check - will trigger updateAvailable event which respects 24-hour limit
+          window.autoUpdater.checkForUpdates(false); // false = automatic check
+        }
       }, 5000);
     }
   }
@@ -135,6 +166,10 @@ class AutoUpdaterUI {
     });
     
     laterBtn.addEventListener('click', () => {
+      console.log('[AutoUpdaterUI] Later button clicked - setting 24-hour suppression');
+      // Set suppression timestamp and save to localStorage
+      this.lastUpdateCheckShown = Date.now();
+      localStorage.setItem('lastUpdateCheckShown', this.lastUpdateCheckShown.toString());
       this.updateModal.style.display = 'none';
     });
 
@@ -277,6 +312,14 @@ class AutoUpdaterUI {
   showUpdateNotification(updateInfo) {
     this.currentUpdateInfo = updateInfo;
     
+    // Set the timestamp when showing the notification and save to localStorage
+    if (!updateInfo._manualCheck) {
+      this.lastUpdateCheckShown = Date.now();
+      localStorage.setItem('lastUpdateCheckShown', this.lastUpdateCheckShown.toString());
+      console.log('[AutoUpdaterUI] Automatic notification shown, timestamp saved:', this.lastUpdateCheckShown);
+    }
+    
+    console.log('[AutoUpdaterUI] Showing update notification for version:', updateInfo.version);
     // Populate modal with update information
     document.getElementById('updateVersion').textContent = updateInfo.version;
     document.getElementById('updateDate').textContent = new Date(updateInfo.publishedAt).toLocaleDateString();
@@ -470,10 +513,146 @@ class AutoUpdaterUI {
 
   // Manual update check trigger
   checkForUpdates() {
+    console.log('[AutoUpdaterUI] Manual update check initiated');
+    
     if (window.autoUpdater) {
-      window.autoUpdater.checkForUpdates();
-      this.showNotification('Update Check', 'Checking for updates...', 'info');
+      // Show checking modal
+      this.showCheckingModal();
+      
+      // Set up event handlers for this specific check
+      const handleUpdateAvailable = (updateInfo) => {
+        this.hideCheckingModal();
+        window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
+        window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
+        window.autoUpdater.off('error', handleError);
+        
+        console.log('[AutoUpdaterUI] Manual check - update available:', updateInfo);
+        this.showUpdateNotification({
+          ...updateInfo,
+          _manualCheck: true
+        });
+      };
+      
+      const handleUpdateNotAvailable = () => {
+        this.hideCheckingModal();
+        window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
+        window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
+        window.autoUpdater.off('error', handleError);
+        
+        console.log('[AutoUpdaterUI] Manual check - no update available');
+        this.showNoUpdateModal();
+      };
+      
+      const handleError = (error) => {
+        this.hideCheckingModal();
+        window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
+        window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
+        window.autoUpdater.off('error', handleError);
+        
+        console.log('[AutoUpdaterUI] Manual check - error:', error);
+        this.showErrorMessage(error);
+      };
+      
+      window.autoUpdater.on('updateAvailable', handleUpdateAvailable);
+      window.autoUpdater.on('updateNotAvailable', handleUpdateNotAvailable);
+      window.autoUpdater.on('error', handleError);
+      
+      // Add a timeout and better debugging
+      setTimeout(() => {
+        console.log('[AutoUpdaterUI] Manual check timeout after 15 seconds');
+        const status = window.autoUpdater.getStatus();
+        console.log('[AutoUpdaterUI] AutoUpdater status at timeout:', status);
+        
+        this.hideCheckingModal();
+        window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
+        window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
+        window.autoUpdater.off('error', handleError);
+        
+        // Check if we already know an update is available
+        if (status.updateAvailable) {
+          console.log('[AutoUpdaterUI] Timeout but update is available');
+          
+          // For timeout, treat as automatic check for suppression logic
+          const timeSinceLastShown = Date.now() - this.lastUpdateCheckShown;
+          const twentyFourHours = 24 * 60 * 60 * 1000;
+          
+          console.log('[AutoUpdaterUI] Timeout - time since last shown:', timeSinceLastShown, 'ms');
+          console.log('[AutoUpdaterUI] Timeout - 24 hours in ms:', twentyFourHours);
+          
+          if (timeSinceLastShown < twentyFourHours) {
+            console.log('[AutoUpdaterUI] Timeout - update available but dialog shown recently, skipping');
+          } else {
+            console.log('[AutoUpdaterUI] Timeout - showing update modal');
+            this.showUpdateNotification({
+              version: status.latestVersion,
+              _manualCheck: false  // Treat timeout as automatic for suppression
+            });
+          }
+        } else {
+          console.log('[AutoUpdaterUI] Timeout and no update available, showing no-update modal');
+          this.showNoUpdateModal();
+        }
+      }, 15000); // 15 second timeout
+      
+      window.autoUpdater.checkForUpdates(true); // Pass true to indicate manual check
+    } else {
+      console.warn('[AutoUpdaterUI] No auto-updater available for manual check');
     }
+  }
+  
+  showCheckingModal() {
+    // Create and show a simple checking modal
+    if (!this.checkingModal) {
+      this.checkingModal = document.createElement('div');
+      this.checkingModal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
+        justify-content: center; align-items: center;
+      `;
+      this.checkingModal.innerHTML = `
+        <div style="background: #333; padding: 2rem; border-radius: 8px; text-align: center; color: #f4e4bc; border: 1px solid #ffcc00;">
+          <div style="margin-bottom: 1rem;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #ffcc00;"></i>
+          </div>
+          <h4 style="margin: 0; color: #ffcc00;">Checking for Updates...</h4>
+          <p style="margin: 0.5rem 0 0 0; color: #f4e4bc;">Please wait while we check for the latest version.</p>
+        </div>
+      `;
+      document.body.appendChild(this.checkingModal);
+    }
+    this.checkingModal.style.display = 'flex';
+  }
+  
+  hideCheckingModal() {
+    if (this.checkingModal) {
+      this.checkingModal.style.display = 'none';
+    }
+  }
+  
+  showNoUpdateModal() {
+    // Create and show a "no update" modal
+    if (!this.noUpdateModal) {
+      this.noUpdateModal = document.createElement('div');
+      this.noUpdateModal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
+        justify-content: center; align-items: center;
+      `;
+      this.noUpdateModal.innerHTML = `
+        <div style="background: #333; padding: 2rem; border-radius: 8px; text-align: center; color: #f4e4bc; border: 1px solid #ffcc00; max-width: 400px;">
+          <div style="margin-bottom: 1rem;">
+            <i class="fas fa-check-circle" style="font-size: 2rem; color: #ffcc00;"></i>
+          </div>
+          <h4 style="margin: 0 0 1rem 0; color: #ffcc00;">You're Up to Date!</h4>
+          <p style="margin: 0 0 1.5rem 0; color: #f4e4bc;">You are running the latest version of BGG Configurator.</p>
+          <button onclick="this.parentElement.parentElement.style.display='none'" style="padding: 0.5rem 1.5rem; background: #ffcc00; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+            OK
+          </button>
+        </div>
+      `;
+      document.body.appendChild(this.noUpdateModal);
+    }
+    this.noUpdateModal.style.display = 'flex';
   }
 }
 
