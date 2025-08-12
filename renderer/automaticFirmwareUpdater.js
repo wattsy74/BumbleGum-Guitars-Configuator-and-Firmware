@@ -46,6 +46,10 @@ class AutomaticFirmwareUpdater {
                 if (deviceVersion) {
                     console.log("✅ setupDeviceInformation already detected version:", deviceVersion);
                     this.currentVersion = { firmware_version: deviceVersion };
+                    
+                    // Now that we have a device version, check for updates
+                    console.log("🔍 [AutomaticUpdater] Device connected and version detected, checking for updates...");
+                    setTimeout(() => this.checkForUpdates(false), 3000); // Check for updates 3 seconds after connection
                     return; // Don't retry if we already have the version
                 }
                 
@@ -79,8 +83,44 @@ class AutomaticFirmwareUpdater {
             console.log(`⏳ Next update check scheduled for: ${nextCheck.toLocaleString()}`);
         }
         
-        // Set up periodic checking
-        setInterval(this.checkForUpdates, this.updateCheckInterval);
+        // Set up periodic checking - but also check every 5 minutes if no device version detected
+        setInterval(() => {
+            // Try to get device version if we don't have one
+            if (!this.currentVersion || !this.currentVersion.firmware_version) {
+                console.log("🔍 [AutomaticUpdater] Periodic check: No device version, attempting detection...");
+                this.getCurrentVersion().then(version => {
+                    if (version && version.firmware_version) {
+                        console.log("✅ [AutomaticUpdater] Device version detected during periodic check:", version.firmware_version);
+                        // Now that we have a version, check for updates
+                        this.checkForUpdates(false);
+                    }
+                }).catch(error => {
+                    console.log("⚠️ [AutomaticUpdater] Periodic version detection failed:", error);
+                });
+            } else {
+                // We have a version, do normal update check
+                this.checkForUpdates(false);
+            }
+        }, this.updateCheckInterval);
+        
+        // Additional shorter interval for version detection when no device version available
+        const versionCheckInterval = setInterval(() => {
+            if (!this.currentVersion || !this.currentVersion.firmware_version) {
+                console.log("🔍 [AutomaticUpdater] Short interval check: Attempting device version detection...");
+                this.getCurrentVersion().then(version => {
+                    if (version && version.firmware_version) {
+                        console.log("✅ [AutomaticUpdater] Device version detected:", version.firmware_version);
+                        clearInterval(versionCheckInterval); // Stop the short interval once we have a version
+                        // Check for updates now that we have a version
+                        this.checkForUpdates(false);
+                    }
+                }).catch(error => {
+                    console.log("⚠️ [AutomaticUpdater] Version detection attempt failed:", error);
+                });
+            } else {
+                clearInterval(versionCheckInterval); // Stop if we already have a version
+            }
+        }, 30000); // Check every 30 seconds for device version
     }
 
     /**
@@ -397,15 +437,25 @@ class AutomaticFirmwareUpdater {
             
             // Only proceed if we have a valid current version
             if (!this.currentVersion) {
+                console.log("🔍 [AutomaticUpdater] No current version, attempting to get it...");
                 await this.getCurrentVersion();
             }
             
-            // If we still don't have a version after trying, don't proceed with automatic update check
+            // If we still don't have a version after trying, make one more attempt with a delay
             if (!this.currentVersion || !this.currentVersion.firmware_version) {
-                console.log("❌ [AutomaticUpdater] Cannot determine device version - skipping automatic update check");
-                console.log("💡 Use manual refresh button to retry version detection");
+                console.log("🔍 [AutomaticUpdater] Still no version, waiting and trying once more...");
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                await this.getCurrentVersion();
+            }
+            
+            // If we still don't have a version after multiple attempts
+            if (!this.currentVersion || !this.currentVersion.firmware_version) {
+                console.log("❌ [AutomaticUpdater] Cannot determine device version after multiple attempts");
+                console.log("💡 This may be because no device is connected or the device version cannot be read");
                 
+                // For automatic checks (showNotification = false), don't show error notifications
                 if (showNotification) {
+                    console.log("💡 Use manual refresh button to retry version detection");
                     this.showVersionDetectionFailedNotification();
                 }
                 return false;
