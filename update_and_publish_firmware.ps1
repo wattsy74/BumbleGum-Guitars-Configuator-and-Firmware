@@ -233,12 +233,19 @@ function Update-JsonVersion {
             $json | ConvertTo-Json -Depth 10 | Set-Content $FilePath
             Write-Host "    Updated JSON version fields" -ForegroundColor $Green
             
+            # CRITICAL: Return the modified object if this is the manifest
+            if ($isManifestFile) {
+                return $json
+            }
+            
         } catch {
             Write-Host "    Error updating JSON: $($_.Exception.Message)" -ForegroundColor $Red
         }
     } else {
         Write-Host "    File not found: $FilePath" -ForegroundColor $Yellow
     }
+    
+    return $null
 }
 
 # Function to safely update config.json (NEVER treat as manifest file)
@@ -410,8 +417,15 @@ $JsonFiles = @(
     "factory_config.json"
 )
 
+$manifestObject = $null
 foreach ($file in $JsonFiles) {
-    Update-JsonVersion $file $NewVersion
+    $result = Update-JsonVersion $file $NewVersion
+    
+    # Capture the manifest object if this is version_manifest.json
+    if ((Split-Path $file -Leaf) -eq "version_manifest.json" -and $result -ne $null) {
+        $manifestObject = $result
+        Write-Host "  Captured updated manifest object" -ForegroundColor $Green
+    }
 }
 
 # Now safely restore and update critical files
@@ -451,21 +465,30 @@ if (Test-Path $ConfigBackupPath) {
 
 # After safely updating critical files, manually update their hashes in the manifest
 Write-Host "`nUpdating critical file hashes in manifest..." -ForegroundColor $Cyan
-if (Test-Path "version_manifest.json") {
-    try {
+if ($manifestObject -eq $null) {
+    Write-Host "  ERROR: Manifest object not captured! Loading from file as fallback..." -ForegroundColor $Red
+    if (Test-Path "version_manifest.json") {
         $manifest = Get-Content "version_manifest.json" -Raw | ConvertFrom-Json
-        
-        # CRITICAL: Make sure the main firmware version is still correct
-        if ($manifest.PSObject.Properties['firmware_version']) {
-            $manifest.firmware_version = $NewVersion
-            Write-Host "  Ensuring main firmware_version is $NewVersion" -ForegroundColor $Cyan
-        }
-        
-        # CRITICAL: Make sure release notes are still correct  
-        if ($manifest.PSObject.Properties['release_notes']) {
-            $manifest.release_notes = $ReleaseNotes
-            Write-Host "  Ensuring release notes are correct" -ForegroundColor $Cyan
-        }
+    } else {
+        Write-Host "  FATAL ERROR: No manifest file found!" -ForegroundColor $Red
+        exit 1
+    }
+} else {
+    Write-Host "  Using captured manifest object (avoiding file reload)" -ForegroundColor $Green
+    $manifest = $manifestObject
+}
+
+# CRITICAL: Make sure the main firmware version is still correct
+if ($manifest.PSObject.Properties['firmware_version']) {
+    $manifest.firmware_version = $NewVersion
+    Write-Host "  Ensuring main firmware_version is $NewVersion" -ForegroundColor $Cyan
+}
+
+# CRITICAL: Make sure release notes are still correct  
+if ($manifest.PSObject.Properties['release_notes']) {
+    $manifest.release_notes = $ReleaseNotes
+    Write-Host "  Ensuring release notes are correct" -ForegroundColor $Cyan
+}
         
         # Update presets.json hash
         if ($manifest.PSObject.Properties['files'] -and $manifest.files.PSObject.Properties['presets.json']) {
@@ -493,10 +516,32 @@ if (Test-Path "version_manifest.json") {
         
         $manifest | ConvertTo-Json -Depth 10 | Set-Content "version_manifest.json"
         Write-Host "  Final manifest update complete" -ForegroundColor $Green
-    } catch {
-        Write-Host "  Could not update critical file hashes in manifest: $($_.Exception.Message)" -ForegroundColor $Yellow
-    }
-}
+        
+        # CRITICAL POST-PROCESSING: Force fix any remaining version inconsistencies
+        Write-Host "  Post-processing: Verifying and fixing all file versions..." -ForegroundColor $Magenta
+        try {
+            # Use the in-memory manifest instead of reloading from file
+            $needsFix = $false
+            
+            # Check for any files that still have wrong versions
+            foreach ($fileEntry in $manifest.files.PSObject.Properties) {
+                if ($fileEntry.Value.version -ne $NewVersion) {
+                    Write-Host "  FIXING: $($fileEntry.Name) version from $($fileEntry.Value.version) to $NewVersion" -ForegroundColor $Yellow
+                    $fileEntry.Value.version = $NewVersion
+                    $needsFix = $true
+                }
+            }
+            
+            if ($needsFix) {
+                # Force save the corrected manifest
+                [System.IO.File]::WriteAllText("version_manifest.json", ($manifest | ConvertTo-Json -Depth 10), [System.Text.Encoding]::UTF8)
+                Write-Host "  ✓ POST-PROCESSING: Fixed version inconsistencies and saved corrected manifest" -ForegroundColor $Green
+            } else {
+                Write-Host "  ✓ POST-PROCESSING: All versions already correct" -ForegroundColor $Green
+            }
+        } catch {
+            Write-Host "  ⚠ POST-PROCESSING: Could not verify/fix versions: $($_.Exception.Message)" -ForegroundColor $Yellow
+        }
 
 # FINAL VERIFICATION: Check that critical files still contain proper data
 Write-Host "`nFINAL VERIFICATION: Checking critical file integrity..." -ForegroundColor $Magenta
