@@ -78,47 +78,73 @@ ipcMain.handle('get-current-version', async () => {
 ipcMain.handle('download-update', async (event, { url, fileName, onProgress }) => {
   return new Promise((resolve) => {
     try {
-      const updatesDir = path.join(__dirname, 'updates');
+      const os = require('os');
+      const downloadsDir = path.join(os.homedir(), 'Downloads');
       
-      // Create updates directory if it doesn't exist
-      if (!fs.existsSync(updatesDir)) {
-        fs.mkdirSync(updatesDir, { recursive: true });
+      // Create downloads directory if it doesn't exist (though it usually does)
+      if (!fs.existsSync(downloadsDir)) {
+        fs.mkdirSync(downloadsDir, { recursive: true });
       }
 
-      const filePath = path.join(updatesDir, fileName);
+      const filePath = path.join(downloadsDir, fileName);
       const file = fs.createWriteStream(filePath);
 
-      console.log(`[AutoUpdater] Downloading update to: ${filePath}`);
+      console.log(`[AutoUpdater] Downloading update to Downloads folder: ${filePath}`);
 
-      https.get(url, (response) => {
-        const totalSize = parseInt(response.headers['content-length'], 10);
-        let downloadedSize = 0;
+      const downloadFile = (downloadUrl, redirectCount = 0) => {
+        if (redirectCount > 5) {
+          console.error('[AutoUpdater] Too many redirects');
+          resolve({ success: false, error: 'Too many redirects' });
+          return;
+        }
 
-        response.on('data', (chunk) => {
-          downloadedSize += chunk.length;
-          const progress = Math.round((downloadedSize / totalSize) * 100);
-          
-          // Send progress to renderer
-          event.sender.send('download-progress', progress);
-        });
+        https.get(downloadUrl, (response) => {
+          // Handle redirects
+          if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+            console.log(`[AutoUpdater] Redirect to: ${response.headers.location}`);
+            downloadFile(response.headers.location, redirectCount + 1);
+            return;
+          }
 
-        response.pipe(file);
+          if (response.statusCode !== 200) {
+            console.error(`[AutoUpdater] HTTP error: ${response.statusCode}`);
+            resolve({ success: false, error: `HTTP ${response.statusCode}` });
+            return;
+          }
 
-        file.on('finish', () => {
-          file.close();
-          console.log('[AutoUpdater] Download completed');
-          resolve({ success: true, filePath });
-        });
+          const totalSize = parseInt(response.headers['content-length'], 10);
+          let downloadedSize = 0;
 
-        file.on('error', (error) => {
-          fs.unlink(filePath, () => {}); // Delete partial file
-          console.error('[AutoUpdater] Download error:', error);
+          console.log(`[AutoUpdater] Download size: ${totalSize} bytes`);
+
+          response.on('data', (chunk) => {
+            downloadedSize += chunk.length;
+            const progress = Math.round((downloadedSize / totalSize) * 100);
+            
+            // Send progress to renderer
+            event.sender.send('download-progress', progress);
+          });
+
+          response.pipe(file);
+
+          file.on('finish', () => {
+            file.close();
+            console.log(`[AutoUpdater] Download completed to Downloads folder: ${filePath}`);
+            resolve({ success: true, filePath });
+          });
+
+          file.on('error', (error) => {
+            fs.unlink(filePath, () => {}); // Delete partial file
+            console.error('[AutoUpdater] Download error:', error);
+            resolve({ success: false, error: error.message });
+          });
+        }).on('error', (error) => {
+          console.error('[AutoUpdater] HTTPS request error:', error);
           resolve({ success: false, error: error.message });
         });
-      }).on('error', (error) => {
-        console.error('[AutoUpdater] HTTPS request error:', error);
-        resolve({ success: false, error: error.message });
-      });
+      };
+
+      downloadFile(url);
     } catch (error) {
       console.error('[AutoUpdater] Download setup error:', error);
       resolve({ success: false, error: error.message });
@@ -203,6 +229,23 @@ ipcMain.handle('open-external-link', async (event, url) => {
     console.error('[AutoUpdater] Error opening external link:', error);
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('open-downloads-folder', async () => {
+  try {
+    const os = require('os');
+    const downloadsPath = path.join(os.homedir(), 'Downloads');
+    await shell.openPath(downloadsPath);
+    return { success: true };
+  } catch (error) {
+    console.error('[AutoUpdater] Error opening Downloads folder:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('close-app', async () => {
+  app.quit();
+  return { success: true };
 });
 
 app.whenReady().then(createWindow);

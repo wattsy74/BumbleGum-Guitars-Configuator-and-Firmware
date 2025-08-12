@@ -11,6 +11,10 @@ window.electronAPI = {
   installUpdate: (downloadPath) => ipcRenderer.invoke('install-update', downloadPath),
   openExternalLink: (url) => ipcRenderer.invoke('open-external-link', url),
   
+  // Manual installation helpers
+  openDownloadsFolder: () => ipcRenderer.invoke('open-downloads-folder'),
+  closeApp: () => ipcRenderer.invoke('close-app'),
+  
   // Registry cleanup (existing)
   cleanupRegistry: (psScript) => ipcRenderer.invoke('cleanup-registry', psScript),
 

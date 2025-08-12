@@ -19,6 +19,21 @@ class PortableAutoUpdater {
       onDownloadProgress: null,
       onUpdateDownloaded: null
     };
+    
+    // Set up download progress listener
+    if (window.electronAPI && window.electronAPI.onDownloadProgress) {
+      window.electronAPI.onDownloadProgress((event, progress) => {
+        console.log(`[AutoUpdater] Progress received: ${progress}%`);
+        if (this.callbacks.onDownloadProgress) {
+          console.log(`[AutoUpdater] Calling progress callback with: ${progress}%`);
+          this.callbacks.onDownloadProgress(progress);
+        } else {
+          console.log('[AutoUpdater] No progress callback set');
+        }
+      });
+    } else {
+      console.log('[AutoUpdater] No electronAPI.onDownloadProgress available');
+    }
   }
 
   /**
@@ -103,29 +118,31 @@ class PortableAutoUpdater {
         this.updateAvailable = true;
         console.log('[AutoUpdater] Update available!');
         
-        // Find portable executable in release assets
+        // Find executable in release assets (look for .exe files)
         const portableAsset = release.assets.find(asset => 
-          asset.name.includes('portable') && asset.name.endsWith('.exe')
+          asset.name.endsWith('.exe') && !asset.name.includes('Setup') && !asset.name.includes('Installer')
         );
 
-        if (portableAsset) {
-          const updateInfo = {
-            version: this.latestVersion,
-            releaseNotes: release.body,
-            downloadUrl: portableAsset.browser_download_url,
-            fileName: portableAsset.name,
-            fileSize: portableAsset.size,
-            publishedAt: release.published_at
-          };
+        // Update is available, notify user first
+        const updateInfo = {
+          version: this.latestVersion,
+          releaseNotes: release.body,
+          downloadUrl: portableAsset ? portableAsset.browser_download_url : null,
+          fileName: portableAsset ? portableAsset.name : null,
+          fileSize: portableAsset ? portableAsset.size : 0,
+          publishedAt: release.published_at,
+          hasPortableExecutable: !!portableAsset
+        };
 
-          if (this.callbacks.onUpdateAvailable) {
-            this.callbacks.onUpdateAvailable(updateInfo);
-          }
-        } else {
+        if (this.callbacks.onUpdateAvailable) {
+          this.callbacks.onUpdateAvailable(updateInfo);
+        }
+
+        // If no portable executable, log but don't show error to user
+        if (!portableAsset) {
           console.error('[AutoUpdater] No portable executable found in latest release');
-          if (this.callbacks.onError) {
-            this.callbacks.onError(new Error('No portable executable found in latest release'));
-          }
+          // Note: We don't call onError here since we want users to know an update exists
+          // even if they can't auto-download it
         }
       } else {
         this.updateAvailable = false;
@@ -160,18 +177,19 @@ class PortableAutoUpdater {
 
     try {
       // Use IPC to download via main process (for better file handling)
+      // Only pass serializable data (no functions)
       const result = await window.electronAPI.downloadUpdate({
         url: updateInfo.downloadUrl,
-        fileName: updateInfo.fileName,
-        onProgress: (progress) => {
-          if (this.callbacks.onDownloadProgress) {
-            this.callbacks.onDownloadProgress(progress);
-          }
-        }
+        fileName: updateInfo.fileName
       });
 
       if (result.success) {
         console.log('[AutoUpdater] Update downloaded successfully');
+        
+        // Trigger 100% progress before calling download complete
+        if (this.callbacks.onDownloadProgress) {
+          this.callbacks.onDownloadProgress(100);
+        }
         
         if (this.callbacks.onUpdateDownloaded) {
           this.callbacks.onUpdateDownloaded({

@@ -1,23 +1,138 @@
+ [deviceUI.js] Loaded. Assigning applyConfig and populatePresetDropdown to window.
+ 🚀 [DEBUG] app.js script loaded and executing!
+ 🚀 [DEBUG] Current DOM ready state: loading
+ [AutoUpdater] Initializing...
+ 🌱 App initialized and DOM fully loaded.
+ [MultiDeviceManager] Scan already in progress, skipping
+ 🔁 BOOTSEL detection polling set up.
+ Diagnostics modal setup:
+ diagnosticsModal: 
+ diagCloseBtn: 
+ 🔍 [App] DOMContentLoaded event fired - starting firmware update initialization
+ 🔍 [App] Button references obtained:
+ 🔍 [App] - updateButton found: true
+ 🔍 [App] - refreshButton found: true
+ 🔍 [App] initializeUpdaters() called
+ 🔍 [App] Checking initialization conditions:
+ 🔍 [App] - FirmwareUpdater available: true
+ 🔍 [App] - AutomaticFirmwareUpdater available: true
+ 🔍 [App] - window.serial: false
  🔍 [App] - activeDevice: false
  🔍 [App] - activeDevice.port: false
  🔍 [App] - hasSerial: null
  � [App] FORCING button setup regardless of serial conditions...
  🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
  ✅ [App] Event listener added to check-for-updates button
  🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
+ ✅ [App] Event listener added to refresh-device-version button
  ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
  ✅ Created AutomaticFirmwareUpdater instance for button testing
+ [AutoUpdater] Current version: 3.5.0
+ Electron Security Warning (Insecure Content-Security-Policy) This renderer process has either no Content Security
+  Policy set or a policy with "unsafe-eval" enabled. This exposes users of
+  this app to unnecessary security risks.
+
+For more information and help, consult
+https://electronjs.org/docs/tutorial/security.
+This warning will not show up
+once the app is packaged.
+warnAboutInsecureCSP @ node:electron/js2c/renderer_init:2
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] previewLed called: Object
+ [MultiDeviceManager] No active device for LED preview. Checking for available devices...
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:241
+ [MultiDeviceManager] No connected devices available
+previewLed @ C:\Users\mlwat\OneDr…eviceManager.js:246
+ [MultiDeviceManager] Got device name before connection: COM8 -> TB1
+ [MultiDeviceManager] Device after scan: COM8 TB1
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
  🛑 Multi-device scanning paused for BOOTSEL mode
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -39,72 +154,34 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -126,78 +203,34 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- [AutoUpdaterUI] Close button clicked
- 🚨 [GLOBAL ERROR]: Object
-(anonymous) @ app.js:6582
-autoUpdaterUI.js:510 Uncaught 
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- [AutoUpdaterUI] Close button clicked
- 🚨 [GLOBAL ERROR]: Object
-(anonymous) @ app.js:6582
-autoUpdaterUI.js:510 Uncaught 
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- [AutoUpdaterUI] Close button clicked
- 🚨 [GLOBAL ERROR]: Object
-(anonymous) @ app.js:6582
-autoUpdaterUI.js:510 Uncaught 
- [AutoUpdaterUI] Close Application button clicked
- [AutoUpdaterUI] electronAPI.exitApp not available
-(anonymous) @ autoUpdaterUI.js:520
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -219,10 +252,144 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
+ 🔍 [App] initializeUpdaters() called
+ 🔍 [App] Checking initialization conditions:
+ 🔍 [App] - FirmwareUpdater available: true
+ 🔍 [App] - AutomaticFirmwareUpdater available: true
+ 🔍 [App] - window.serial: false
+ 🔍 [App] - activeDevice: false
+ 🔍 [App] - activeDevice.port: false
+ 🔍 [App] - hasSerial: null
+ � [App] FORCING button setup regardless of serial conditions...
+ 🔧 [App] Setting up check-for-updates button...
+ 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js:6417
+ ✅ [App] Event listener added to check-for-updates button
+ 🔧 [App] Setting up refresh-device-version button...
+ ❌ [App] refresh-device-version button has no parent node!
+ ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+ ✅ Created AutomaticFirmwareUpdater instance for button testing
+ 🚀 [DEBUG] 5-second delayed test starting...
+ 🔍 [Debug] Testing button functionality...
+ 🔍 [Debug] check-for-updates button found: true
+ 🔍 [Debug] refresh-device-version button found: true
+ 🔍 [Debug] AutomaticFirmwareUpdater class available: true
+ 🔍 [Debug] window.automaticUpdater: object
+ [AutoUpdaterUI] Starting automatic update check...
+ [AutoUpdater] Checking for updates...
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
+ 🔍 [App] initializeUpdaters() called
+ 🔍 [App] Checking initialization conditions:
+ 🔍 [App] - FirmwareUpdater available: true
+ 🔍 [App] - AutomaticFirmwareUpdater available: true
+ 🔍 [App] - window.serial: false
+ 🔍 [App] - activeDevice: false
+ 🔍 [App] - activeDevice.port: false
+ 🔍 [App] - hasSerial: null
+ � [App] FORCING button setup regardless of serial conditions...
+ 🔧 [App] Setting up check-for-updates button...
+ 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js:6417
+ ✅ [App] Event listener added to check-for-updates button
+ 🔧 [App] Setting up refresh-device-version button...
+ ❌ [App] refresh-device-version button has no parent node!
+ ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+ ✅ Created AutomaticFirmwareUpdater instance for button testing
+ [AutoUpdater] Latest version: 3.9.22
+ [AutoUpdater] Current version: 3.5.0
+ [AutoUpdater] Update available!
+ [AutoUpdaterUI] Showing update notification for version: 3.9.22
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -244,10 +411,85 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
+ [AutoUpdater] Downloading update: BumbleGum-Guitars-Configurator.exe
+ 🔍 [App] initializeUpdaters() called
+ 🔍 [App] Checking initialization conditions:
+ 🔍 [App] - FirmwareUpdater available: true
+ 🔍 [App] - AutomaticFirmwareUpdater available: true
+ 🔍 [App] - window.serial: false
+ 🔍 [App] - activeDevice: false
+ 🔍 [App] - activeDevice.port: false
+ 🔍 [App] - hasSerial: null
+ � [App] FORCING button setup regardless of serial conditions...
+ 🔧 [App] Setting up check-for-updates button...
+ 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js:6417
+ ✅ [App] Event listener added to check-for-updates button
+ 🔧 [App] Setting up refresh-device-version button...
+ ❌ [App] refresh-device-version button has no parent node!
+ ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+ ✅ Created AutomaticFirmwareUpdater instance for button testing
+ [AutoUpdater] Update downloaded successfully
+ 🛑 Multi-device scanning paused for BOOTSEL mode
+ 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+ 🔍 BOOTSEL scan complete
+ ▶️ Multi-device scanning resumed
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
+ [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -269,10 +511,34 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -294,10 +560,34 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+ [MultiDeviceManager] Port filtered out: Object
+ [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+ [MultiDeviceManager] Filtered guitarDevices: Array(1)
+ [MultiDeviceManager] Device after scan: COM8 TB1
  [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] devices map after scan: Array(1)
  🔍 [App] initializeUpdaters() called
  🔍 [App] Checking initialization conditions:
  🔍 [App] - FirmwareUpdater available: true
@@ -319,685 +609,34 @@ initializeUpdaters @ app.js:6417
  👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
  🔍 BOOTSEL scan complete
  ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
- 🔍 [App] - AutomaticFirmwareUpdater available: true
- 🔍 [App] - window.serial: false
- 🔍 [App] - activeDevice: false
- 🔍 [App] - activeDevice.port: false
- 🔍 [App] - hasSerial: null
- � [App] FORCING button setup regardless of serial conditions...
- 🔧 [App] Setting up check-for-updates button...
- 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js:6417
- ✅ [App] Event listener added to check-for-updates button
- 🔧 [App] Setting up refresh-device-version button...
- ❌ [App] refresh-device-version button has no parent node!
- ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
- ✅ Created AutomaticFirmwareUpdater instance for button testing
- 🛑 Multi-device scanning paused for BOOTSEL mode
- 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
- 🔍 BOOTSEL scan complete
- ▶️ Multi-device scanning resumed
- [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
- [MultiDeviceManager] Filtered guitarDevices: Array(0)
- [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
- [MultiDeviceManager] devices map after scan: Array(0)
- 🔍 [App] initializeUpdaters() called
- 🔍 [App] Checking initialization conditions:
- 🔍 [App] - FirmwareUpdater available: true
-app.js?v=20250803-2:6399 🔍 [App] - AutomaticFirmwareUpdater available: true
-app.js?v=20250803-2:6400 🔍 [App] - window.serial: false
-app.js?v=20250803-2:6401 🔍 [App] - activeDevice: false
-app.js?v=20250803-2:6402 🔍 [App] - activeDevice.port: false
-app.js?v=20250803-2:6403 🔍 [App] - hasSerial: null
-app.js?v=20250803-2:6406 � [App] FORCING button setup regardless of serial conditions...
-app.js?v=20250803-2:6409 🔧 [App] Setting up check-for-updates button...
-app.js?v=20250803-2:6417 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
-initializeUpdaters @ app.js?v=20250803-2:6417
-app.js?v=20250803-2:6450 ✅ [App] Event listener added to check-for-updates button
-app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
-app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
-app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
-app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
-app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
-app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(0)
+ [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+ [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+ [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
 app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
 app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
 app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
@@ -1015,14 +654,38 @@ app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
 app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
 app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
 app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
 app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
 app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(0)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 Array(2)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: Object
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(1)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(1)
 app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
 app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
 app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
@@ -1040,14 +703,38 @@ app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
 app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
 app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
 app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
 app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
 app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 0 Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: Array(0)
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: Array(0)
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
 app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
 app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
 app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
@@ -1065,11 +752,219 @@ app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
 app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
 app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
 app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
 app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
 app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 0 []
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: []
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
-C:\Users\mlwat\AppData\Local\Temp\319CNLXrLpMzW8uAtCkYEjnf0zN\resources\app.asar\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: []
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
+app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
+app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
+app.js?v=20250803-2:6399 🔍 [App] - AutomaticFirmwareUpdater available: true
+app.js?v=20250803-2:6400 🔍 [App] - window.serial: false
+app.js?v=20250803-2:6401 🔍 [App] - activeDevice: false
+app.js?v=20250803-2:6402 🔍 [App] - activeDevice.port: false
+app.js?v=20250803-2:6403 🔍 [App] - hasSerial: null
+app.js?v=20250803-2:6406 � [App] FORCING button setup regardless of serial conditions...
+app.js?v=20250803-2:6409 🔧 [App] Setting up check-for-updates button...
+app.js?v=20250803-2:6417 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js?v=20250803-2:6417
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+app.js?v=20250803-2:6450 ✅ [App] Event listener added to check-for-updates button
+app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
+app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
+app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
+app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
+app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
+app.js?v=20250803-2:6399 🔍 [App] - AutomaticFirmwareUpdater available: true
+app.js?v=20250803-2:6400 🔍 [App] - window.serial: false
+app.js?v=20250803-2:6401 🔍 [App] - activeDevice: false
+app.js?v=20250803-2:6402 🔍 [App] - activeDevice.port: false
+app.js?v=20250803-2:6403 🔍 [App] - hasSerial: null
+app.js?v=20250803-2:6406 � [App] FORCING button setup regardless of serial conditions...
+app.js?v=20250803-2:6409 🔧 [App] Setting up check-for-updates button...
+app.js?v=20250803-2:6417 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js?v=20250803-2:6417
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+app.js?v=20250803-2:6450 ✅ [App] Event listener added to check-for-updates button
+app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
+app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
+app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
+app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
+app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
+app.js?v=20250803-2:6399 🔍 [App] - AutomaticFirmwareUpdater available: true
+app.js?v=20250803-2:6400 🔍 [App] - window.serial: false
+app.js?v=20250803-2:6401 🔍 [App] - activeDevice: false
+app.js?v=20250803-2:6402 🔍 [App] - activeDevice.port: false
+app.js?v=20250803-2:6403 🔍 [App] - hasSerial: null
+app.js?v=20250803-2:6406 � [App] FORCING button setup regardless of serial conditions...
+app.js?v=20250803-2:6409 🔧 [App] Setting up check-for-updates button...
+app.js?v=20250803-2:6417 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js?v=20250803-2:6417
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+app.js?v=20250803-2:6450 ✅ [App] Event listener added to check-for-updates button
+app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
+app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
+app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1088 🛑 Multi-device scanning paused for BOOTSEL mode
+app.js?v=20250803-2:2331 👀 Checking for BOOTSEL volumes... bootselPrompted: false isFlashingFirmware: false
+app.js?v=20250803-2:2358 🔍 BOOTSEL scan complete
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:1093 ▶️ Multi-device scanning resumed
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:786 [MultiDeviceManager] SerialPort.list() returned: 2 (2) [{…}, {…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 0: {
+  "path": "COM9",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0000",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM9)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:789 [MultiDeviceManager] Port 1: {
+  "path": "COM8",
+  "manufacturer": "Microsoft",
+  "serialNumber": "8&132EC959&0&0002",
+  "pnpId": "USB\\VID_6997&PID_9B1C&MI_02\\8&132EC959&0&0002",
+  "locationId": "0000.0014.0000.003.000.000.000.000.000",
+  "friendlyName": "USB Serial Device (COM8)",
+  "vendorId": "6997",
+  "productId": "9B1C"
+}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM9: pnpId=USB\VID_6997&PID_9B1C&MI_00\8&132EC959&0&0000 => EXCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:796 [MultiDeviceManager] Port filtered out: {path: 'COM9', manufacturer: 'Microsoft', serialNumber: '8&132EC959&0&0000', pnpId: 'USB\\VID_6997&PID_9B1C&MI_00\\8&132EC959&0&0000', locationId: '0000.0014.0000.003.000.000.000.000.000', …}
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:794 [MultiDeviceManager] Filter check for port COM8: pnpId=USB\VID_6997&PID_9B1C&MI_02\8&132EC959&0&0002 => INCLUDED
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:800 [MultiDeviceManager] Filtered guitarDevices: [{…}]
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:900 [MultiDeviceManager] Device after scan: COM8 TB1
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:902 [MultiDeviceManager] Finished processing all guitar devices, synchronizing connection state
+C:\Users\mlwat\OneDrive\Desktop\BGG-Windows-App v3.0\renderer\multiDeviceManager.js:913 [MultiDeviceManager] devices map after scan: [Array(2)]
+app.js?v=20250803-2:6391 🔍 [App] initializeUpdaters() called
+app.js?v=20250803-2:6397 🔍 [App] Checking initialization conditions:
+app.js?v=20250803-2:6398 🔍 [App] - FirmwareUpdater available: true
+app.js?v=20250803-2:6399 🔍 [App] - AutomaticFirmwareUpdater available: true
+app.js?v=20250803-2:6400 🔍 [App] - window.serial: false
+app.js?v=20250803-2:6401 🔍 [App] - activeDevice: false
+app.js?v=20250803-2:6402 🔍 [App] - activeDevice.port: false
+app.js?v=20250803-2:6403 🔍 [App] - hasSerial: null
+app.js?v=20250803-2:6406 � [App] FORCING button setup regardless of serial conditions...
+app.js?v=20250803-2:6409 🔧 [App] Setting up check-for-updates button...
+app.js?v=20250803-2:6417 🔍 [App] updateButton has no parent node, cannot replace. Using original button.
+initializeUpdaters @ app.js?v=20250803-2:6417
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+setTimeout (async)
+initializeUpdaters @ app.js?v=20250803-2:6532
+app.js?v=20250803-2:6450 ✅ [App] Event listener added to check-for-updates button
+app.js?v=20250803-2:6456 🔧 [App] Setting up refresh-device-version button...
+app.js?v=20250803-2:6494 ❌ [App] refresh-device-version button has no parent node!
+app.js?v=20250803-2:6523 ⚠️ [App] Not all conditions met for full initialization, but buttons are set up
+app.js?v=20250803-2:6528 ✅ Created AutomaticFirmwareUpdater instance for button testing
