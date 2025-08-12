@@ -686,9 +686,12 @@ class MultiDeviceManager {
           // Parse the response
           const lines = responseBuffer.split('\n').map(line => line.trim()).filter(line => line);
           
-          // Find device name (skip ACK and UID-like responses)
+          // Find device name (skip ACK, UID-like responses, and firmware ready messages)
           for (const line of lines) {
-            if (line === 'END' || line.startsWith('ACK:') || /^[0-9A-F]{16}$/i.test(line)) {
+            if (line === 'END' || 
+                line.startsWith('ACK:') || 
+                line.startsWith('FIRMWARE_READY:') || 
+                /^[0-9A-F]{16}$/i.test(line)) {
               continue;
             }
             if (line && line !== 'Unknown') {

@@ -1174,6 +1174,11 @@ async function rebootAndReload(fileToReload = 'presets.json') {
                 window.updateHeaderStatus(activeDevice);
               }
               
+              // Ensure button texts are updated after config reload
+              updateToggleButtonText();
+              updateTiltWaveButtonText();
+              console.log('[rebootAndReload] Updated menu button texts after config reload');
+              
               showToast('Device reconnected and UI fully refreshed', 'success');
             } else if (typeof activeDevice.readFile === 'function') {
               // fallback: manual reload
@@ -1190,6 +1195,11 @@ async function rebootAndReload(fileToReload = 'presets.json') {
               if (typeof window.updateHeaderStatus === 'function') {
                 window.updateHeaderStatus(activeDevice);
               }
+              
+              // Ensure button texts are updated after manual config reload
+              updateToggleButtonText();
+              updateTiltWaveButtonText();
+              console.log('[rebootAndReload] Updated menu button texts after manual config reload');
               
               showToast('Device reconnected and UI fully refreshed', 'success');
             } else {
@@ -1236,7 +1246,25 @@ function waitForFirmwareReady(port, maxAttempts = 10, intervalMs = 500) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     let buffer = '';
+    let timeoutId = null;
+    let listenerCleanupId = null;
+    
+    console.log(`[waitForFirmwareReady] Starting firmware ready check with ${maxAttempts} attempts, ${intervalMs}ms interval`);
+    
     async function handleReady() {
+      console.log('[waitForFirmwareReady] FIRMWARE_READY:OK received, cleaning up...');
+      // Clear timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      
+      // Remove listener using serialListenerManager
+      if (listenerCleanupId) {
+        serialListenerManager.removeListener(port, listenerCleanupId);
+        listenerCleanupId = null;
+      }
+      
       // Flush the serial buffer after FIRMWARE_READY:OK before resolving
       if (typeof port.flush === 'function') {
         try {
@@ -1248,30 +1276,87 @@ function waitForFirmwareReady(port, maxAttempts = 10, intervalMs = 500) {
           console.warn('[waitForFirmwareReady] Serial buffer flush failed after FIRMWARE_READY:OK', flushErr);
         }
       }
+      
+      console.log('[waitForFirmwareReady] Firmware ready check completed successfully');
       resolve();
     }
+    
     function onData(data) {
-      buffer += data.toString();
+      const dataStr = data.toString();
+      buffer += dataStr;
+      console.log(`[waitForFirmwareReady] Received data: "${dataStr.trim()}", buffer length: ${buffer.length}`);
+      
       if (buffer.includes('FIRMWARE_READY:OK')) {
-        port.off('data', onData);
+        console.log('[waitForFirmwareReady] Found FIRMWARE_READY:OK in buffer');
         handleReady();
       } else if (buffer.match(/ERROR|Unknown command/)) {
-        port.off('data', onData);
+        console.warn('[waitForFirmwareReady] Error response in buffer:', buffer);
+        if (listenerCleanupId) {
+          serialListenerManager.removeListener(port, listenerCleanupId);
+          listenerCleanupId = null;
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         reject(new Error('Firmware not ready or error response: ' + buffer));
       }
     }
+    
     function poll() {
       if (attempts++ >= maxAttempts) {
-        port.off('data', onData);
-        reject(new Error('Firmware not ready after polling'));
+        console.warn(`[waitForFirmwareReady] Max attempts (${maxAttempts}) reached, giving up`);
+        if (listenerCleanupId) {
+          serialListenerManager.removeListener(port, listenerCleanupId);
+          listenerCleanupId = null;
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        reject(new Error(`Firmware not ready after ${maxAttempts} polling attempts`));
         return;
       }
+      
+      console.log(`[waitForFirmwareReady] Poll attempt ${attempts}/${maxAttempts}`);
       buffer = '';
-      port.on('data', onData);
-      port.write('FIRMWARE_READY?\n');
-      setTimeout(() => {
-        port.off('data', onData);
-        if (attempts < maxAttempts) poll();
+      
+      // Use serialListenerManager to ensure exclusive access to serial data
+      const listenerId = 'waitForFirmwareReady';
+      serialListenerManager.removeListener(port, listenerId);
+      serialListenerManager.addListener(port, listenerId, onData);
+      listenerCleanupId = listenerId; // Store the ID for cleanup
+      console.log(`[waitForFirmwareReady] Added exclusive listener with ID: ${listenerCleanupId}`);
+      
+      try {
+        port.write('FIRMWARE_READY?\n');
+        console.log('[waitForFirmwareReady] Sent FIRMWARE_READY? command');
+      } catch (writeErr) {
+        console.error('[waitForFirmwareReady] Failed to write FIRMWARE_READY? command:', writeErr);
+        if (listenerCleanupId) {
+          serialListenerManager.removeListener(port, listenerCleanupId);
+          listenerCleanupId = null;
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        reject(writeErr);
+        return;
+      }
+      
+      // Set timeout for next poll
+      timeoutId = setTimeout(() => {
+        if (attempts < maxAttempts) {
+          poll();
+        } else {
+          console.warn('[waitForFirmwareReady] Final timeout reached');
+          if (listenerCleanupId) {
+            serialListenerManager.removeListener(port, listenerCleanupId);
+            listenerCleanupId = null;
+          }
+          reject(new Error(`Firmware not ready after timeout (${maxAttempts} attempts)`));
+        }
       }, intervalMs);
     }
     poll();
@@ -1380,12 +1465,15 @@ const populatePresetDropdown = (presets, isUserPresets = false) => {
   top.selected = true;
   select.appendChild(top);
 
-  const keys = Object.keys(presetsData).sort((a, b) => {
-    const aNum = parseInt(a.replace(/\D/g, '')) || 0;
-    const bNum = parseInt(b.replace(/\D/g, '')) || 0;
-    return aNum - bNum;
+  const keys = Object.keys(presetsData).filter(key => {
+    // Filter out "Select Preset" if it exists as an actual preset
+    return key !== 'Select Preset';
+  }).sort((a, b) => {
+    // Sort alphabetically (A-Z), case-insensitive
+    return a.toLowerCase().localeCompare(b.toLowerCase());
   });
-  console.log('[populatePresetDropdown] keys:', keys);
+  console.log('[populatePresetDropdown] Original keys (unsorted):', Object.keys(presetsData));
+  console.log('[populatePresetDropdown] Filtered and sorted keys:', keys);
 
   for (const key of keys) {
     const value = presetsData[key];
@@ -1520,10 +1608,14 @@ window.populatePresetDropdown = populatePresetDropdown;
 // Function to update the toggle button text based on current hat_mode
 function updateToggleButtonText() {
   const toggleBtn = document.getElementById('toggle-hat-mode-btn');
-  if (!toggleBtn) return;
+  if (!toggleBtn) {
+    console.warn('[updateToggleButtonText] Button not found: toggle-hat-mode-btn');
+    return;
+  }
   
   // If no config loaded yet, show default text
   if (!originalConfig) {
+    console.log('[updateToggleButtonText] No originalConfig, using default text');
     toggleBtn.textContent = "Switch to D-Pad";
     return;
   }
@@ -1531,20 +1623,26 @@ function updateToggleButtonText() {
   const current = originalConfig.hat_mode || "joystick";
   const nextMode = current === "joystick" ? "D-Pad" : "Joystick";
   toggleBtn.textContent = `Switch to ${nextMode}`;
+  console.log(`[updateToggleButtonText] Updated button text to: "Switch to ${nextMode}" (current mode: ${current})`);
 }
 
 function updateTiltWaveButtonText() {
   const tiltWaveBtn = document.getElementById('toggle-tilt-wave-btn');
-  if (!tiltWaveBtn) return;
+  if (!tiltWaveBtn) {
+    console.warn('[updateTiltWaveButtonText] Button not found: toggle-tilt-wave-btn');
+    return;
+  }
   
   // If no config loaded yet, show default text
   if (!originalConfig) {
+    console.log('[updateTiltWaveButtonText] No originalConfig, using default text');
     tiltWaveBtn.textContent = "Turn On Tiltwave";
     return;
   }
   
   const current = originalConfig.tilt_wave_enabled || false;
   tiltWaveBtn.textContent = current ? "Turn Off Tiltwave" : "Turn On Tiltwave";
+  console.log(`[updateTiltWaveButtonText] Updated button text to: "${current ? "Turn Off Tiltwave" : "Turn On Tiltwave"}" (current enabled: ${current})`);
 }
 
 // ===== DOM-dependent code =====
@@ -1563,6 +1661,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof updateDeviceSelector === 'function') updateDeviceSelector();
       if (window.updateFooterDeviceName) window.updateFooterDeviceName();
       if (window.updateActiveButtonText) window.updateActiveButtonText(null);
+      
+      // Update button texts to default state when device disconnects
+      updateToggleButtonText();
+      updateTiltWaveButtonText();
+      console.log('[app.js][EVENT] Updated button texts for device disconnection');
+      
       // Optionally clear UI fields here
       console.log('[app.js][EVENT] Device disconnected (UI forced):', device?.id);
     });
@@ -1582,6 +1686,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.updateActiveButtonText === 'function') {
           window.updateActiveButtonText(newDevice);
         }
+        
+        // Update button texts based on current config (if available)
+        updateToggleButtonText();
+        updateTiltWaveButtonText();
+        console.log('[app.js][EVENT] Updated button texts for device connection');
         
         // Note: Config file loading will be done when user explicitly requests it
         // through "Load Device Files" buttons or when opening specific functionality
@@ -1636,6 +1745,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen for device files loaded events to update diagnostics
   document.addEventListener('deviceFilesLoaded', (event) => {
     console.log('[app.js][EVENT] Device files loaded:', event.detail);
+    
+    // Apply config to update UI when files are loaded automatically
+    const { config } = event.detail;
+    if (config && typeof applyConfig === 'function') {
+      console.log('[app.js][EVENT] Applying config from device files');
+      applyConfig(config);
+      
+      // Explicitly update button texts after applying config
+      // Use setTimeout to ensure DOM updates are complete
+      setTimeout(() => {
+        updateToggleButtonText();
+        updateTiltWaveButtonText();
+        console.log('[app.js][EVENT] Updated menu button texts after deviceFilesLoaded');
+      }, 100);
+    }
     
     // Update device information in diagnostics if modal is open
     setTimeout(() => {
@@ -3663,8 +3787,39 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
   const menu = document.getElementById('config-menu');
 
   toggle?.addEventListener('click', () => {
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    const isCurrentlyHidden = menu.style.display !== 'block';
+    menu.style.display = isCurrentlyHidden ? 'block' : 'none';
+    
+    // Update button texts when menu is opened
+    if (isCurrentlyHidden) {
+      console.log('[CONFIG MENU] Menu opened, updating button texts...');
+      updateToggleButtonText();
+      updateTiltWaveButtonText();
+    }
   });
+
+  // Also watch for programmatic menu changes
+  if (menu) {
+    const menuObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const isNowVisible = menu.style.display === 'block';
+          if (isNowVisible) {
+            console.log('[CONFIG MENU] Menu became visible, updating button texts...');
+            setTimeout(() => {
+              updateToggleButtonText();
+              updateTiltWaveButtonText();
+            }, 50); // Small delay to ensure menu is fully rendered
+          }
+        }
+      });
+    });
+    
+    menuObserver.observe(menu, { 
+      attributes: true, 
+      attributeFilter: ['style'] 
+    });
+  }
 
   // Close menu when clicking outside
   document.addEventListener('click', e => {
@@ -6540,6 +6695,30 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('deviceConnected', () => {
     console.log("🔌 Device connected, re-checking automatic updater...");
     setTimeout(initializeUpdaters, 500);
+    
+    // Update menu button texts when device connects
+    setTimeout(() => {
+      updateToggleButtonText();
+      updateTiltWaveButtonText();
+      console.log("🔌 Updated menu button texts after device connected");
+    }, 750); // Delay to ensure config is loaded
+  });
+  
+  // Handle device disconnection
+  window.addEventListener('deviceDisconnected', () => {
+    console.log("🔌 Device disconnected, resetting menu button texts...");
+    
+    // Reset button text to defaults when device disconnects
+    const switchBtn = document.getElementById('switch-to-dpad-button');
+    const tiltBtn = document.getElementById('tiltwave-menu-button');
+    
+    if (switchBtn) {
+      switchBtn.textContent = 'Switch to D-Pad';
+    }
+    if (tiltBtn) {
+      tiltBtn.textContent = 'Turn On Tiltwave';
+    }
+    console.log("🔌 Reset menu button texts after device disconnected");
   });
 });
 

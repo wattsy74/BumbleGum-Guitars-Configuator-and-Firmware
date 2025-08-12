@@ -225,6 +225,12 @@ if (window.multiDeviceManager && typeof window.multiDeviceManager.on === 'functi
       });
     // Defensive: log sorted keys
     console.log('[deviceUI][PATCH] Sorted user preset keys for dropdown:', keys);
+  } else {
+    // Sort regular presets alphabetically (A-Z), case-insensitive
+    keys = keys
+      .filter(k => k !== '_metadata' && k !== 'Select Preset')
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    console.log('[deviceUI][PATCH] Sorted regular preset keys for dropdown:', keys);
   }
   for (const key of keys) {
     if (isUserPresets && key === '_metadata') continue;
