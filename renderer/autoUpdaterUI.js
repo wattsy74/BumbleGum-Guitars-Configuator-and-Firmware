@@ -51,7 +51,8 @@ class AutoUpdaterUI {
       });
 
       window.autoUpdater.on('updateNotAvailable', () => {
-        this.showNotification('No Updates', 'You are running the latest version.', 'info');
+        // Don't show automatic "no update" notifications - only for manual checks
+        console.log('[AutoUpdaterUI] No update available (automatic check - not showing notification)');
       });
 
       window.autoUpdater.on('downloadProgress', (progress) => {
