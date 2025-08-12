@@ -520,8 +520,14 @@ class AutoUpdaterUI {
       // Show checking modal
       this.showCheckingModal();
       
+      // Flag to track if the check has completed
+      let checkCompleted = false;
+      
       // Set up event handlers for this specific check
       const handleUpdateAvailable = (updateInfo) => {
+        if (checkCompleted) return;
+        checkCompleted = true;
+        
         this.hideCheckingModal();
         window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
         window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
@@ -535,6 +541,9 @@ class AutoUpdaterUI {
       };
       
       const handleUpdateNotAvailable = () => {
+        if (checkCompleted) return;
+        checkCompleted = true;
+        
         this.hideCheckingModal();
         window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
         window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
@@ -545,6 +554,9 @@ class AutoUpdaterUI {
       };
       
       const handleError = (error) => {
+        if (checkCompleted) return;
+        checkCompleted = true;
+        
         this.hideCheckingModal();
         window.autoUpdater.off('updateAvailable', handleUpdateAvailable);
         window.autoUpdater.off('updateNotAvailable', handleUpdateNotAvailable);
@@ -560,7 +572,14 @@ class AutoUpdaterUI {
       
       // Add a timeout and better debugging
       setTimeout(() => {
+        if (checkCompleted) {
+          console.log('[AutoUpdaterUI] Manual check already completed, skipping timeout handler');
+          return;
+        }
+        
         console.log('[AutoUpdaterUI] Manual check timeout after 15 seconds');
+        checkCompleted = true;
+        
         const status = window.autoUpdater.getStatus();
         console.log('[AutoUpdaterUI] AutoUpdater status at timeout:', status);
         
@@ -639,43 +658,64 @@ class AutoUpdaterUI {
         background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
         justify-content: center; align-items: center;
       `;
-      this.noUpdateModal.innerHTML = `
-        <div style="background: #333; padding: 2rem; border-radius: 8px; text-align: center; color: #f4e4bc; border: 1px solid #ffcc00; max-width: 400px;">
-          <div style="margin-bottom: 1rem;">
-            <i class="fas fa-check-circle" style="font-size: 2rem; color: #ffcc00;"></i>
-          </div>
-          <h4 style="margin: 0 0 1rem 0; color: #ffcc00;">You're Up to Date!</h4>
-          <p style="margin: 0 0 1.5rem 0; color: #f4e4bc;">You are running the latest version of BGG Configurator.</p>
-          <p id="autoCloseCountdown" style="margin: 0 0 1rem 0; color: #d4af37; font-size: 0.9rem;">Closing in 3 seconds...</p>
-          <button onclick="this.parentElement.parentElement.style.display='none'" style="padding: 0.5rem 1.5rem; background: #ffcc00; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-            OK
-          </button>
-        </div>
-      `;
       document.body.appendChild(this.noUpdateModal);
     }
+    
+    // Recreate the modal content each time to ensure fresh countdown element
+    this.noUpdateModal.innerHTML = `
+      <div style="background: #333; padding: 2rem; border-radius: 8px; text-align: center; color: #f4e4bc; border: 1px solid #ffcc00; max-width: 400px;">
+        <div style="margin-bottom: 1rem;">
+          <i class="fas fa-check-circle" style="font-size: 2rem; color: #ffcc00;"></i>
+        </div>
+        <h4 style="margin: 0 0 1rem 0; color: #ffcc00;">You're Up to Date!</h4>
+        <p style="margin: 0 0 1.5rem 0; color: #f4e4bc;">You are running the latest version of BumbleGum Guitars Configurator.</p>
+        <p id="autoCloseCountdown" style="margin: 0 0 1rem 0; color: #d4af37; font-size: 0.9rem;">Closing in 3 seconds...</p>
+        <button id="noUpdateOkBtn" style="padding: 0.5rem 1.5rem; background: #ffcc00; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+          OK
+        </button>
+      </div>
+    `;
+    
     this.noUpdateModal.style.display = 'flex';
+    console.log('[AutoUpdaterUI] No update modal shown, starting 3-second countdown');
     
     // Start countdown and auto-close after 3 seconds
     let countdown = 3;
-    const countdownElement = document.getElementById('autoCloseCountdown');
+    const countdownElement = this.noUpdateModal.querySelector('#autoCloseCountdown');
     
-    const countdownInterval = setInterval(() => {
+    // Clear any existing interval
+    if (this.noUpdateCountdownInterval) {
+      clearInterval(this.noUpdateCountdownInterval);
+    }
+    
+    this.noUpdateCountdownInterval = setInterval(() => {
       countdown--;
+      console.log('[AutoUpdaterUI] Countdown:', countdown);
+      
       if (countdownElement) {
-        countdownElement.textContent = countdown > 0 ? `Closing in ${countdown} seconds...` : 'Closing...';
+        if (countdown > 0) {
+          countdownElement.textContent = `Closing in ${countdown} seconds...`;
+        } else {
+          countdownElement.textContent = 'Closing...';
+        }
       }
       
       if (countdown <= 0) {
-        clearInterval(countdownInterval);
+        console.log('[AutoUpdaterUI] Auto-closing no update modal');
+        clearInterval(this.noUpdateCountdownInterval);
+        this.noUpdateCountdownInterval = null;
         this.noUpdateModal.style.display = 'none';
       }
     }, 1000);
     
     // Clear interval if user manually closes the modal
-    const okButton = this.noUpdateModal.querySelector('button');
+    const okButton = this.noUpdateModal.querySelector('#noUpdateOkBtn');
     okButton.onclick = () => {
-      clearInterval(countdownInterval);
+      console.log('[AutoUpdaterUI] User manually closed no update modal');
+      if (this.noUpdateCountdownInterval) {
+        clearInterval(this.noUpdateCountdownInterval);
+        this.noUpdateCountdownInterval = null;
+      }
       this.noUpdateModal.style.display = 'none';
     };
   }

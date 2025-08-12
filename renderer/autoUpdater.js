@@ -269,6 +269,16 @@ class PortableAutoUpdater {
   }
 
   /**
+   * Remove event callbacks
+   */
+  off(event, callback) {
+    const eventName = `on${event.charAt(0).toUpperCase()}${event.slice(1)}`;
+    if (this.callbacks.hasOwnProperty(eventName)) {
+      this.callbacks[eventName] = null;
+    }
+  }
+
+  /**
    * Get current update status
    */
   getStatus() {
