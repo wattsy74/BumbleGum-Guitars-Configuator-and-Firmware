@@ -647,7 +647,7 @@ select option:disabled {
   width: 90%;
   max-width: 800px;
   max-height: 80%;
-  overflow-y: auto;
+  overflow-y: hidden;
   position: relative;
 }
 
