@@ -10,7 +10,7 @@ class PortableAutoUpdater {
     this.updateAvailable = false;
     this.checking = false;
     this.downloading = false;
-    this.githubRepo = 'wattsy74/BumbleGum-Guitars-Configuator-and-Firmware';
+    this.githubRepo = 'wattsy74/BumbleGum-Guitars-Configurator';
     this.updateCheckInterval = null;
     this.callbacks = {
       onUpdateAvailable: null,
