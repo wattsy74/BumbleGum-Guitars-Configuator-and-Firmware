@@ -4036,34 +4036,159 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     errorMsg.style.display = 'none';
     input.focus();
 
+    // Track if rename is in progress to prevent modal closure
+    let renameInProgress = false;
+
     function cleanup() {
+      if (renameInProgress) {
+        console.log('[rename] Cannot close modal - rename in progress');
+        return; // Prevent closure during rename
+      }
       modal.style.display = 'none';
       applyBtn.removeEventListener('click', onApply);
       cancelBtn.removeEventListener('click', onCancel);
       input.removeEventListener('keydown', onKeyDown);
+      // Remove click-outside prevention
+      modal.removeEventListener('click', preventClickOutside);
+    }
+
+    // Prevent modal from closing by clicking outside during rename
+    function preventClickOutside(e) {
+      if (renameInProgress && e.target === modal) {
+        e.stopPropagation();
+        console.log('[rename] Modal click outside prevented - rename in progress');
+      }
     }
 
     function validateName(name) {
       return name && name.length >= 3 && /^[\w\s\-]+$/.test(name);
     }
 
-    function onApply() {
+    function showRenameProgress() {
+      renameInProgress = true;
+      
+      // Disable input and apply button
+      input.disabled = true;
+      applyBtn.disabled = true;
+      applyBtn.textContent = 'Renaming...';
+      applyBtn.style.opacity = '0.6';
+      
+      // Update cancel button to show warning
+      cancelBtn.textContent = 'Please Wait...';
+      cancelBtn.disabled = true;
+      cancelBtn.style.opacity = '0.6';
+      
+      // Show critical warning message with red background
+      errorMsg.innerHTML = '⚠️ <strong>CRITICAL WARNING:</strong> Device rename in progress!<br/>🚫 <strong>DO NOT UNPLUG OR DISCONNECT THE DEVICE!</strong><br/>⏳ This process may take 30-60 seconds...<br/>💀 <strong>Interruption may permanently damage your device!</strong>';
+      errorMsg.style.display = 'block';
+      errorMsg.style.color = '#ffffff'; // White text
+      errorMsg.style.backgroundColor = '#dc3545'; // Bootstrap danger red
+      errorMsg.style.border = '3px solid #a71e2a'; // Darker red border
+      errorMsg.style.padding = '15px';
+      errorMsg.style.borderRadius = '8px';
+      errorMsg.style.fontWeight = 'bold';
+      errorMsg.style.fontSize = '14px';
+      errorMsg.style.textAlign = 'center';
+      errorMsg.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)'; // Red shadow
+      
+      // Make modal background much darker to indicate it's locked
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+      
+      // Prevent modal from being closed
+      modal.addEventListener('click', preventClickOutside);
+    }
+
+    function hideRenameProgress(success = true, message = '') {
+      renameInProgress = false;
+      
+      // Re-enable controls
+      input.disabled = false;
+      applyBtn.disabled = false;
+      applyBtn.textContent = 'Apply';
+      applyBtn.style.opacity = '1';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.disabled = false;
+      cancelBtn.style.opacity = '1';
+      
+      // Restore normal modal background
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      
+      if (success) {
+        // Show success message briefly then close
+        errorMsg.innerHTML = `✅ <strong>Success!</strong><br/>${message || 'Device renamed successfully! You may now close this dialog.'}`;
+        errorMsg.style.color = '#155724';
+        errorMsg.style.backgroundColor = '#d4edda';
+        errorMsg.style.border = '2px solid #c3e6cb';
+        errorMsg.style.fontWeight = 'bold';
+        
+        setTimeout(() => {
+          cleanup();
+        }, 3000); // Auto-close after 3 seconds on success
+      } else {
+        // Show error message
+        errorMsg.innerHTML = `❌ <strong>Error!</strong><br/>${message || 'Device rename failed. You may try again or close this dialog.'}`;
+        errorMsg.style.color = '#721c24';
+        errorMsg.style.backgroundColor = '#f8d7da';
+        errorMsg.style.border = '2px solid #f5c6cb';
+        errorMsg.style.fontWeight = 'bold';
+      }
+      
+      // Remove click-outside prevention
+      modal.removeEventListener('click', preventClickOutside);
+    }
+
+    async function onApply() {
       const newName = input.value.trim();
       if (!validateName(newName)) {
         errorMsg.textContent = "Name must be at least 3 characters and contain only letters, numbers, spaces, or dashes.";
         errorMsg.style.display = 'block';
+        errorMsg.style.color = '#721c24';
+        errorMsg.style.backgroundColor = '#f8d7da';
+        errorMsg.style.border = '1px solid #f5c6cb';
         input.focus();
         return;
       }
-      cleanup();
-      updateDeviceName(newName);
+      
+      showRenameProgress();
+      
+      try {
+        await updateDeviceName(newName, {
+          onSuccess: (message) => {
+            hideRenameProgress(true, message);
+          },
+          onError: (message) => {
+            hideRenameProgress(false, message);
+          }
+        });
+      } catch (error) {
+        hideRenameProgress(false, `Rename failed: ${error.message}`);
+      }
     }
 
     function onCancel() {
+      if (renameInProgress) {
+        // Show critical warning instead of closing
+        errorMsg.innerHTML = '⚠️ <strong>CRITICAL WARNING:</strong><br/>🚫 <strong>CANNOT CANCEL DURING RENAME!</strong><br/>💀 <strong>Device damage may occur if interrupted!</strong><br/>⏳ Please wait for completion...';
+        errorMsg.style.display = 'block';
+        errorMsg.style.color = '#ffffff';
+        errorMsg.style.backgroundColor = '#dc3545'; // Same critical red
+        errorMsg.style.border = '3px solid #a71e2a';
+        errorMsg.style.padding = '15px';
+        errorMsg.style.borderRadius = '8px';
+        errorMsg.style.fontWeight = 'bold';
+        errorMsg.style.fontSize = '14px';
+        errorMsg.style.textAlign = 'center';
+        errorMsg.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)';
+        return;
+      }
       cleanup();
     }
 
     function onKeyDown(e) {
+      if (renameInProgress) {
+        e.preventDefault(); // Prevent any keyboard actions during rename
+        return;
+      }
       if (e.key === "Enter") onApply();
       if (e.key === "Escape") onCancel();
     }
@@ -4089,10 +4214,14 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     });
   }
 
-  async function updateDeviceName(newName) {
+  async function updateDeviceName(newName, callbacks = {}) {
+    const { onSuccess, onError } = callbacks;
+    
     const activeDevice = multiDeviceManager.getActiveDevice();
     if (!activeDevice || !activeDevice.port || !activeDevice.port.isOpen) {
-      showToast('No active device connected', 'error');
+      const errorMsg = 'No active device connected';
+      showToast(errorMsg, 'error');
+      if (onError) onError(errorMsg);
       return;
     }
     
@@ -4104,13 +4233,13 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     // Set both status and button to "Please wait..." during rename operation - use direct DOM manipulation
     const statusText = document.getElementById('status-text');
     if (statusText) {
-      statusText.textContent = 'Please wait...';
+      statusText.textContent = 'Renaming Device...';
       statusText.style.color = '#f39c12'; // Orange
     }
     
     const selectorBtn = document.getElementById('deviceSelectorButton');
     if (selectorBtn) {
-      selectorBtn.textContent = 'Please wait...';
+      selectorBtn.textContent = 'Renaming...';
       selectorBtn.style.background = '#f39c12'; // Orange
       selectorBtn.style.color = '#fff';
     }
@@ -4205,7 +4334,8 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         }      
         
         console.log("✅ boot.py write completed! Device rename successful.");
-        showToast(`Device renamed to "${newName}" successfully!`, 'success');
+        const successMsg = `Device renamed to "${newName}" successfully! Device will reconnect automatically.`;
+        showToast(successMsg, 'success');
         
         // Update stored device info with new name before reboot for auto-reconnection
         if (multiDeviceManager.lastActiveDeviceInfo) {
@@ -4216,6 +4346,9 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         // Clear the rename flag before reboot
         window._renameInProgress = false;
         
+        // Notify success callback
+        if (onSuccess) onSuccess(successMsg);
+        
         // CircuitPython will automatically reboot when boot.py is written
         // Use the global rebootAndReload function for proper reconnection after a longer delay
         setTimeout(() => {
@@ -4224,10 +4357,14 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         
       } catch (error) {
         console.error('Error updating device name:', error);
-        showToast(`Failed to rename device: ${error.message}`, 'error');
+        const errorMsg = `Failed to rename device: ${error.message}`;
+        showToast(errorMsg, 'error');
         
         // Clear the rename flag on error
         window._renameInProgress = false;
+        
+        // Notify error callback
+        if (onError) onError(errorMsg);
         
         // Restore status and button after error
         if (typeof window.updateHeaderStatus === 'function') {
