@@ -646,6 +646,7 @@ class AutoUpdaterUI {
           </div>
           <h4 style="margin: 0 0 1rem 0; color: #ffcc00;">You're Up to Date!</h4>
           <p style="margin: 0 0 1.5rem 0; color: #f4e4bc;">You are running the latest version of BGG Configurator.</p>
+          <p id="autoCloseCountdown" style="margin: 0 0 1rem 0; color: #d4af37; font-size: 0.9rem;">Closing in 3 seconds...</p>
           <button onclick="this.parentElement.parentElement.style.display='none'" style="padding: 0.5rem 1.5rem; background: #ffcc00; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
             OK
           </button>
@@ -654,6 +655,29 @@ class AutoUpdaterUI {
       document.body.appendChild(this.noUpdateModal);
     }
     this.noUpdateModal.style.display = 'flex';
+    
+    // Start countdown and auto-close after 3 seconds
+    let countdown = 3;
+    const countdownElement = document.getElementById('autoCloseCountdown');
+    
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      if (countdownElement) {
+        countdownElement.textContent = countdown > 0 ? `Closing in ${countdown} seconds...` : 'Closing...';
+      }
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        this.noUpdateModal.style.display = 'none';
+      }
+    }, 1000);
+    
+    // Clear interval if user manually closes the modal
+    const okButton = this.noUpdateModal.querySelector('button');
+    okButton.onclick = () => {
+      clearInterval(countdownInterval);
+      this.noUpdateModal.style.display = 'none';
+    };
   }
 }
 
