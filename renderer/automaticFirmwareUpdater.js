@@ -5,8 +5,10 @@ class AutomaticFirmwareUpdater {
     constructor() {
         this.updateCheckInterval = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
         this.lastCheckTime = localStorage.getItem('lastUpdateCheck') || 0;
+        // Remove global suppression - now device-specific
         this.currentVersion = null;
         this.remoteManifest = null;
+        this.cachedRemoteManifest = null; // Store remote version fetched at startup
         this.updateAvailable = false;
         this.firmwareUpdater = null; // Will be set from firmwareUpdater.js
         
@@ -33,6 +35,10 @@ class AutomaticFirmwareUpdater {
         
         console.log("🔄 Initializing automatic firmware update system...");
         
+        // STEP 1: Always fetch latest firmware version at startup (regardless of device connection)
+        console.log("🌐 Fetching latest firmware version at startup...");
+        await this.fetchLatestFirmwareVersion();
+        
         // Set up device connection event listener for automatic version detection with retry
         if (this.multiDeviceManager && typeof this.multiDeviceManager.on === 'function') {
             this.multiDeviceManager.on('deviceConnected', async (device) => {
@@ -47,9 +53,9 @@ class AutomaticFirmwareUpdater {
                     console.log("✅ setupDeviceInformation already detected version:", deviceVersion);
                     this.currentVersion = { firmware_version: deviceVersion };
                     
-                    // Now that we have a device version, check for updates
-                    console.log("🔍 [AutomaticUpdater] Device connected and version detected, checking for updates...");
-                    setTimeout(() => this.checkForUpdates(false), 3000); // Check for updates 3 seconds after connection
+                    // STEP 2: Now that we have device version, check against cached remote version
+                    console.log("🔍 [AutomaticUpdater] Device connected and version detected, checking against cached remote version...");
+                    this.checkDeviceAgainstCachedRemote();
                     return; // Don't retry if we already have the version
                 }
                 
@@ -61,29 +67,21 @@ class AutomaticFirmwareUpdater {
             console.log("✅ Device connection event listener registered for automatic version detection");
         }
         
-        // Get current device version
+        // Get current device version if already connected
         try {
             await this.getCurrentVersion();
             console.log("📱 Current device version detected:", this.currentVersion);
+            
+            // If we have both device version and cached remote, check immediately
+            if (this.currentVersion && this.cachedRemoteManifest) {
+                console.log("🔍 Both device and remote versions available, checking for updates...");
+                this.checkDeviceAgainstCachedRemote();
+            }
         } catch (error) {
             console.warn("⚠️ Failed to get current device version:", error);
         }
         
-        // Check if it's time for an update check
-        const now = Date.now();
-        const timeSinceLastCheck = now - parseInt(this.lastCheckTime);
-        
-        // Force check on first run (if never checked before) or if 24 hours have passed
-        if (!this.lastCheckTime || this.lastCheckTime === '0' || timeSinceLastCheck >= this.updateCheckInterval) {
-            console.log("⏰ Running automatic update check...");
-            // Increased delay significantly to ensure device version is fully detected and to avoid conflicts
-            setTimeout(() => this.checkForUpdates(false), 10000); // 10 second delay, don't show notifications automatically
-        } else {
-            const nextCheck = new Date(parseInt(this.lastCheckTime) + this.updateCheckInterval);
-            console.log(`⏳ Next update check scheduled for: ${nextCheck.toLocaleString()}`);
-        }
-        
-        // Set up periodic checking - but also check every 5 minutes if no device version detected
+        // Traditional 24-hour periodic checking for manual checks and background updates
         setInterval(() => {
             // Try to get device version if we don't have one
             if (!this.currentVersion || !this.currentVersion.firmware_version) {
@@ -111,8 +109,10 @@ class AutomaticFirmwareUpdater {
                     if (version && version.firmware_version) {
                         console.log("✅ [AutomaticUpdater] Device version detected:", version.firmware_version);
                         clearInterval(versionCheckInterval); // Stop the short interval once we have a version
-                        // Check for updates now that we have a version
-                        this.checkForUpdates(false);
+                        // Check against cached remote version
+                        if (this.cachedRemoteManifest) {
+                            this.checkDeviceAgainstCachedRemote();
+                        }
                     }
                 }).catch(error => {
                     console.log("⚠️ [AutomaticUpdater] Version detection attempt failed:", error);
@@ -124,8 +124,161 @@ class AutomaticFirmwareUpdater {
     }
 
     /**
-     * Get device firmware version from the main app's working detection system
+     * Fetch latest firmware version at app startup (independent of device connection)
      */
+    async fetchLatestFirmwareVersion() {
+        try {
+            console.log("🌐 [AutomaticUpdater] Fetching latest firmware manifest from GitHub...");
+            
+            const response = await fetch(this.manifestURL);
+            console.log("🌐 [AutomaticUpdater] GitHub response status:", response.status, response.ok);
+            
+            if (!response.ok) {
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+            
+            const githubResponse = await response.json();
+            const manifestContent = atob(githubResponse.content);
+            this.cachedRemoteManifest = JSON.parse(manifestContent);
+            
+            console.log(`🌐 [AutomaticUpdater] Latest firmware version cached: v${this.cachedRemoteManifest.firmware_version}`);
+            
+            // Update last check time since we successfully fetched remote version
+            this.lastCheckTime = Date.now();
+            localStorage.setItem('lastUpdateCheck', this.lastCheckTime.toString());
+            
+            return this.cachedRemoteManifest;
+            
+        } catch (error) {
+            console.error("❌ [AutomaticUpdater] Failed to fetch latest firmware version:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Get device-specific unique identifier for suppression tracking
+     */
+    getDeviceSuppressionKey() {
+        const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+        if (!activeDevice) {
+            console.warn("⚠️ [AutomaticUpdater] No active device for suppression key");
+            return null;
+        }
+        
+        // Use device UID if available, otherwise fall back to device name/id combination
+        if (activeDevice.uid) {
+            return `updatePromptSuppression_${activeDevice.uid}`;
+        } else if (activeDevice.id) {
+            // Use device ID and name combination as fallback
+            const deviceName = activeDevice.displayName || activeDevice.name || 'unknown';
+            return `updatePromptSuppression_${activeDevice.id}_${deviceName}`;
+        } else {
+            console.warn("⚠️ [AutomaticUpdater] Cannot create device suppression key - no UID or ID");
+            return null;
+        }
+    }
+
+    /**
+     * Check if update prompts are suppressed for the current device
+     */
+    isUpdatePromptSuppressed() {
+        const suppressionKey = this.getDeviceSuppressionKey();
+        if (!suppressionKey) {
+            console.warn("⚠️ [AutomaticUpdater] No suppression key - allowing prompt");
+            return false;
+        }
+        
+        const suppressionTimestamp = localStorage.getItem(suppressionKey);
+        if (!suppressionTimestamp) {
+            console.log(`📱 [AutomaticUpdater] No suppression found for device: ${suppressionKey}`);
+            return false;
+        }
+        
+        const now = Date.now();
+        const timeSinceSuppression = now - parseInt(suppressionTimestamp);
+        const suppressionPeriod = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (timeSinceSuppression < suppressionPeriod) {
+            const nextPrompt = new Date(parseInt(suppressionTimestamp) + suppressionPeriod);
+            console.log(`⏰ [AutomaticUpdater] Update prompt suppressed for device until: ${nextPrompt.toLocaleString()}`);
+            return true;
+        } else {
+            console.log(`✅ [AutomaticUpdater] Suppression period expired for device: ${suppressionKey}`);
+            // Clean up expired suppression
+            localStorage.removeItem(suppressionKey);
+            return false;
+        }
+    }
+
+    /**
+     * Set update prompt suppression for the current device
+     */
+    suppressUpdatePromptForDevice() {
+        const suppressionKey = this.getDeviceSuppressionKey();
+        if (!suppressionKey) {
+            console.error("❌ [AutomaticUpdater] Cannot suppress - no device suppression key");
+            return false;
+        }
+        
+        const suppressionTimestamp = Date.now();
+        localStorage.setItem(suppressionKey, suppressionTimestamp.toString());
+        
+        const nextPrompt = new Date(suppressionTimestamp + (24 * 60 * 60 * 1000));
+        console.log(`⏰ [AutomaticUpdater] Update prompts suppressed for device ${suppressionKey} until: ${nextPrompt.toLocaleString()}`);
+        
+        return true;
+    }
+
+    /**
+     * Check device firmware version against cached remote version
+     */
+    checkDeviceAgainstCachedRemote() {
+        console.log("🔍 [AutomaticUpdater] Checking device version against cached remote version...");
+        
+        if (!this.currentVersion || !this.currentVersion.firmware_version) {
+            console.log("⚠️ [AutomaticUpdater] No device version available for comparison");
+            return false;
+        }
+        
+        if (!this.cachedRemoteManifest) {
+            console.log("⚠️ [AutomaticUpdater] No cached remote manifest available for comparison");
+            return false;
+        }
+        
+        const deviceVersion = this.currentVersion.firmware_version;
+        const remoteVersion = this.cachedRemoteManifest.firmware_version;
+        
+        console.log(`🔍 [AutomaticUpdater] Comparing versions: device="${deviceVersion}" vs remote="${remoteVersion}"`);
+        
+        const updateAvailable = this.compareVersions(deviceVersion, remoteVersion);
+        
+        if (updateAvailable) {
+            console.log("🎉 [AutomaticUpdater] Firmware update available!");
+            
+            // Check if user has suppressed update prompts for this specific device
+            if (this.isUpdatePromptSuppressed()) {
+                console.log("⏰ [AutomaticUpdater] Update prompt suppressed for this device");
+                return false;
+            }
+            
+            // Show update notification with Later button
+            this.showUpdateNotificationWithLater();
+            
+            // Trigger custom event for UI updates
+            window.dispatchEvent(new CustomEvent('firmwareUpdateAvailable', {
+                detail: {
+                    currentVersion: deviceVersion,
+                    newVersion: remoteVersion,
+                    releaseNotes: this.cachedRemoteManifest.release_notes
+                }
+            }));
+            
+            return true;
+        } else {
+            console.log("✅ [AutomaticUpdater] Device firmware is up to date");
+            return false;
+        }
+    }
     getDeviceFirmwareFromMainApp() {
         try {
             console.log("🔍 [AutomaticUpdater] Getting device firmware from main app...");
@@ -413,9 +566,51 @@ class AutomaticFirmwareUpdater {
         console.log("🔍 [AutomaticUpdater] Checking for firmware updates...");
         console.log("🔍 [AutomaticUpdater] showNotification:", showNotification);
         console.log("🔍 [AutomaticUpdater] Current version:", this.currentVersion);
+        console.log("🔍 [AutomaticUpdater] Cached remote manifest:", this.cachedRemoteManifest);
         
         try {
-            // Update last check time
+            // If we have cached remote manifest and current device version, use them
+            if (this.currentVersion && this.currentVersion.firmware_version && this.cachedRemoteManifest) {
+                console.log("🔍 [AutomaticUpdater] Using cached remote manifest for comparison...");
+                
+                const deviceVersion = this.currentVersion.firmware_version;
+                const remoteVersion = this.cachedRemoteManifest.firmware_version;
+                
+                console.log(`📱 Current device version: ${deviceVersion}`);
+                console.log(`🌐 Cached remote version: ${remoteVersion}`);
+                
+                this.updateAvailable = this.compareVersions(deviceVersion, remoteVersion);
+                this.remoteManifest = this.cachedRemoteManifest; // Set for update process
+                
+                if (this.updateAvailable) {
+                    console.log("🎉 Firmware update available (from cache)!");
+                    
+                    if (showNotification) {
+                        // For manual checks, show regular notification (ignores suppression)
+                        this.showUpdateNotification();
+                    }
+                    
+                    // Trigger custom event for UI updates
+                    window.dispatchEvent(new CustomEvent('firmwareUpdateAvailable', {
+                        detail: {
+                            currentVersion: deviceVersion,
+                            newVersion: remoteVersion,
+                            releaseNotes: this.cachedRemoteManifest.release_notes
+                        }
+                    }));
+                    
+                } else {
+                    console.log("✅ Firmware is up to date (from cache)");
+                    
+                    if (showNotification) {
+                        this.showUpToDateNotification();
+                    }
+                }
+                
+                return this.updateAvailable;
+            }
+            
+            // Update last check time only for network requests
             this.lastCheckTime = Date.now();
             localStorage.setItem('lastUpdateCheck', this.lastCheckTime.toString());
             
@@ -434,6 +629,7 @@ class AutomaticFirmwareUpdater {
             console.log("🔍 [AutomaticUpdater] GitHub response content:", githubResponse);
             const manifestContent = atob(githubResponse.content);
             this.remoteManifest = JSON.parse(manifestContent);
+            this.cachedRemoteManifest = this.remoteManifest; // Cache for future use
             
             // Only proceed if we have a valid current version
             if (!this.currentVersion) {
@@ -572,7 +768,7 @@ class AutomaticFirmwareUpdater {
         `;
         refreshModal.innerHTML = `
             <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
-                <h3 style="margin-top: 0; color: #4CAF50;">🔄 Refreshing Device Version...</h3>
+                <h3 style="margin-top: 0; color: #ffcc00;">🔄 Refreshing Device Version...</h3>
                 <p style="margin: 15px 0;">Detecting current firmware version...</p>
             </div>
         `;
@@ -646,10 +842,10 @@ class AutomaticFirmwareUpdater {
                 
                 refreshModal.innerHTML = `
                     <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
-                        <h3 style="margin-top: 0; color: #4CAF50;">✅ Version Refreshed!</h3>
+                        <h3 style="margin-top: 0; color: #ffcc00;">✅ Version Refreshed!</h3>
                         <p style="margin: 15px 0;"><strong>Current Firmware:</strong> ${versionDisplay}</p>
                         <p style="margin: 15px 0;">Device version successfully updated in diagnostics.</p>
-                        <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Close</button>
+                        <button onclick="this.parentNode.parentNode.remove()" style="background: #ffcc00; color: black; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Close</button>
                     </div>
                 `;
                 
@@ -743,6 +939,12 @@ class AutomaticFirmwareUpdater {
                         window.setupDeviceInformation();
                     }
                     
+                    // Check against cached remote version
+                    if (this.cachedRemoteManifest) {
+                        console.log("🔍 [AutomaticUpdater] Checking device version against cached remote after retry detection...");
+                        this.checkDeviceAgainstCachedRemote();
+                    }
+                    
                     console.log("🎉 Automatic version detection completed successfully");
                     return; // Success - exit retry loop
                 } else {
@@ -796,7 +998,7 @@ class AutomaticFirmwareUpdater {
                 <p style="margin: 15px 0;">Unable to determine current firmware version.</p>
                 <p style="margin: 15px 0;">Update check cannot proceed without knowing the current version.</p>
                 <div style="margin-top: 25px;">
-                    <button id="refresh-version" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">🔄 Refresh Version</button>
+                    <button id="refresh-version" style="background: #ffcc00; color: black; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">🔄 Refresh Version</button>
                     <button id="dismiss-warning" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; margin: 0 10px;">Dismiss</button>
                 </div>
             </div>
@@ -870,14 +1072,38 @@ class AutomaticFirmwareUpdater {
     async manualUpdateCheck() {
         console.log("🔍 [AutomaticUpdater] Manual update check requested");
         console.log("🔍 [AutomaticUpdater] Current version state:", this.currentVersion);
-        console.log("🔍 [AutomaticUpdater] Calling checkForUpdates...");
+        console.log("🔍 [AutomaticUpdater] Cached remote manifest:", this.cachedRemoteManifest);
+        
+        // If we have both device version and cached remote, check immediately
+        if (this.currentVersion && this.currentVersion.firmware_version && this.cachedRemoteManifest) {
+            console.log("🔍 [AutomaticUpdater] Using cached versions for manual check...");
+            const updateAvailable = this.checkDeviceAgainstCachedRemote();
+            
+            if (!updateAvailable) {
+                // Show up-to-date notification for manual checks
+                this.showUpToDateNotification();
+            }
+            
+            return updateAvailable;
+        }
+        
+        // Fall back to full network check if we don't have cached data
+        console.log("🔍 [AutomaticUpdater] Falling back to full network check...");
         return await this.checkForUpdates(true);
     }
 
     /**
-     * Show update available notification
+     * Show update available notification with Later button (device-specific 24-hour suppression)
      */
-    showUpdateNotification() {
+    showUpdateNotificationWithLater() {
+        // Use cached remote manifest for notification
+        const remoteManifest = this.cachedRemoteManifest;
+        
+        if (!remoteManifest || !this.currentVersion) {
+            console.error("❌ Cannot show update notification - missing version information");
+            return;
+        }
+        
         // Create and show update notification UI
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -908,13 +1134,13 @@ class AutomaticFirmwareUpdater {
         
         // Format version numbers to avoid double "v" prefix
         const currentVersionDisplay = this.currentVersion.firmware_version.startsWith('v') ? this.currentVersion.firmware_version : `v${this.currentVersion.firmware_version}`;
-        const remoteVersionDisplay = this.remoteManifest.firmware_version.startsWith('v') ? this.remoteManifest.firmware_version : `v${this.remoteManifest.firmware_version}`;
+        const remoteVersionDisplay = remoteManifest.firmware_version.startsWith('v') ? remoteManifest.firmware_version : `v${remoteManifest.firmware_version}`;
         
         modalContent.innerHTML = `
-            <h3 style="margin-top: 0; color: #4CAF50;">🎉 Firmware Update Available!</h3>
+            <h3 style="margin-top: 0; color: #ffcc00;">🎉 Firmware Update Available!</h3>
             <p style="margin: 15px 0;"><strong>Current:</strong> ${currentVersionDisplay}</p>
             <p style="margin: 15px 0;"><strong>Available:</strong> ${remoteVersionDisplay}</p>
-            <p style="margin: 15px 0; font-size: 14px; color: #ccc;">${this.remoteManifest.release_notes || 'New firmware version available'}</p>
+            <p style="margin: 15px 0; font-size: 14px; color: #ccc;">${remoteManifest.release_notes || 'New firmware version available'}</p>
             <div style="background: #ff5722; color: white; padding: 12px; border-radius: 4px; margin: 20px 0; font-size: 13px;">
                 <strong>⚠️ WARNING:</strong> Do not disconnect or power off the device during the firmware update process. Interrupting the update may render your device unusable and require manual recovery.
             </div>
@@ -926,10 +1152,12 @@ class AutomaticFirmwareUpdater {
         
         const updateButton = document.createElement('button');
         updateButton.textContent = 'Update Now';
-        updateButton.style.cssText = 'background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 0 10px;';
+        updateButton.style.cssText = 'background: #ffcc00; color: black; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 0 10px;';
         updateButton.onclick = () => {
             console.log("🚀 Update Now clicked - starting firmware update process");
             notification.remove();
+            // Set the remoteManifest for the update process
+            this.remoteManifest = this.cachedRemoteManifest;
             this.startUpdateProcess();
         };
         
@@ -937,7 +1165,17 @@ class AutomaticFirmwareUpdater {
         laterButton.textContent = 'Later';
         laterButton.style.cssText = 'background: #666; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 0 10px;';
         laterButton.onclick = () => {
-            console.log("⏳ Update Later clicked - dismissing notification");
+            console.log("⏳ Later button clicked - setting device-specific 24-hour suppression");
+            
+            // Set device-specific 24-hour suppression
+            const suppressionSuccess = this.suppressUpdatePromptForDevice();
+            
+            if (suppressionSuccess) {
+                console.log("✅ [AutomaticUpdater] Successfully set device-specific update suppression");
+            } else {
+                console.warn("⚠️ [AutomaticUpdater] Failed to set device-specific update suppression");
+            }
+            
             notification.remove();
         };
         
@@ -948,12 +1186,12 @@ class AutomaticFirmwareUpdater {
         
         document.body.appendChild(notification);
         
-        // Auto-remove after 30 seconds
+        // Auto-remove after 60 seconds (longer since it has Later option)
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
-        }, 30000);
+        }, 60000);
     }
 
     /**
@@ -979,9 +1217,9 @@ class AutomaticFirmwareUpdater {
         `;
         notification.innerHTML = `
             <div style="background: #2a2a2a; color: #eee; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 400px; text-align: center;">
-                <h3 style="margin-top: 0; color: #4CAF50;">✅ Firmware Up to Date</h3>
+                <h3 style="margin-top: 0; color: #ffcc00;">✅ Firmware Up to Date</h3>
                 <p style="margin: 15px 0;">Your device is running the latest firmware version ${versionDisplay}</p>
-                <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Close</button>
+                <button onclick="this.parentNode.parentNode.remove()" style="background: #ffcc00; color: black; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Close</button>
             </div>
         `;
         
@@ -1045,9 +1283,14 @@ class AutomaticFirmwareUpdater {
     async downloadAndApplyUpdate() {
         console.log("🚀 Starting automatic firmware download and update...");
         
-        if (!this.remoteManifest) {
+        // Use cached remote manifest if available, otherwise use remoteManifest
+        const manifestToUse = this.cachedRemoteManifest || this.remoteManifest;
+        
+        if (!manifestToUse) {
             throw new Error('No remote manifest available');
         }
+        
+        console.log(`🚀 Using firmware manifest version: v${manifestToUse.firmware_version}`);
         
         // Show progress modal
         const progressModal = document.createElement('div');
@@ -1069,14 +1312,14 @@ class AutomaticFirmwareUpdater {
             const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
             progressModal.innerHTML = `
                 <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center; min-width: 400px;">
-                    <h3 style="margin-top: 0; color: #4CAF50;">🚀 Updating Firmware to v${this.remoteManifest.firmware_version}</h3>
+                    <h3 style="margin-top: 0; color: #ffcc00;">🚀 Updating Firmware to v${manifestToUse.firmware_version}</h3>
                     <div style="background: #ff5722; color: white; padding: 10px; border-radius: 4px; margin: 15px 0; font-size: 12px;">
                         <strong>⚠️ DO NOT DISCONNECT DEVICE</strong><br>
                         Disconnecting during update may damage firmware
                     </div>
                     <div style="margin: 20px 0;">
                         <div style="background: #444; border-radius: 10px; overflow: hidden; height: 20px; margin: 10px 0;">
-                            <div style="background: #4CAF50; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                            <div style="background: #ffcc00; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
                         </div>
                         <p style="margin: 10px 0; font-size: 14px;">${detail}</p>
                         ${total > 0 ? `<p style="margin: 5px 0; font-size: 12px; color: #aaa;">${current}/${total} (${percentage}%)</p>` : ''}
@@ -1092,7 +1335,7 @@ class AutomaticFirmwareUpdater {
             updateProgress('downloading', 0, 0, 'Downloading firmware files from GitHub...');
             
             const firmwareFiles = new Map();
-            const filesToDownload = Object.keys(this.remoteManifest.files);
+            const filesToDownload = Object.keys(manifestToUse.files);
             
             for (let i = 0; i < filesToDownload.length; i++) {
                 const fileName = filesToDownload[i];
@@ -1163,7 +1406,10 @@ class AutomaticFirmwareUpdater {
      * Show update validation dialog that waits for device reconnection and version confirmation
      */
     async showUpdateValidationDialog(progressModal) {
-        const expectedVersion = this.remoteManifest.firmware_version;
+        // Use cached remote manifest if available, otherwise use remoteManifest
+        const manifestToUse = this.cachedRemoteManifest || this.remoteManifest;
+        const expectedVersion = manifestToUse.firmware_version;
+        
         console.log(`🔍 [AutomaticUpdater] Waiting for device reconnection and version validation. Expected: v${expectedVersion}`);
         
         // Show waiting for validation dialog
@@ -1293,12 +1539,12 @@ class AutomaticFirmwareUpdater {
         
         progressModal.innerHTML = `
             <div style="background: #2a2a2a; color: #eee; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 500px; text-align: center;">
-                <h3 style="margin-top: 0; color: #4CAF50;">✅ Update Complete & Validated!</h3>
+                <h3 style="margin-top: 0; color: #ffcc00;">✅ Update Complete & Validated!</h3>
                 <p style="margin: 15px 0;">Firmware has been successfully updated to <strong>v${expectedVersion}</strong></p>
-                <p style="margin: 15px 0; font-size: 14px; color: #4CAF50;">✓ Device reconnected successfully</p>
-                <p style="margin: 15px 0; font-size: 14px; color: #4CAF50;">✓ New firmware version confirmed</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ffcc00;">✓ Device reconnected successfully</p>
+                <p style="margin: 15px 0; font-size: 14px; color: #ffcc00;">✓ New firmware version confirmed</p>
                 <p style="margin: 15px 0; font-size: 14px; color: #ccc;">Your device is now running the latest firmware and ready to use.</p>
-                <button onclick="this.parentNode.parentNode.remove()" style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
+                <button onclick="this.parentNode.parentNode.remove()" style="background: #ffcc00; color: black; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 15px;">Close</button>
             </div>
         `;
     }

@@ -15,6 +15,7 @@ BUGS
 1. Switch to DPAD / JOSYTICK button is not changing its label based on the config - Resolved
 2. Turn ON/OFF Tiltwave is not changing the button label based on the config - Resolved
 3. Device ID and Device Firmware are not always populating in the diagnostics page - Seems stable marked as Resolved
+4. Reconnection after applying config for a preset change the device name shows as FIRMWARE_READY_OK
 
 AESTHETICS
 1. Diagnostics Input Status need a better more balanced look
