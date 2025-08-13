@@ -4225,8 +4225,6 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
       return;
     }
     
-    const fullName = `BumbleGum Guitars - ${newName}`;
-    
     // Set global flag to prevent status overrides during rename
     window._renameInProgress = true;
     
@@ -4248,12 +4246,12 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     // Use pauseScanningDuringOperation to prevent conflicts
     return await multiDeviceManager.pauseScanningDuringOperation(async () => {
       try {
-        console.log(`[updateDeviceName] Starting device rename process for "${newName}"`);
+        console.log(`[updateDeviceName] Starting config-based device rename process for "${newName}"`);
         
-        // 0. Clear all pending states and stop any ongoing polling
+        // 1. Clear all pending states and stop any ongoing polling
         console.log(`[updateDeviceName] Clearing serial buffer and stopping polling...`);
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Longer wait to let device settle
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait to let device settle
         
         // Stop any running FIRMWARE_READY polling to prevent interference
         if (window.devicePollingInterval) {
@@ -4262,7 +4260,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           console.log(`[updateDeviceName] Stopped device polling during rename`);
         }
 
-        // 1. Delete registry entry (no elevation)
+        // 2. Delete registry entry (no elevation required)
         const uidHex = await getDeviceUid();
         const pid = getUniquePid(uidHex);
         const powershellCmd = `powershell -Command "Get-ChildItem 'HKCU:\\System\\CurrentControlSet\\Control\\MediaProperties\\PrivateProperties\\Joystick\\OEM' | Where-Object { $_.Name -like '*${pid}*' } | ForEach-Object { Remove-Item $_.PsPath -Force }"`;
@@ -4274,73 +4272,53 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
           }
         });
 
-        // 2. Read current boot.py using serialFileIO with extended timeout
-        console.log(`[updateDeviceName] Reading current boot.py...`);
-        await multiDeviceManager.flushSerialBuffer(activeDevice.port);
-        await new Promise(resolve => setTimeout(resolve, 800)); // Longer wait for buffer to clear
-        // Use a much longer timeout for boot.py since it's a large file (~13KB)
-        let bootPy = await window.serialFileIO.readFile('boot.py', 45000); // 45 second timeout for read
-        
-        // DEBUG: Log the length and first/last parts of the file to verify complete read
-        console.log(`[updateDeviceName] Read boot.py - Length: ${bootPy.length} characters`);
-        console.log(`[updateDeviceName] First 200 chars:`, bootPy.substring(0, 200));
-        console.log(`[updateDeviceName] Last 200 chars:`, bootPy.substring(bootPy.length - 200));
-        
-        // Verify we have the complete file by checking for key markers
-        if (!bootPy.includes('__version__') || !bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')) {
-          console.warn(`[updateDeviceName] WARNING: boot.py appears incomplete!`);
-          console.warn(`[updateDeviceName] Contains version: ${bootPy.includes('__version__')}`);
-          console.warn(`[updateDeviceName] Contains final print: ${bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')}`);
-          throw new Error('boot.py file appears to be incomplete - aborting rename to prevent corruption');
-        }
-      
-        // 3. Update the device name in boot.py content
-        console.log(`[updateDeviceName] Updating device name in boot.py content...`);
-        // Handle multiline supervisor.set_usb_identification() calls
-        bootPy = bootPy.replace(/(product\s*=\s*)"[^"]*"/, `$1"${fullName}"`);
-        bootPy = bootPy.replace(/(usb_hid\.set_interface_name\(\s*)"[^"]*"(\s*\))/, `$1"${fullName}"$2`);
-        
-        // Verify the replacements were successful
-        if (!bootPy.includes(`product="${fullName}"`)) {
-          throw new Error('Failed to update product name in boot.py');
-        }
-        if (!bootPy.includes(`usb_hid.set_interface_name("${fullName}")`)) {
-          throw new Error('Failed to update USB interface name in boot.py');
-        }
-        
-        // DEBUG: Verify the file is still complete after modifications
-        console.log(`[updateDeviceName] After modification - Length: ${bootPy.length} characters`);
-        if (!bootPy.includes('__version__') || !bootPy.includes('print(f"BGG Guitar Controller v{__version__} boot complete!")')) {
-          console.error(`[updateDeviceName] ERROR: boot.py became corrupted during modification!`);
-          throw new Error('boot.py file became corrupted during name replacement - aborting');
-        }
-        
-        console.log(`[updateDeviceName] boot.py content updated successfully`);
-
-        // 4. Write updated boot.py using serialFileIO with proper timeout and error handling
+        // 3. Read current config.json
+        console.log(`[updateDeviceName] Reading current config.json...`);
         await multiDeviceManager.flushSerialBuffer(activeDevice.port);
         await new Promise(resolve => setTimeout(resolve, 500)); // Wait for buffer to clear
-        console.log(`[updateDeviceName] Starting boot.py write operation...`);
+        
+        let configJson = await window.serialFileIO.readFile('config.json', 15000); // 15 second timeout
+        console.log(`[updateDeviceName] Read config.json - Length: ${configJson.length} characters`);
+        
+        // 4. Parse and update config with new device name
+        let config;
+        try {
+          config = JSON.parse(configJson);
+          console.log(`[updateDeviceName] Parsed config successfully`);
+        } catch (parseError) {
+          console.error(`[updateDeviceName] Failed to parse config.json:`, parseError);
+          throw new Error(`Failed to parse config.json: ${parseError.message}`);
+        }
+        
+        // Update the device_name field
+        const oldName = config.device_name || 'Guitar Controller';
+        config.device_name = newName;
+        console.log(`[updateDeviceName] Updated device_name from "${oldName}" to "${newName}"`);
+        
+        // 5. Write updated config.json back to device
+        const updatedConfigJson = JSON.stringify(config, null, 2);
+        console.log(`[updateDeviceName] Writing updated config.json (${updatedConfigJson.length} characters)...`);
+        
+        await multiDeviceManager.flushSerialBuffer(activeDevice.port);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait for buffer to clear
         
         try {
-          // Use longer timeout for boot.py write since it's a critical system file and large
-          console.log(`[updateDeviceName] Starting boot.py write operation...`);
-          await window.serialFileIO.writeFile(activeDevice.port, 'boot.py', bootPy, 30000); // 30 second timeout
-          console.log(`[updateDeviceName] boot.py write completed successfully`);
+          await window.serialFileIO.writeFile(activeDevice.port, 'config.json', updatedConfigJson, 15000); // 15 second timeout
+          console.log(`[updateDeviceName] config.json write completed successfully`);
         } catch (writeError) {
-          console.error(`[updateDeviceName] boot.py write failed:`, writeError);
-          showToast(`Failed to write boot.py: ${writeError.message}`, 'error');
+          console.error(`[updateDeviceName] config.json write failed:`, writeError);
+          showToast(`Failed to write config.json: ${writeError.message}`, 'error');
           throw writeError;
-        }      
+        }
         
-        console.log("✅ boot.py write completed! Device rename successful.");
-        const successMsg = `Device renamed to "${newName}" successfully! Device will reconnect automatically.`;
+        console.log("✅ Config-based device rename successful!");
+        const successMsg = `Device renamed to "${newName}" successfully! Device will reboot to apply changes.`;
         showToast(successMsg, 'success');
         
         // Update stored device info with new name before reboot for auto-reconnection
         if (multiDeviceManager.lastActiveDeviceInfo) {
-          multiDeviceManager.lastActiveDeviceInfo.deviceName = fullName;
-          console.log('📝 Updated stored device info with new name for auto-reconnection:', fullName);
+          multiDeviceManager.lastActiveDeviceInfo.deviceName = `BumbleGum Guitars - ${newName}`;
+          console.log('📝 Updated stored device info with new name for auto-reconnection:', `BumbleGum Guitars - ${newName}`);
         }
         
         // Clear the rename flag before reboot
@@ -4349,11 +4327,11 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
         // Notify success callback
         if (onSuccess) onSuccess(successMsg);
         
-        // CircuitPython will automatically reboot when boot.py is written
-        // Use the global rebootAndReload function for proper reconnection after a longer delay
+        // Reboot the device to apply the new device name
+        console.log("🔄 Rebooting device to apply name change...");
         setTimeout(() => {
           rebootAndReload();
-        }, 2000); // Longer delay to account for CircuitPython's automatic reboot
+        }, 1500); // Shorter delay since we're not writing boot.py
         
       } catch (error) {
         console.error('Error updating device name:', error);
