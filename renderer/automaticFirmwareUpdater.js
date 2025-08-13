@@ -1311,20 +1311,9 @@ class AutomaticFirmwareUpdater {
                         // Extract device name from READDEVICENAME response
                         const nameMatch = buffer.match(/DEVICENAME:([^\r\n]+)/);
                         if (nameMatch) {
-                            const fullDeviceName = nameMatch[1].trim();
-                            console.log(`📝 [AutomaticUpdater] Full device name: "${fullDeviceName}"`);
-                            
-                            // Extract only the user-configurable part (after "BumbleGum Guitars - ")
-                            const prefix = "BumbleGum Guitars - ";
-                            if (fullDeviceName.startsWith(prefix)) {
-                                const userPart = fullDeviceName.substring(prefix.length);
-                                console.log(`✅ [AutomaticUpdater] Extracted user part: "${userPart}"`);
-                                resolve(userPart);
-                            } else {
-                                // If name doesn't follow expected format, use the full name
-                                console.log(`⚠️ [AutomaticUpdater] Unexpected name format, using full name: "${fullDeviceName}"`);
-                                resolve(fullDeviceName);
-                            }
+                            const userDeviceNamePart = nameMatch[1].trim();
+                            console.log(`✅ [AutomaticUpdater] Captured user device name part: "${userDeviceNamePart}"`);
+                            resolve(userDeviceNamePart);
                         } else {
                             console.warn("⚠️ [AutomaticUpdater] Could not extract device name from response");
                             resolve(null);
