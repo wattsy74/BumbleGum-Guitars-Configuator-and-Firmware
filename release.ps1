@@ -7,6 +7,9 @@ param(
     [Parameter(ParameterSetName = "ManualVersion")]
     [string]$Version,
     
+    [ValidateSet("Update", "Recreate", "Skip")]
+    [string]$ExistingReleaseAction = "Update",
+    
     [switch]$DryRun
 )
 
@@ -193,6 +196,21 @@ function Commit-Changes {
     }
     
     try {
+        # Check if tag already exists
+        $tagExists = git tag -l "v$version"
+        if ($tagExists) {
+            Write-Warning "Tag v$version already exists"
+            $recreate = Read-Host "Delete and recreate tag? (y/N)"
+            if ($recreate -eq 'y' -or $recreate -eq 'Y') {
+                git tag -d "v$version"
+                git push origin ":refs/tags/v$version" 2>$null  # Delete remote tag, ignore errors
+                Write-Info "Deleted existing tag v$version"
+            } else {
+                Write-Info "Skipping tag creation - using existing tag"
+                return $true
+            }
+        }
+        
         git add package.json package-lock.json
         git commit -m "Release v$version"
         git tag -a "v$version" -m "Release v$version"
@@ -232,24 +250,25 @@ function Create-GitHubRelease {
     
     Write-Step "Creating GitHub release..."
     
-    # Check if executable exists
-    $exePath = "out\BumbleGum Guitars Configurator-win32-x64\BumbleGum Guitars Configurator.exe"
-    if (-not (Test-Path $exePath)) {
-        Write-Warning "Executable not found at $exePath"
-        Write-Info "Checking for alternative paths..."
+    # Look for the correct portable executable in the make directory
+    $portableExePath = "out\make\BumbleGum-Guitars-Configurator-v$version-portable.exe"
+    
+    if (Test-Path $portableExePath) {
+        $exePath = $portableExePath
+        Write-Success "Found portable executable at: $exePath"
+    } else {
+        Write-Warning "Portable executable not found at $portableExePath"
+        Write-Info "Checking for alternative portable executables..."
         
-        # Look for the executable in different possible locations
+        # Look for any portable executable in the make directory
         $possiblePaths = @(
-            "out\*\*.exe",
-            "out\BumbleGum Guitars Configurator-win32-x64\BumbleGum Guitars Configurator.exe",
-            "out\BGG Configurator-win32-x64\BGG Configurator.exe",
-            "out\make\squirrel.windows\*\*.exe",
-            "dist\*\*.exe"
+            "out\make\BumbleGum-Guitars-Configurator-*-portable.exe",
+            "out\make\BumbleGum-Guitars-Configurator.exe"
         )
         
         $foundPath = $null
         foreach ($pattern in $possiblePaths) {
-            $found = Get-ChildItem $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
+            $found = Get-ChildItem $pattern -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
             if ($found) {
                 $foundPath = $found.FullName
                 break
@@ -258,10 +277,30 @@ function Create-GitHubRelease {
         
         if ($foundPath) {
             $exePath = $foundPath
-            Write-Success "Found executable at: $exePath"
+            Write-Success "Found portable executable at: $exePath"
         } else {
-            Write-Error "Could not find BGG Configurator.exe"
+            Write-Error "Could not find portable BGG Configurator executable in out\make directory"
+            Write-Warning "Available files in out\make:"
+            Get-ChildItem "out\make\*.exe" -ErrorAction SilentlyContinue | ForEach-Object { 
+                $sizeKB = [math]::Round($_.Length/1KB,0)
+                Write-Info "  $($_.Name) ($sizeKB KB)"
+            }
             return $false
+        }
+    }
+    
+    # Show file size for verification
+    $fileSize = [math]::Round((Get-Item $exePath).Length/1MB,2)
+    Write-Info "Executable size: $fileSize MB"
+    
+    if ($fileSize -gt 100) {
+        Write-Warning "Executable size is unusually large ($fileSize MB). Expected ~67MB for portable version."
+        if (-not $DryRun) {
+            $continue = Read-Host "Continue anyway? (y/N)"
+            if ($continue -ne 'y' -and $continue -ne 'Y') {
+                Write-Info "Upload cancelled due to file size concern"
+                return $false
+            }
         }
     }
     
@@ -275,7 +314,7 @@ function Create-GitHubRelease {
         gh --version | Out-Null
     } catch {
         Write-Warning "GitHub CLI not available. Manual steps required:"
-        Write-Info "1. Go to: https://github.com/YourUsername/BGG-Windows-App/releases/new"
+        Write-Info "1. Go to: https://github.com/wattsy74/BumbleGum-Guitars-Configurator/releases/new"
         Write-Info "2. Tag: v$version"
         Write-Info "3. Title: BGG Configurator v$version"
         Write-Info "4. Upload: $exePath"
@@ -284,9 +323,60 @@ function Create-GitHubRelease {
     }
     
     try {
-        # Create a copy with hyphens instead of spaces (GitHub converts spaces to dots anyway)
-        $renamedExePath = Join-Path (Get-Location) "BumbleGum-Guitars-Configurator.exe"
+        # Check if release already exists
+        $existingRelease = gh release view "v$version" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Warning "GitHub release v$version already exists"
+            
+            if ($ExistingReleaseAction -eq "Update") {
+                $action = "U"
+            } elseif ($ExistingReleaseAction -eq "Recreate") {
+                $action = "D"
+            } elseif ($ExistingReleaseAction -eq "Skip") {
+                $action = "S"
+            } else {
+                $action = Read-Host "Choose action: (U)pdate existing release, (D)elete and recreate, (S)kip release creation"
+            }
+            
+            switch ($action.ToUpper()) {
+                'U' {
+                    Write-Info "Updating existing release v$version..."
+                    # Create a copy with a clean name for GitHub release
+                    $cleanFileName = "BumbleGum-Guitars-Configurator.exe"
+                    $renamedExePath = Join-Path (Get-Location) $cleanFileName
+                    Copy-Item $exePath $renamedExePath -Force
+                    
+                    # Upload new file (this will replace existing file)
+                    gh release upload "v$version" $renamedExePath --clobber
+                    
+                    # Clean up temporary file
+                    Remove-Item $renamedExePath -Force
+                    
+                    Write-Success "Updated GitHub release v$version with new executable ($fileSize MB)"
+                    return $true
+                }
+                'D' {
+                    Write-Info "Deleting and recreating release v$version..."
+                    gh release delete "v$version" --yes
+                    # Continue to create new release below
+                }
+                'S' {
+                    Write-Info "Skipping GitHub release creation"
+                    return $true
+                }
+                default {
+                    Write-Info "Invalid choice. Skipping release creation."
+                    return $true
+                }
+            }
+        }
+        
+        # Create a copy with a clean name for GitHub release
+        $cleanFileName = "BumbleGum-Guitars-Configurator.exe"
+        $renamedExePath = Join-Path (Get-Location) $cleanFileName
         Copy-Item $exePath $renamedExePath -Force
+        
+        Write-Info "Created release copy: $cleanFileName ($(([math]::Round((Get-Item $renamedExePath).Length/1MB,2))) MB)"
         
         # Generate release notes
         $releaseNotes = @"
@@ -297,26 +387,35 @@ function Create-GitHubRelease {
 - Updated to version $version
 
 ## Installation
-Download the BumbleGum Guitars Configurator.exe file below and run it. No installation required - it's a portable executable.
+Download the **BumbleGum-Guitars-Configurator.exe** file below and run it. 
+
+✅ **Portable Application** - No installation required!  
+✅ **Single File** - Just download and run  
+✅ **Auto-Update** - The app will check for updates automatically  
+
+## System Requirements
+- Windows 10/11 (64-bit)
+- No additional software required
 
 ## Auto-Update
-If you have a previous version installed, the app will automatically check for updates and prompt you to upgrade.
+If you have a previous version, the app will automatically detect this new version and prompt you to upgrade.
 "@
         
         # Create the release first without assets
         gh release create "v$version" --title "BGG Configurator v$version" --notes $releaseNotes --latest
         
-        # Then upload the file with the hyphenated name
+        # Then upload the portable executable
         gh release upload "v$version" $renamedExePath --clobber
         
         # Clean up temporary file
         Remove-Item $renamedExePath -Force
         
-        Write-Success "Created GitHub release v$version with executable"
+        Write-Success "Created GitHub release v$version with portable executable ($fileSize MB)"
         return $true
     } catch {
         Write-Error "Failed to create GitHub release: $($_.Exception.Message)"
-        Write-Info "You can manually create the release at: https://github.com/YourUsername/BGG-Windows-App/releases/new"
+        Write-Info "You can manually create the release at: https://github.com/wattsy74/BumbleGum-Guitars-Configurator/releases/new"
+        Write-Info "Upload file: $exePath"
         return $false
     }
 }
