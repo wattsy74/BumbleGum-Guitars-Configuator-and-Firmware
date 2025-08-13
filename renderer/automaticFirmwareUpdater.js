@@ -1343,8 +1343,17 @@ class AutomaticFirmwareUpdater {
      * Preserve device name in boot.py content
      */
     preserveDeviceNameInBootPy(bootPyContent, userDeviceNamePart) {
+        console.log(`🔍 [AutomaticUpdater] === DEVICE NAME PRESERVATION DEBUG ===`);
+        console.log(`🔍 [AutomaticUpdater] Input userDeviceNamePart: "${userDeviceNamePart}"`);
+        console.log(`🔍 [AutomaticUpdater] Boot.py content length: ${bootPyContent?.length || 'null'} characters`);
+        
         if (!userDeviceNamePart) {
             console.warn("⚠️ [AutomaticUpdater] No user device name part to preserve, using original boot.py");
+            return bootPyContent;
+        }
+        
+        if (!bootPyContent) {
+            console.error("❌ [AutomaticUpdater] Boot.py content is null/undefined!");
             return bootPyContent;
         }
         
@@ -1367,10 +1376,20 @@ class AutomaticFirmwareUpdater {
                 `usb_hid.set_interface_name("${newFullName}")`
             );
             
+            // Verify the replacement worked
+            const verifyMatch = modifiedContent.match(interfaceNameRegex);
+            if (verifyMatch) {
+                console.log(`✅ [AutomaticUpdater] Verification: New interface name in content: "${verifyMatch[1]}"`);
+            } else {
+                console.error(`❌ [AutomaticUpdater] Verification failed: Could not find interface name in modified content!`);
+            }
+            
             console.log("✅ [AutomaticUpdater] Successfully preserved user device name part in boot.py");
+            console.log(`🔍 [AutomaticUpdater] Modified content length: ${modifiedContent.length} characters`);
             return modifiedContent;
         } else {
             console.warn("⚠️ [AutomaticUpdater] Could not find usb_hid.set_interface_name in boot.py");
+            console.log(`🔍 [AutomaticUpdater] Boot.py preview (first 500 chars): ${bootPyContent.substring(0, 500)}`);
             return bootPyContent;
         }
     }
@@ -1457,10 +1476,22 @@ class AutomaticFirmwareUpdater {
                 const githubResponse = await response.json();
                 let fileContent = atob(githubResponse.content);
                 
+                console.log(`🔍 [AutomaticUpdater] Downloaded ${fileName}, content length: ${fileContent.length}`);
+                
                 // Special handling for boot.py to preserve device name
                 if (fileName === 'boot.py' && userDeviceNamePart) {
-                    console.log(`📝 [AutomaticUpdater] Processing boot.py to preserve user device name part...`);
+                    console.log(`📝 [AutomaticUpdater] === BOOT.PY PROCESSING START ===`);
+                    console.log(`📝 [AutomaticUpdater] Processing boot.py to preserve user device name part: "${userDeviceNamePart}"`);
+                    console.log(`📝 [AutomaticUpdater] Original boot.py length: ${fileContent.length}`);
+                    
+                    const originalContent = fileContent;
                     fileContent = this.preserveDeviceNameInBootPy(fileContent, userDeviceNamePart);
+                    
+                    console.log(`📝 [AutomaticUpdater] Modified boot.py length: ${fileContent.length}`);
+                    console.log(`📝 [AutomaticUpdater] Content changed: ${originalContent !== fileContent}`);
+                    console.log(`📝 [AutomaticUpdater] === BOOT.PY PROCESSING END ===`);
+                } else if (fileName === 'boot.py') {
+                    console.warn(`⚠️ [AutomaticUpdater] Boot.py downloaded but no userDeviceNamePart available for preservation!`);
                 }
                 
                 firmwareFiles.set(fileName, fileContent);
@@ -1710,6 +1741,82 @@ class AutomaticFirmwareUpdater {
     async startUpdateProcess() {
         console.log("🚀 Starting firmware update process...");
         await this.downloadAndApplyUpdate();
+    }
+
+    /**
+     * TEST FUNCTION: Test device name preservation logic without full firmware update
+     * Call this from developer console: window.automaticFirmwareUpdater.testNamePreservation()
+     */
+    async testNamePreservation() {
+        console.log("🧪 [TEST] Starting device name preservation test...");
+        
+        try {
+            // Step 1: Test device name capture
+            console.log("🧪 [TEST] Step 1: Testing device name capture...");
+            const userDeviceNamePart = await this.captureCurrentDeviceName();
+            console.log(`🧪 [TEST] Captured user device name part: "${userDeviceNamePart}"`);
+            
+            if (!userDeviceNamePart) {
+                console.error("🧪 [TEST] FAILED: Could not capture device name");
+                return;
+            }
+            
+            // Step 2: Test downloading and modifying boot.py
+            console.log("🧪 [TEST] Step 2: Testing boot.py download and modification...");
+            
+            // Get the latest firmware manifest
+            const manifestResponse = await fetch('https://api.github.com/repos/wattsy74/BumbleGum-Guitars-Configurator/contents/bgg-firmware-updates/firmware-manifest.json');
+            if (!manifestResponse.ok) {
+                throw new Error(`Failed to fetch manifest: ${manifestResponse.status}`);
+            }
+            
+            const manifestData = await manifestResponse.json();
+            const manifestContent = JSON.parse(atob(manifestData.content));
+            const latestVersion = Object.keys(manifestContent.versions).sort().pop();
+            const manifest = manifestContent.versions[latestVersion];
+            
+            console.log(`🧪 [TEST] Using manifest version: ${latestVersion}`);
+            
+            // Download boot.py
+            const bootPyUrl = `https://api.github.com/repos/wattsy74/BumbleGum-Guitars-Configurator/contents/bgg-firmware-updates/${manifest.files['boot.py']}`;
+            const bootPyResponse = await fetch(bootPyUrl);
+            
+            if (!bootPyResponse.ok) {
+                throw new Error(`Failed to download boot.py: ${bootPyResponse.status}`);
+            }
+            
+            const bootPyData = await bootPyResponse.json();
+            let bootPyContent = atob(bootPyData.content);
+            
+            console.log(`🧪 [TEST] Downloaded boot.py, length: ${bootPyContent.length}`);
+            console.log(`🧪 [TEST] Original boot.py preview:\n${bootPyContent.substring(0, 500)}`);
+            
+            // Test name preservation
+            const modifiedBootPy = this.preserveDeviceNameInBootPy(bootPyContent, userDeviceNamePart);
+            
+            console.log(`🧪 [TEST] Modified boot.py preview:\n${modifiedBootPy.substring(0, 500)}`);
+            console.log(`🧪 [TEST] Content changed: ${bootPyContent !== modifiedBootPy}`);
+            
+            // Test: Find the interface name line in both versions
+            const originalMatch = bootPyContent.match(/usb_hid\.set_interface_name\("([^"]+)"\)/);
+            const modifiedMatch = modifiedBootPy.match(/usb_hid\.set_interface_name\("([^"]+)"\)/);
+            
+            console.log(`🧪 [TEST] Original interface name: "${originalMatch ? originalMatch[1] : 'NOT FOUND'}"`);
+            console.log(`🧪 [TEST] Modified interface name: "${modifiedMatch ? modifiedMatch[1] : 'NOT FOUND'}"`);
+            
+            console.log("🧪 [TEST] ✅ Test completed successfully!");
+            
+            return {
+                userDeviceNamePart,
+                originalInterfaceName: originalMatch ? originalMatch[1] : null,
+                modifiedInterfaceName: modifiedMatch ? modifiedMatch[1] : null,
+                contentChanged: bootPyContent !== modifiedBootPy
+            };
+            
+        } catch (error) {
+            console.error("🧪 [TEST] ❌ Test failed:", error);
+            throw error;
+        }
     }
 
     // Additional methods (notifications, UI, etc.) would go here...
