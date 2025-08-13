@@ -1311,9 +1311,20 @@ class AutomaticFirmwareUpdater {
                         // Extract device name from READDEVICENAME response
                         const nameMatch = buffer.match(/DEVICENAME:([^\r\n]+)/);
                         if (nameMatch) {
-                            const deviceName = nameMatch[1].trim();
-                            console.log(`✅ [AutomaticUpdater] Captured device name: "${deviceName}"`);
-                            resolve(deviceName);
+                            const fullDeviceName = nameMatch[1].trim();
+                            console.log(`📝 [AutomaticUpdater] Full device name: "${fullDeviceName}"`);
+                            
+                            // Extract only the user-configurable part (after "BumbleGum Guitars - ")
+                            const prefix = "BumbleGum Guitars - ";
+                            if (fullDeviceName.startsWith(prefix)) {
+                                const userPart = fullDeviceName.substring(prefix.length);
+                                console.log(`✅ [AutomaticUpdater] Extracted user part: "${userPart}"`);
+                                resolve(userPart);
+                            } else {
+                                // If name doesn't follow expected format, use the full name
+                                console.log(`⚠️ [AutomaticUpdater] Unexpected name format, using full name: "${fullDeviceName}"`);
+                                resolve(fullDeviceName);
+                            }
                         } else {
                             console.warn("⚠️ [AutomaticUpdater] Could not extract device name from response");
                             resolve(null);
@@ -1342,29 +1353,32 @@ class AutomaticFirmwareUpdater {
     /**
      * Preserve device name in boot.py content
      */
-    preserveDeviceNameInBootPy(bootPyContent, currentDeviceName) {
-        if (!currentDeviceName) {
-            console.warn("⚠️ [AutomaticUpdater] No device name to preserve, using original boot.py");
+    preserveDeviceNameInBootPy(bootPyContent, userDeviceNamePart) {
+        if (!userDeviceNamePart) {
+            console.warn("⚠️ [AutomaticUpdater] No user device name part to preserve, using original boot.py");
             return bootPyContent;
         }
         
-        console.log(`📝 [AutomaticUpdater] Preserving device name "${currentDeviceName}" in boot.py`);
+        console.log(`📝 [AutomaticUpdater] Preserving user device name part "${userDeviceNamePart}" in boot.py`);
         
         // Find the usb_hid.set_interface_name line and replace it
         const interfaceNameRegex = /usb_hid\.set_interface_name\("([^"]+)"\)/;
         const match = bootPyContent.match(interfaceNameRegex);
         
         if (match) {
-            const originalName = match[1];
-            console.log(`📝 [AutomaticUpdater] Found original interface name: "${originalName}"`);
-            console.log(`📝 [AutomaticUpdater] Replacing with preserved name: "${currentDeviceName}"`);
+            const originalFullName = match[1];
+            console.log(`📝 [AutomaticUpdater] Found original interface name: "${originalFullName}"`);
+            
+            // Construct the new full name with preserved prefix and user part
+            const newFullName = `BumbleGum Guitars - ${userDeviceNamePart}`;
+            console.log(`📝 [AutomaticUpdater] Creating new interface name: "${newFullName}"`);
             
             const modifiedContent = bootPyContent.replace(
                 interfaceNameRegex,
-                `usb_hid.set_interface_name("${currentDeviceName}")`
+                `usb_hid.set_interface_name("${newFullName}")`
             );
             
-            console.log("✅ [AutomaticUpdater] Successfully preserved device name in boot.py");
+            console.log("✅ [AutomaticUpdater] Successfully preserved user device name part in boot.py");
             return modifiedContent;
         } else {
             console.warn("⚠️ [AutomaticUpdater] Could not find usb_hid.set_interface_name in boot.py");
@@ -1427,11 +1441,11 @@ class AutomaticFirmwareUpdater {
         try {
             // Step 0: Capture current device name for preservation
             updateProgress('preparing', 0, 0, 'Capturing current device name...');
-            const currentDeviceName = await this.captureCurrentDeviceName();
-            if (currentDeviceName) {
-                console.log(`📝 [AutomaticUpdater] Device name captured: "${currentDeviceName}"`);
+            const userDeviceNamePart = await this.captureCurrentDeviceName();
+            if (userDeviceNamePart) {
+                console.log(`📝 [AutomaticUpdater] User device name part captured: "${userDeviceNamePart}"`);
             } else {
-                console.warn("⚠️ [AutomaticUpdater] Could not capture device name - will use default");
+                console.warn("⚠️ [AutomaticUpdater] Could not capture user device name part - will use default");
             }
             
             // Step 1: Download all firmware files
@@ -1455,9 +1469,9 @@ class AutomaticFirmwareUpdater {
                 let fileContent = atob(githubResponse.content);
                 
                 // Special handling for boot.py to preserve device name
-                if (fileName === 'boot.py' && currentDeviceName) {
-                    console.log(`📝 [AutomaticUpdater] Processing boot.py to preserve device name...`);
-                    fileContent = this.preserveDeviceNameInBootPy(fileContent, currentDeviceName);
+                if (fileName === 'boot.py' && userDeviceNamePart) {
+                    console.log(`📝 [AutomaticUpdater] Processing boot.py to preserve user device name part...`);
+                    fileContent = this.preserveDeviceNameInBootPy(fileContent, userDeviceNamePart);
                 }
                 
                 firmwareFiles.set(fileName, fileContent);
