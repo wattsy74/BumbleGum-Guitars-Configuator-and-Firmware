@@ -1278,6 +1278,100 @@ class AutomaticFirmwareUpdater {
     }
 
     /**
+     * Capture current device name for preservation during firmware updates
+     */
+    async captureCurrentDeviceName() {
+        return new Promise((resolve, reject) => {
+            console.log("📝 [AutomaticUpdater] Capturing current device name for preservation...");
+            
+            const activeDevice = window.multiDeviceManager?.getActiveDevice?.();
+            if (!activeDevice || !activeDevice.isConnected || !activeDevice.port) {
+                console.warn("⚠️ [AutomaticUpdater] No active device for name capture");
+                resolve(null);
+                return;
+            }
+
+            const port = activeDevice.port;
+            let buffer = '';
+            let timeoutId;
+            
+            const cleanup = () => {
+                if (timeoutId) clearTimeout(timeoutId);
+                port.off('data', handleResponse);
+            };
+            
+            const handleResponse = (data) => {
+                try {
+                    buffer += data.toString();
+                    console.log(`📝 [AutomaticUpdater] Name capture buffer: "${buffer}"`);
+                    
+                    if (buffer.includes('END')) {
+                        cleanup();
+                        
+                        // Extract device name from READDEVICENAME response
+                        const nameMatch = buffer.match(/DEVICENAME:([^\r\n]+)/);
+                        if (nameMatch) {
+                            const deviceName = nameMatch[1].trim();
+                            console.log(`✅ [AutomaticUpdater] Captured device name: "${deviceName}"`);
+                            resolve(deviceName);
+                        } else {
+                            console.warn("⚠️ [AutomaticUpdater] Could not extract device name from response");
+                            resolve(null);
+                        }
+                    }
+                } catch (error) {
+                    cleanup();
+                    console.error("❌ [AutomaticUpdater] Error capturing device name:", error);
+                    resolve(null);
+                }
+            };
+            
+            // Set timeout for name capture
+            timeoutId = setTimeout(() => {
+                cleanup();
+                console.warn("⚠️ [AutomaticUpdater] Device name capture timed out");
+                resolve(null);
+            }, 5000);
+            
+            port.on('data', handleResponse);
+            console.log("📝 [AutomaticUpdater] Sending READDEVICENAME command...");
+            port.write('READDEVICENAME\n');
+        });
+    }
+
+    /**
+     * Preserve device name in boot.py content
+     */
+    preserveDeviceNameInBootPy(bootPyContent, currentDeviceName) {
+        if (!currentDeviceName) {
+            console.warn("⚠️ [AutomaticUpdater] No device name to preserve, using original boot.py");
+            return bootPyContent;
+        }
+        
+        console.log(`📝 [AutomaticUpdater] Preserving device name "${currentDeviceName}" in boot.py`);
+        
+        // Find the usb_hid.set_interface_name line and replace it
+        const interfaceNameRegex = /usb_hid\.set_interface_name\("([^"]+)"\)/;
+        const match = bootPyContent.match(interfaceNameRegex);
+        
+        if (match) {
+            const originalName = match[1];
+            console.log(`📝 [AutomaticUpdater] Found original interface name: "${originalName}"`);
+            console.log(`📝 [AutomaticUpdater] Replacing with preserved name: "${currentDeviceName}"`);
+            
+            const modifiedContent = bootPyContent.replace(
+                interfaceNameRegex,
+                `usb_hid.set_interface_name("${currentDeviceName}")`
+            );
+            
+            console.log("✅ [AutomaticUpdater] Successfully preserved device name in boot.py");
+            return modifiedContent;
+        } else {
+            console.warn("⚠️ [AutomaticUpdater] Could not find usb_hid.set_interface_name in boot.py");
+            return bootPyContent;
+        }
+    }
+    /**
      * Download and apply firmware update automatically
      */
     async downloadAndApplyUpdate() {
@@ -1331,6 +1425,15 @@ class AutomaticFirmwareUpdater {
         document.body.appendChild(progressModal);
         
         try {
+            // Step 0: Capture current device name for preservation
+            updateProgress('preparing', 0, 0, 'Capturing current device name...');
+            const currentDeviceName = await this.captureCurrentDeviceName();
+            if (currentDeviceName) {
+                console.log(`📝 [AutomaticUpdater] Device name captured: "${currentDeviceName}"`);
+            } else {
+                console.warn("⚠️ [AutomaticUpdater] Could not capture device name - will use default");
+            }
+            
             // Step 1: Download all firmware files
             updateProgress('downloading', 0, 0, 'Downloading firmware files from GitHub...');
             
@@ -1349,7 +1452,14 @@ class AutomaticFirmwareUpdater {
                 }
                 
                 const githubResponse = await response.json();
-                const fileContent = atob(githubResponse.content);
+                let fileContent = atob(githubResponse.content);
+                
+                // Special handling for boot.py to preserve device name
+                if (fileName === 'boot.py' && currentDeviceName) {
+                    console.log(`📝 [AutomaticUpdater] Processing boot.py to preserve device name...`);
+                    fileContent = this.preserveDeviceNameInBootPy(fileContent, currentDeviceName);
+                }
+                
                 firmwareFiles.set(fileName, fileContent);
                 
                 console.log(`✅ Downloaded ${fileName} (${fileContent.length} bytes)`);
