@@ -1,7 +1,12 @@
 [CmdletBinding()]
 param(
+    [Parameter(ParameterSetName = "AutoIncrement")]
     [ValidateSet("major", "minor", "patch")]
     [string]$VersionType = "patch",
+    
+    [Parameter(ParameterSetName = "ManualVersion")]
+    [string]$Version,
+    
     [switch]$DryRun
 )
 
@@ -79,6 +84,22 @@ function Test-Prerequisites {
     }
 }
 
+# Function to get target version (either from parameter or auto-increment)
+function Get-TargetVersion {
+    param([string]$currentVersion, [string]$versionType, [string]$manualVersion)
+    
+    if ($manualVersion) {
+        # Validate manual version format
+        if ($manualVersion -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Invalid version format. Expected format: x.y.z (e.g., 3.9.26)"
+        }
+        return $manualVersion
+    } else {
+        # Auto-increment based on version type
+        return Get-NewVersion -currentVersion $currentVersion -versionType $versionType
+    }
+}
+
 # Function to get current version from package.json
 function Get-CurrentVersion {
     $packageJson = Get-Content "package.json" | ConvertFrom-Json
@@ -114,18 +135,23 @@ function Get-NewVersion {
 
 # Function to update package.json version
 function Update-PackageVersion {
-    param([string]$newVersion)
+    param([string]$newVersion, [string]$currentVersion)
     
     Write-Step "Updating package.json version to $newVersion..."
     
+    if ($newVersion -eq $currentVersion) {
+        Write-Info "Version $newVersion is already set in package.json - skipping version update"
+        return $true
+    }
+    
     if ($DryRun) {
-        Write-Info "DRY RUN: Would update package.json version to $newVersion"
+        Write-Info "DRY RUN: Would update package.json version from $currentVersion to $newVersion"
         return $true
     }
     
     try {
         npm version $newVersion --no-git-tag-version | Out-Null
-        Write-Success "Updated package.json to version $newVersion"
+        Write-Success "Updated package.json from $currentVersion to version $newVersion"
         return $true
     } catch {
         Write-Error "Failed to update package.json: $($_.Exception.Message)"
@@ -325,7 +351,14 @@ function Show-Summary {
 
 # Main execution
 Write-Step "BGG Configurator Release Script"
-Write-Info "Version type: $VersionType"
+
+# Determine which mode we're in
+if ($Version) {
+    Write-Info "Manual version mode: $Version"
+} else {
+    Write-Info "Auto-increment mode: $VersionType"
+}
+
 if ($DryRun) {
     Write-Warning "DRY RUN MODE - No changes will be made"
 }
@@ -336,15 +369,19 @@ if (-not (Test-Prerequisites)) {
     exit 1
 }
 
-# Get current and new versions
+# Get current and target versions
 $currentVersion = Get-CurrentVersion
-$newVersion = Get-NewVersion -currentVersion $currentVersion -versionType $VersionType
+$targetVersion = Get-TargetVersion -currentVersion $currentVersion -versionType $VersionType -manualVersion $Version
 
 Write-Info "Current version: $currentVersion"
-Write-Info "New version: $newVersion"
+Write-Info "Target version: $targetVersion"
 
 if (-not $DryRun) {
-    $confirmation = Read-Host "`nProceed with release? (y/N)"
+    if ($Version) {
+        $confirmation = Read-Host "`nProceed with release v$targetVersion? (y/N)"
+    } else {
+        $confirmation = Read-Host "`nProceed with $VersionType release v$targetVersion? (y/N)"
+    }
     if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
         Write-Info "Release cancelled by user"
         exit 0
@@ -354,9 +391,9 @@ if (-not $DryRun) {
 # Execute release steps
 $success = $true
 
-# Update version
+# Update version (only if different from current)
 if ($success) {
-    $success = [bool](Update-PackageVersion -newVersion $newVersion)
+    $success = [bool](Update-PackageVersion -newVersion $targetVersion -currentVersion $currentVersion)
 }
 
 # Build application
@@ -364,23 +401,31 @@ if ($success) {
     $success = [bool](Build-Application)
 }
 
-# Commit changes
+# Commit changes (only if version was updated)
 if ($success) {
-    $success = [bool](Commit-Changes -version $newVersion)
+    if ($targetVersion -eq $currentVersion) {
+        Write-Info "Version unchanged - skipping commit step"
+    } else {
+        $success = [bool](Commit-Changes -version $targetVersion)
+    }
 }
 
-# Push changes
+# Push changes (only if version was updated)
 if ($success) {
-    $success = [bool](Push-Changes -version $newVersion)
+    if ($targetVersion -eq $currentVersion) {
+        Write-Info "Version unchanged - skipping push step"
+    } else {
+        $success = [bool](Push-Changes -version $targetVersion)
+    }
 }
 
 # Create GitHub release
 if ($success) {
-    $success = [bool](Create-GitHubRelease -version $newVersion)
+    $success = [bool](Create-GitHubRelease -version $targetVersion)
 }
 
 # Show summary
-Show-Summary -version $newVersion -success ([bool]$success)
+Show-Summary -version $targetVersion -success ([bool]$success)
 
 if ($success) {
     exit 0
