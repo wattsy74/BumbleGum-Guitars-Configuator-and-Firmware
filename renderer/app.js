@@ -6838,6 +6838,94 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===== DEBUGGING: Test button functionality directly =====
+// ===== SHARE PRESET TO COMMUNITY UI LOGIC =====
+document.addEventListener('DOMContentLoaded', function() {
+  const shareBtn = document.getElementById('share-preset-btn');
+  const shareModal = document.getElementById('share-preset-modal');
+  const shareForm = document.getElementById('share-preset-form');
+  const cancelBtn = document.getElementById('cancel-share-preset');
+  if (shareBtn && shareModal && shareForm && cancelBtn) {
+    shareBtn.onclick = () => {
+      shareModal.style.display = 'flex';
+    };
+    cancelBtn.onclick = () => {
+      shareModal.style.display = 'none';
+    };
+    shareForm.onsubmit = function(e) {
+      e.preventDefault();
+      // Collect color selections from UI
+      const preset = {
+        'green-fret-pressed': document.getElementById('green-fret-pressed')?.style.backgroundColor || '#00FF00',
+        'red-fret-pressed': document.getElementById('red-fret-pressed')?.style.backgroundColor || '#FF0000',
+        'yellow-fret-pressed': document.getElementById('yellow-fret-pressed')?.style.backgroundColor || '#FFFF00',
+        'blue-fret-pressed': document.getElementById('blue-fret-pressed')?.style.backgroundColor || '#0000FF',
+        'orange-fret-pressed': document.getElementById('orange-fret-pressed')?.style.backgroundColor || '#FF4D00',
+        'green-fret-released': document.getElementById('green-fret-released')?.style.backgroundColor || '#008000',
+        'red-fret-released': document.getElementById('red-fret-released')?.style.backgroundColor || '#800000',
+        'yellow-fret-released': document.getElementById('yellow-fret-released')?.style.backgroundColor || '#808000',
+        'blue-fret-released': document.getElementById('blue-fret-released')?.style.backgroundColor || '#000080',
+        'orange-fret-released': document.getElementById('orange-fret-released')?.style.backgroundColor || '#804000',
+        'strum-up-active': document.getElementById('strum-up-active')?.style.backgroundColor || '#FFFFFF',
+        'strum-down-active': document.getElementById('strum-down-active')?.style.backgroundColor || '#FFFFFF',
+        'strum-up-released': document.getElementById('strum-up-released')?.style.backgroundColor || '#808080',
+        'strum-down-released': document.getElementById('strum-down-released')?.style.backgroundColor || '#808080'
+      };
+      const name = document.getElementById('preset-name').value.trim();
+      const author = document.getElementById('preset-author').value.trim();
+      const description = document.getElementById('preset-description').value.trim();
+      const bgp = {
+        name,
+        author,
+        description,
+        version: '1.0',
+        created: new Date().toISOString().split('T')[0],
+        preset
+      };
+      // Save file locally
+    // Create the .bgp file as a string
+    const bgpString = JSON.stringify(bgp, null, 2);
+    // Upload to GitHub using secure IPC (token never exposed to renderer)
+    if (window.electron && window.electron.ipcRenderer) {
+      window.electron.ipcRenderer.invoke('upload-preset-to-github', {
+        name,
+        author,
+        description,
+        preset
+      }).then(result => {
+        if (result.success) {
+          if (window.showToast) window.showToast('Preset uploaded to community site!', 'success');
+        } else {
+          customAlert('Failed to upload preset: ' + (result.error || 'Unknown error'));
+        }
+        shareForm.style.display = 'none';
+        shareBtn.style.display = 'inline-block';
+        if (shareModal) shareModal.style.display = 'none';
+      });
+    } else if (window.electronAPI && window.electronAPI.uploadPresetToGithub) {
+      window.electronAPI.uploadPresetToGithub({
+        name,
+        author,
+        description,
+        preset
+      }).then(result => {
+        if (result.success) {
+          if (window.showToast) window.showToast('Preset uploaded to community site!', 'success');
+        } else {
+          customAlert('Failed to upload preset: ' + (result.error || 'Unknown error'));
+        }
+        shareForm.style.display = 'none';
+        shareBtn.style.display = 'inline-block';
+        if (shareModal) shareModal.style.display = 'none';
+      });
+    } else {
+  customAlert('Preset upload is not available in this environment.');
+  shareForm.style.display = 'none';
+  shareBtn.style.display = 'inline-block';
+  if (shareModal) shareModal.style.display = 'none';
+    }
+    };
+  }
+});
 window.testButtons = function() {
   console.log("🔍 [Debug] Testing button functionality...");
   

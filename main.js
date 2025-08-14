@@ -65,6 +65,48 @@ ipcMain.handle('cleanup-registry', async (event, psScript) => {
 });
 
 // Auto-updater IPC handlers
+// Secure IPC handler for uploading presets to GitHub
+const GITHUB_TOKEN = 'TOKEN_HERE'; // Store securely in production
+const fetch = require('node-fetch');
+ipcMain.handle('upload-preset-to-github', async (event, { name, author, description, preset }) => {
+  try {
+    const repo = 'wattsy74/BumbleGum-Presets';
+    const filename = `${name.replace(/\s+/g, '-').toLowerCase()}.bgp`;
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/presets/${filename}`;
+    const bgp = {
+      name,
+      author,
+      description,
+      version: '1.0',
+      created: new Date().toISOString().split('T')[0],
+      preset
+    };
+    function toBase64(str) {
+      return Buffer.from(str, 'utf8').toString('base64');
+    }
+    const payload = {
+      message: `Add new preset: ${name}`,
+      content: toBase64(JSON.stringify(bgp, null, 2))
+    };
+    const response = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (data.content && data.content.download_url) {
+      return { success: true, url: data.content.download_url };
+    } else {
+      throw new Error(data.message || 'Unknown error');
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
 ipcMain.handle('get-current-version', async () => {
   try {
     const packageJson = require('./package.json');

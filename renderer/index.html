@@ -117,6 +117,8 @@
           </div>
         </div>
 
+
+
         <div class="strum-area">
           <div class="strum-set released-set" style="display: flex;">
             <!-- Released strum buttons -->
@@ -142,8 +144,12 @@
             </div>
           </div>
         </div>
+        <!-- Share Preset Button and Form -->
+        <div id="share-preset-area" style="margin-top: 1.5rem; text-align: center;">
+          <button id="share-preset-btn" style="background: #ffcc00; color: #222; font-weight: bold; border-radius: 8px; padding: 0.7em 2em; border: none; cursor: pointer;">Share Preset to Community</button>
+        </div>
       </div>
-
+      
       <div class="picker-panel">
         <div class="picker-area">
           <div id="picker-root" style="width: 200px;"></div>
@@ -440,6 +446,31 @@
       <div style="display:flex; justify-content:center; margin-top:2em;">
         <button id="custom-alert-ok" class="modal-btn">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Share Preset Modal Popover -->
+  <div id="share-preset-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:2em; border-radius:1em; min-width:400px; max-width:600px; color:#fff; box-shadow:0 0 20px #000; text-align:center;">
+      <h3 style="margin-top:0; color:#ffcc00; font-size:1.4em;">Share Preset to Community</h3>
+      <form id="share-preset-form" style="margin-top: 1rem; background: #222; color: #fff; border-radius: 8px; padding: 1.5em; border: 1px solid #ffcc00; text-align:left;">
+        <div style="margin-bottom: 1em;">
+          <label for="preset-name" style="display:block; margin-bottom:0.3em;">Preset Name:</label>
+          <input type="text" id="preset-name" required style="width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #444; background: #181818; color: #fff;">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label for="preset-author" style="display:block; margin-bottom:0.3em;">Author Name:</label>
+          <input type="text" id="preset-author" required style="width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #444; background: #181818; color: #fff;">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label for="preset-description" style="display:block; margin-bottom:0.3em;">Description:</label>
+          <textarea id="preset-description" rows="3" style="width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #444; background: #181818; color: #fff;"></textarea>
+        </div>
+        <div style="text-align: center;">
+          <button type="submit" style="background: #ffcc00; color: #222; font-weight: bold; border-radius: 8px; padding: 0.7em 2em; border: none; cursor: pointer;">Create & Upload Preset</button>
+          <button type="button" id="cancel-share-preset" style="background: #444; color: #fff; font-weight: bold; border-radius: 8px; padding: 0.7em 2em; border: none; cursor: pointer; margin-left: 1em;">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 

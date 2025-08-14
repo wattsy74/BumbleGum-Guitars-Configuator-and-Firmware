@@ -23,4 +23,6 @@ window.electronAPI = {
     ipcRenderer.on('download-progress', callback);
     return () => ipcRenderer.removeListener('download-progress', callback);
   }
+  ,
+  uploadPresetToGithub: (presetData) => ipcRenderer.invoke('upload-preset-to-github', presetData)
 };
