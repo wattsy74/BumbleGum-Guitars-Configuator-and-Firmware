@@ -1,15 +1,10 @@
 [CmdletBinding()]
 param(
-    [Parameter(ParameterSetName = "AutoIncrement")]
     [ValidateSet("major", "minor", "patch")]
     [string]$VersionType = "patch",
-    
-    [Parameter(ParameterSetName = "ManualVersion")]
     [string]$Version,
-    
     [ValidateSet("Update", "Recreate", "Skip")]
     [string]$ExistingReleaseAction = "Update",
-    
     [switch]$DryRun
 )
 
@@ -451,7 +446,20 @@ function Show-Summary {
 # Main execution
 Write-Step "BGG Configurator Release Script"
 
-# Determine which mode we're in
+
+# Prompt for missing parameters interactively
+if (-not $VersionType) {
+    $VersionType = Read-Host "Enter version type (major/minor/patch) [default: patch]"
+    if (-not $VersionType) { $VersionType = "patch" }
+}
+
+if (-not $Version) {
+    $manualMode = Read-Host "Do you want to specify a manual version? (y/N)"
+    if ($manualMode -eq 'y' -or $manualMode -eq 'Y') {
+        $Version = Read-Host "Enter manual version (format: x.y.z)"
+    }
+}
+
 if ($Version) {
     Write-Info "Manual version mode: $Version"
 } else {

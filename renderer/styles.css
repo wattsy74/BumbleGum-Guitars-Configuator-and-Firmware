@@ -233,9 +233,24 @@ html, body {
 }
 
 #preset-select {
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
+  background-color: #222;
+  color: #fff;
+  border: 2px solid #ffcc00;
+  height: 38px;
+  min-width: 200px;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+#preset-select:focus {
+  outline: none;
+  border-color: #ffcc00;
+  color: #ffcc00;
 }
 
 
@@ -250,23 +265,24 @@ html, body {
 }
 
 select {
-  background-color: #222;         /* Match toggle buttons */
+  background-color: #222;
   color: #fff;
-  border: 1px solid #ffcc00;         /* Subtle outline */
+  border: 2px solid #ffcc00;
   padding: 8px 16px;
-  border-radius: 999px;           /* Pill shape */
+  border-radius: 8px;
   font-size: 16px;
   font-family: inherit;
   cursor: pointer;
   min-width: 180px;
-  box-shadow: 0 0 4px rgba(0, 255, 204, 0.2); /* Gentle glow */
-  transition: box-shadow 0.2s ease;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
 }
 
-/* Focus state with brighter edge */
+/* Focus state with yellow border */
 select:focus {
   outline: none;
-  box-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+  border-color: #ffcc00;
+  color: #ffcc00;
 }
 
 /* Disabled top row */
@@ -288,21 +304,29 @@ select option:disabled {
 
   background-color: #222;
   color: #fff;
-  border: 1px solid #444;
+  border: 2px solid #ffcc00;
   padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 14px;
   font-family: 'Segoe UI', sans-serif;
-  height: 42px;
+  font-weight: normal;
+  height: 38px;
   min-width: 200px;
-  box-shadow: 0 0 4px rgba(0, 255, 204, 0.2);
-  transition: box-shadow 0.2s ease;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
   line-height: 1.4;
+  cursor: pointer;
 }
 
 .preset-dropdown:focus {
   outline: none;
-  box-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+  border-color: #ffcc00;
+  color: #ffcc00;
+}
+
+.preset-dropdown option {
+  background-color: #222;
+  color: #fff;
 }
 
 .preset-dropdown option:disabled {
@@ -313,21 +337,23 @@ select option:disabled {
 .fret-toggle-button,
 .strum-toggle-button {
   background-color: #222;
-  color: #ccc;
-  border: 2px solid #444;
-  border-radius: 999px;
+  color: #fff;
+  border: 2px solid #ffcc00;
+  border-radius: 8px;
   padding: 8px 20px;
-  font-weight: bold;
+  font-weight: normal;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 .fret-toggle-button.selected,
 .strum-toggle-button.selected {
-  box-shadow: 0 0 8px 2px #ffcc00;
+  background-color: #ffcc00;
+  color: #222;
   border-color: #ffcc00;
-  color: #fff;
+  font-weight: bold;
 }
 
 /* Fret and strum areas */
@@ -519,28 +545,25 @@ select option:disabled {
 }
 
 #apply-config-btn {
-  background-color: #222;
-  color: #ffcc00;
-  border: 1px solid #444;
-  border-radius: 999px;
+  background-color: #ffcc00;
+  color: #222;
+  border: none;
+  border-radius: 8px;
   padding: 8px 16px;
-  font-size: 16px;
+  font-size: 14px;
   font-family: 'Segoe UI', sans-serif;
+  font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 0 4px rgba(255, 204, 0, 0.3);
-  transition: box-shadow 0.2s ease;
+  transition: background-color 0.2s ease;
   display: none; /* Hidden by default */
   min-width: 200px;
   text-align: center;
   outline: none;
-  box-shadow:
-    0 0 0 2px #ffcc00,
-    0 0 12px 4px #ffcc00;
-  z-index: 1;
+  height: 38px;
 }
 
 #apply-config-btn:hover {
-  box-shadow: 0 0 6px rgba(255, 204, 0, 0.5);
+  background-color: #e6b800;
 }
 .config-menu-wrapper {
   position: relative; /* Keeps the icon aligned inside header */
@@ -608,22 +631,24 @@ select option:disabled {
 
 #hexInput {
   margin-top: 12px;
-  padding: 6px 10px;
+  padding: 8px 16px;
   font-size: 14px;
-  border: 2px solid #FFCC00;
-  border-radius: 999px;
+  border: 2px solid #ffcc00;
+  border-radius: 8px;
   background-color: #222;
   color: #fff;
   outline: none;
   width: 100px;
   text-align: center;
-  box-shadow: 0 0 4px rgba(255, 204, 0, 0.5);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
+  height: 38px;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 #hexInput:focus {
-  border-color: #FFCC00;
-  box-shadow: 0 0 8px rgba(255, 204, 0, 0.75);
+  border-color: #ffcc00;
+  color: #ffcc00;
 }
 
 /* Diagnostics Modal Styles */
@@ -799,13 +824,14 @@ select option:disabled {
 }
 
 .device-selector-button {
-  background: #333;
-  color: #fff;
-  border: 1px solid #555;
+  background: #ffcc00;
+  color: #222;
+  border: none;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: bold;
   user-select: none;
   transition: background-color 0.2s;
   min-width: 200px;
@@ -814,10 +840,11 @@ select option:disabled {
   overflow: hidden;
   white-space: nowrap;
   text-align: left;
+  height: 38px;
 }
 
 .device-selector-button:hover {
-  background: #444;
+  background: #e6b800;
 }
 
 .device-dropdown {

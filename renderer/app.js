@@ -1395,6 +1395,18 @@ function rgbToHex(rgbString) {
   return "#" + [r, g, b].map(n => n.toString(16).padStart(2, '0')).join('');
 }
 
+function hexToRgb(hex) {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Parse hex to RGB values
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  return [r, g, b];
+}
+
 function sanitizeColor(color) {
   return color.startsWith('rgb') ? rgbToHex(color) : color;
 }
@@ -3453,7 +3465,36 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
   }
 
   try {
-    console.log('[DEBUG][apply-config] Writing config to device:', JSON.stringify(originalConfig, null, 2));
+    // Convert HEX colors to RGB tuples for firmware compatibility
+    const configForDevice = JSON.parse(JSON.stringify(originalConfig)); // Deep copy
+    
+    // Convert led_color array from HEX to RGB tuples
+    if (configForDevice.led_color && Array.isArray(configForDevice.led_color)) {
+      configForDevice.led_color = configForDevice.led_color.map(color => {
+        if (typeof color === 'string' && color.startsWith('#')) {
+          return hexToRgb(color);
+        }
+        return color; // Already in correct format or invalid
+      });
+    }
+    
+    // Convert released_color array from HEX to RGB tuples  
+    if (configForDevice.released_color && Array.isArray(configForDevice.released_color)) {
+      configForDevice.released_color = configForDevice.released_color.map(color => {
+        if (typeof color === 'string' && color.startsWith('#')) {
+          return hexToRgb(color);
+        }
+        return color; // Already in correct format or invalid
+      });
+    }
+    
+    console.log('[DEBUG][apply-config] Converting colors for device compatibility:');
+    console.log('[DEBUG][apply-config] Original led_color:', originalConfig.led_color);
+    console.log('[DEBUG][apply-config] Device led_color:', configForDevice.led_color);
+    console.log('[DEBUG][apply-config] Original released_color:', originalConfig.released_color);
+    console.log('[DEBUG][apply-config] Device released_color:', configForDevice.released_color);
+    
+    console.log('[DEBUG][apply-config] Writing config to device:', JSON.stringify(configForDevice, null, 2));
     
     // Mark config write in multi-device manager to delay auto-reconnection
     if (window.multiDeviceManager && typeof window.multiDeviceManager.markConfigWrite === 'function') {
@@ -3461,7 +3502,7 @@ document.getElementById('apply-config-btn')?.addEventListener('click', () => {
     }
     
     port.write('WRITEFILE:config.json\n');
-    port.write(JSON.stringify(originalConfig) + '\n');
+    port.write(JSON.stringify(configForDevice) + '\n');
     port.write('END\n');
 
     showToast('Config applied and saved ✅ (device will reboot)', 'success');
